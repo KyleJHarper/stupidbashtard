@@ -1,6 +1,4 @@
 #!/bin/bash
-#
-# This script does... NOTHING!
-# Please read
-#
-# 
+
+## Description
+## The core namespace is for 
