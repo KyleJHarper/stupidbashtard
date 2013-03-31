@@ -1,5 +1,26 @@
 #!/bin/bash
 
+function whe_there-bob01_hi {
+  echo 'boooooobs'
+}
+
+whe_there-bob01_hi
+
+exit
+one-hi() {
+  echo 'hi'
+}
+
+two      ()
+{
+  echo 'me too'
+}
+
+one-hi
+two
+
+exit
+
 bob1 = 'hi'
 echo $bob1
 

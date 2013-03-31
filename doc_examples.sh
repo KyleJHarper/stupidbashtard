@@ -1,15 +1,15 @@
 #!/bin/bash
 
-#@Author   : Kyle Harper
-#@Date     : 2013.03.19
-#@Version  : 0.1-beta
-#@namespace: doc_examples
+#@Author    Kyle Harper
+#@Date      2013.03.19
+#@Version   0.1-beta
+#@namespace doc_examples
 
-#@Desc: This is an example template to help demonstrate how code should be written in the stupidbashtard modules.  It is important to follow the style guidelines so that the self-documenting system will work.  Also, if this is ever put into an IDE, it will enable intelligent description popups.
-#@Desc:
-#@Desc: Using the same tag multiple times in succession is how you span lines.
+#@Desc This is a series of examples to help demonstrate how code should be written in the stupidbashtard modules.  It is important to follow the style guidelines so that the self-documenting system will work.  Also, if this is ever put into an IDE, it will enable intelligent description popups.
+#@Desc
+#@Desc Using the same tag multiple times in succession is how you span lines.
 
-#@Desc: ^^ Empty lines mean nothing, but please avoid them for readability. A blank line(without the #@Description tag) will not put a blank line in the automated documentation generation.
+#@Desc ^^ Empty lines mean nothing, but please avoid them for readability.
 
 
 # +----------+
@@ -70,7 +70,7 @@
 #   case $some_var in                       # You CAN use any variable name you want.  $some_var is an example.
 #     ...                                   # You CAN put the 'do' keyword on a separate line, if you want.
 #   esac                                    # You CAN quote $some_var in your case statement if desired.
-# done
+# done                                      # You CAN NOT make a description for \? (default) in the case statement.  This would be silly.
 #
 # When Docker sees the aforementioned, it will scan for getopt tags (#@opt_).  Typically you will place these tags inside each case item.  Docker will understand which case item the tag is in and record it appropriately.  You can also specify the name of the option if desired (e.g. #@opt_a).  This will override Docker's auto-detected case-item at run time... though it should always be the same, so why would you?
 #
@@ -84,30 +84,79 @@
 # The following examples are loosly ordered by complexity.
 
 
+function doc_examples_01-DoNothing {
+  #@Desc This function does nothing.  Just gives a description.  It inherits global tags from above
+  #@Desc such as Author and Version.
+  return 0
+}
 
 
-function doc_examples_Function99 {
-  #@Author: Hank BoFrank
-  #@Date  : 2013.03.04
-  #@$1 Description for some_variable_name.  Do not continue on a new line, it won't work.
-  local E_SOME_ERROR_CONDITION=10        ##@$ Error code when some error happens
-  local E_ANOTHER_BADDY=82               ##@$ If another bad thing happens, we send this code.
-  local temp='something'                 ##@$ A temp thing to hold stuff.  The value assigned will show up in docs.
-  declare -r local wife_is_hot=true      ##@$ This boolean is now read only (and accurate).
-  declare -a local index_array=( Zelda ) ##@$ Made an index array with 1 element (element 0, value of Zelda)
-  declare -A local assoc_array           ##@$ Created an associative array.  Now it has a description.
-  delcare -i local i                     ##@$ A counter variable, forced to be integer only.  No default value.
-  naughtiness='boo'                      ##@$ This will NOT show up in docs, at all, because it lacks the local keyword.
+function doc_examples_02-OneLiner { return 0 ; }
+#(proof you can do this and Docker will 'read' it, but you can't really specify any tags... so... ???)
 
-  while getopts ":acD:vw:" opt; do
+
+doc_examples_03-AnnoyingDeclaration ()
+{
+  #@Desc  Proving that even annoying function declarations like this one will still get discovered.
+  echo "Please use the unambiguous keyword: function.  It's for the kittens!"
+  return 0
+}
+
+
+function doc_examples_99-ComplexZelda {
+  #@Author Hank BoFrank
+  #@Date   2013.03.04
+
+  #@Desc   A complex function attempting to show most (or all) of the things/ways you can document stuff.
+  #@Desc   We will attempt to read a file and list the line number and first occurence of a Zelda keyword.
+  #@Desc
+  #@Desc   This is a SILLY script that is untested; for demonstration purposes only.
+
+  # Variables
+  #@$1 The first option (after shifting from getopts) will be a file name to operate on.
+  local E_GENERIC=1                      #@$E_GENERIC If we need to exit and don't have a better ERROR choice, use this.
+  local E_BAD_INPUT=10                   #@$ Send when file specified in $1 is invalid or when -D is blank.
+  local VERBOSE=false                    #@$VERBOSE Flag to decide if we should be chatty with our output.
+  local temp='something'                 #@$ A temp variable for our operations below.  (Note: Docker will record defaults.)
+  declare -r local wife_is_hot=true      #@$ Pointless boolean flag, and it is now read only (and accurate).
+  declare -a local index_array=( Zelda ) #@$ Index array with 1 element (element 0, value of Zelda)
+  declare -A local assoc_array           #@$ Associative array (hash) to hold misc things as we read file.
+  delcare -i local i                     #@$ A counter variable, forced to be integer only.
+  final_value=''                         #@$ The final value to expose to the caller after we exit. (Note: Docker will flag as by-ref.)
+
+  # Process options
+  while getopts ":D:hv" opt; do
     case $opt in
-      a  ) bla ;;
-      c  ) bla ;;
-      D  ) bla ;;
-      v  ) bla ;;
-      w  ) bla ;;
-      \? ) echo "Invalid option: -$OPTARG" >&2  ;;
+      D  ) #@opt_ Add bonus items to the index_array variable.
+           #@opt_ Note, this option can be specified multiple times, so always concatenate the array.
+           index_array+=("${OPTARG}")
+           ;;
+      h  ) #@opt_ Display an error and return non-zero if the user tries to use -h for this function.
+           echo 'No help exists for this function yet.' >&2
+           return ${E_GENERIC}
+           ;;
+      v  ) VERBOSE=true ;; #@opt_ Change the verbose flag to true so we can send more output to the caller.
+      \? ) echo "Invalid option: -$OPTARG" >&2 ; return ${E_GENERIC} ;;
     esac
   done
+
+  # Pre-flight Checks
+  if [ ${#index_array[@]} -lt 2 ] ; then echo "You must provide at least 1 Hyrule item (via -D option)" >&2 ; return ${E_BAD_INPUT} ; fi
+  if [ ! -f ${1} ]                ; then echo "Cannot find specified file to read: ${1}"                >&2 ; return ${E_BAD_INPUT} ; fi
+  ${VERBOSE} && echo "Verbosity enabled.  Done processing variables and cleared pre-flight checks."
+
+  # Main function logic
+  i=1
+  while read line ; do
+    # If the line matches a Hyrule keyword, store it in associative array.
+    for temp in ${index_array[@]} ; do
+      if [[ "${line}" =~ ${temp} ]] ; then assoc_array["${i}"]="${temp}" ; break ; fi
+    done
+    let i++
+  done <$1
+
+  # Print results
+  if [ ${#assoc_array[@]} -eq 0 ] ; then echo "No matches found." ; return 0 ; fi
+  for temp in ${!assoc_array[@]} ; do echo "Found match for keyword ${assoc_array[${temp}]} on line number ${temp}." ; done
 }
 
