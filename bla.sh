@@ -1,5 +1,9 @@
 #!/bin/bash
 
+bob1 = 'hi'
+echo $bob1
+
+exit
 
 while getopts ":A" opt; do
   case $opt in
