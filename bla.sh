@@ -1,6 +1,17 @@
 #!/bin/bash
 
-function whe_there-bob01_hi {
+
+declare -i i
+typeset -i -r j=55
+
+i=5
+#j='hi'
+
+echo $i $j
+
+exit
+
+function whe_there-bob01_hi () {
   echo 'boooooobs'
 }
 

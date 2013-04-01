@@ -28,9 +28,20 @@
 # -- Tag Basics
 # Tags are the indicator that the documentation building script ("Docker") should include info about something it normally wouldn't capture.  Docker will look for certain tags by default, such as author, date, namespace, et cetera.  Custom tags are valid as well, and will be placed in the docuemntation in the order they are found.  Built-ins (like the aforementioned) will always go in default placeholders.
 #
-# You can specify a tag by using the comment and @ symbol combination:  #@SomeAttribute bla (see the #@Description above for a multi-line example).
+# You can specify a tag by using the comment and @ symbol combination:  #@SomeAttribute bla (see the #@Desc above for a multi-line example).
 #
-# If you specify a tag at the top of the file, and do not override it in a function, the value provided at the top will be used.  This can be disabled via the document generation script switches.
+# If you specify a tag at the top of the file, and do not override it in a function, the value provided at the top will be used.  This can be disabled via the document generation script switches.  The only tags that don't propagate are:
+#   1. Desc
+
+# -- Line-End Tags
+# Bash supports line-end comments, therefore Docker does too.  The two benefits to line-end comments are 1) 'cleaner' code visually and 2) certain line-end tags infer information.  This is quite popular for variable tag, getopt tags, and similar because it allows you to leave off the tag name.  For example, if you wanted to document a variable named VERBOSE, you could do:
+# VERBOSE=false  #@$VEBOSE <description text>
+# (or... since it's line-end...)
+# VERBOSE=false  #@$ <description text>
+
+# -- Federated Tags
+# If you prefer, you can put any tag anywhere inside a function.  For example, if you have a variable named VERBOSE, you can put a variable tag for it anywhere.  The advantage is the ability to federate the tag from the actual line of code.  The disadvantage is it ALWAYS requires a name.  Using our VERBOSE example, you could create a federated tag like so anywhere inside the function:
+# #@$VERBOSE <description text>
 
 # -- Variable Tags
 # Variables are auto-detected by the local keyword.  If a variable tag (#@$) is used as a line-end comment, the text following will be used as a description.  You do not need to specify the variable name again (#$@var), it will be inferred from the declaration.  Can can treat variable tags like all others, if desired.  Their unique prefix (#@$) allows Docker to still group them all up, so where you place them in the function is irrelevant to Docker.
@@ -48,15 +59,20 @@
 # -- Function Declarations
 # You do NOT need to use special comments and tags.  You ONLY need to write the function using valid bash syntax.  The documentation tool will read everything after it.  The braces for the function simply need to comply with bash rules.  The opening is on the same line or directly after.  The closing must be on it's own line, or preceeded by a semicolon.  Again, whatever bash allows.
 
-# -- Method Signature (Compulsory Parameters)
+# -- Function Variables
+# Functions act more like code macros than subroutines (ignoring async/fork calls for now).  While you can assign values to a variable inside a function and have it exposed to the caller, this is not always easy to detect.  Docker will, however, attempt to treat anything that looks like a variable assignment to a non-local defined variable (via the local keyword) as either by-ref or out.  Variables declared with the local keyword are always scoped to the function, so by-ref/by-val is nonsensical.
+#
+REWRITE THIS SECTION, or all of FUNC VARIABLES
+# By-Ref Params: if the variable name was already 
+# Out Params:
+#
+#
+# The above assumes you call a function synchronously.  Docker cannot know how the function will be called.  Please keep in mind that calling a function asynchronously (via fork, <command>&, etc) will always make a copy of all variables and prevent exposure to the caller (in other words: they're now by-val).
+
+# -- Method Signature (Parameters)
 # Generally, options should be passed as switches (see getopts below) and combined with pre-flight logic for mandatory things.  If, however, your function expects things like $1, you need to let the document script know.  Do this by placing a variable tag (#@$1) INSIDE the function.
 # Note: While its tag looks funny, you are welcome to use the $@ variable.  Its variable tag would be:  #@$@
 # Note: Same with the $* variable:  #@$*
-
-# -- Function Variables
-# Functions act more like code macros than subroutines (ignoring async/fork calls for now).  While you can assign values to a variable inside a function and have it exposed to the caller, this is not always easy to detect.  Docker will, however, attempt to treat anything that looks like a variable assignment to a non-local defined variable (via the local keyword) as by-ref.  Variables declared with the local keyword are always scoped to the function, so by-ref/by-val is nonsensical.
-#
-# The above assumes you call a function synchronously.  Docker cannot know how the function will be called.  Please keep in mind that calling a function asynchronously (via fork, <command>&, etc) will always make a copy of all variables and prevent exposure to the caller (in other words: they're now by-val).
 
 # -- Declare & Typeset
 # Bash variables are generally untyped.  If you use the declare keyword, the document script will note this and update correctly.  Declare is preferred, but typeset is acceptable too.  Any valid declare type will be detected.  E.g. -r, -i, etc.  Docker will attempt to point out conflicts and warn about them, but don't rely on this.  (For example: declare -a -A some_var ).
@@ -81,9 +97,20 @@
 # +------------+
 # |  Examples  |
 # +------------+
-# The following examples are loosly ordered by complexity.
+# 01 - 09:  Function Declarations
+# 10 - 19:  Variables (Typing & Scope)
+# 20 - 29:  Parameters
+# 30 - 39:  (reserved)
+# 40 - 49:  Variable Tags
+# 50 - 59:  GetOpts Tags
+# 60 - 69:  (reserved)
+# 70 - 79:  (reserved)
+# 80 - 89:  (reserved)
+# 90 - 99:  Complex Examples
 
-
+# --
+# -- Examples 01 - 09:  Function Declarations
+# --
 function doc_examples_01-DoNothing {
   #@Desc This function does nothing.  Just gives a description.  It inherits global tags from above
   #@Desc such as Author and Version.
@@ -91,8 +118,8 @@ function doc_examples_01-DoNothing {
 }
 
 
+#(proof you can do this and Docker will 'read' it, but you can't really specify any tags... so... why???)
 function doc_examples_02-OneLiner { return 0 ; }
-#(proof you can do this and Docker will 'read' it, but you can't really specify any tags... so... ???)
 
 
 doc_examples_03-AnnoyingDeclaration ()
@@ -103,6 +130,218 @@ doc_examples_03-AnnoyingDeclaration ()
 }
 
 
+#(proof this works too)
+doc_examples_04-AnnoyingDeclarationOneLiner () { return 0 ; }
+
+
+function doc_examples_05-MixedDeclaration () {
+  #@Desc  This form of declaration is valid in bash too, and still annoying.  But Docker will accept it.
+  return 0
+}
+
+
+# --
+# -- Examples 10 - 19:  Variables (Typing & Scope)
+# --
+function doc_examples_10-SimpleLocalVariables {
+  #@Desc  This function will setup a few local variables.  That's it. (No tags).
+
+  local VERBOSE=false
+  local MAX_THINGS=20
+  # Docker will note the above variables and their default values.
+
+  local i
+  # Docker will acknowledge the variable above, and that it does not have a default value.
+
+  return 0
+}
+
+
+function doc_examples_11-MixedVariables {
+  #@Desc  This function establishes both local variables and a few non-locals.
+
+  local VERBOSE=false
+  ITEMS_FOUND
+  # Docker will notice the missing local keyword and flag ITEMS_FOUND as a by-ref variable (when synchronous of course).
+
+  return 0
+}
+
+
+function doc_examples_12-ThreadSafe {
+  #@Desc  Thread safety is possible in limited capacity.  Obviously this only applies when the function is called
+  #@Desc  asynchronously.  If all detected variables are declared with the local keyword, the function will be flagged
+  #@Desc  as thread safe.
+
+  local START_TIME="$(date +%s)"
+  local VERBOSE=false
+
+  return 0
+}
+
+
+function doc_examples_13-NonThreadSafe {
+  #@Desc  This simple function will be flaged as non-thread safe because there is a variable defined without a local
+  #@Desc  keyword.  Ruh roh!
+
+  local START_TIME="$(date +%s)"
+  VERBOSE=false
+
+  return 0
+}
+
+
+function doc_examples_14-TypedVariables {
+  #@Desc  This function will specify attributes about some variables by way of the keyword: declare.  It is also possible
+  #@Desc  to use the typeset keyword.
+
+  # Docker will note the special attributes for the following variables
+  declare -r local my_uuid="$(uuidgen)"  # Read only
+  declare -i local i                     # integer
+  declare -a local index_array           # Simple array
+  declare -A local some_hash             # Associative array (hash)
+
+  # Docker understands typeset too
+  typeset -r local START_TIME="$(date +%s)"
+
+  # Regular variables are untyped.
+  local WOOHOO=true
+
+  return 0
+}
+
+
+# --
+# -- Examples 20 - 29:  Parameters
+# --
+function doc_examples_20-NumericParameters {
+  #@Desc  This function accepts $1 and $2 as parameters.
+
+}
+
+
+# --
+# -- Examples 40 - 49:  Variable Tags
+# --
+function doc_examples_40-SimpleVariableTag {
+  #@Desc  A single, simple variable tag (happens to be a line-end tag too)
+
+  local VERBOSE=false  #@$VERBOSE  Disable verbosity unless the user enables it with -v
+  return 0
+}
+
+
+function doc_examples_41-LineEndVariableTags {
+  #@Desc  This function will show simple variable tags:  Line-End and federated.
+
+  local VERBOSE=false  #@$VERBOSE  Disable verbosity unless the user enables it with -v
+  local SUPPRESS=false #@$SUPPRESS Don't sent error messages if the user specifies -s
+
+  # Line-end tags infer names, so Docker will transform the following variable tag (#@$) into  #@$QUIET
+  local QUIET=false    #@$ Limit output of regular messages.  Will NOT disable error message output (see -s).
+
+  return 0
+}
+
+
+function doc_examples_42-FederatedVariableTags {
+  #@Desc  This function shows how variable tags can be federated from the actual code declaring the variable; if desired.
+  #@$VERBOSE  Disable verbosity unless the user enables it with -v
+  #@$SUPPRESS Don't sent error messages if the user specifies -s
+  #@$QUIET    Limit output of regular messages.  Will NOT disable error message output (see -s).
+
+  local VERBOSE=false
+  local SUPPRESS=false
+  local QUIET=false
+
+  return 0
+}
+
+
+function doc_examples_43-ParameterVariableTags {
+  #@Desc  In this function we will accept $1 and $2 parameters.  We will assign descriptions to them.
+  #@Desc  These must always be federated, as there is no declaration for them.
+
+  #@$1  The file we will use for <whatever>.
+  #@$2  The maximum results to find before leaving.
+
+  declare -r    local INPUT_FILE="$1"  #@$  This will hold the contents of $1, mostly for readability later.
+  delcare -r -i local MAX_RESULTS=$2   #@$  This will hold the value of $2, mostly for readability later.
+
+  return 0
+}
+
+
+# --
+# -- Examples 50 - 59:  GetOpts Tags
+# --
+function doc_examples_50-GetOptsTags {
+  #@Desc  This function will show a few ways to provide comments for the getopts loop.
+
+  local my_opt
+  local AWESOME_MODE=false
+  local BOOK_NAME='Plumbing Guide to Angling'
+  while getopts 'ab:' my_opt ; do
+    case "${my_opt}" in
+      'a' ) #@opt_ When specified, turns on AWESOME mode... yea.
+            AWESOME_MODE=true     ;;
+      'b' ) #@opt_ Override the default book name to use.
+            BOOK_NAME="${OPTARG}" ;;
+      *   ) echo "Invalid option -${OPTARG}" >&2
+            return 1
+            ;;
+    esac
+  done
+
+  return 0
+}
+
+
+function doc_examples_51-LineEndGetOptsTags {
+  #@Desc  This function will show a few ways to provide comments for the getopts loop.
+
+  local my_opt
+  local AWESOME_MODE=false
+  local BOOK_NAME='Plumbing Guide to Angling'
+  while getopts 'ab:' my_opt ; do
+    case "${my_opt}" in
+      'a' ) AWESOME_MODE=true     ;;  #@opt_ When specified, turns on AWESOME mode... yea.
+      'b' ) BOOK_NAME="${OPTARG}" ;;  #@opt_ Override the default book name to use.
+      *   ) echo "Invalid option -${OPTARG}" >&2
+            return 1
+            ;;
+    esac
+  done
+
+  return 0
+}
+
+
+function doc_examples_52-FederatedGetOptsTags {
+  #@Desc  This function will show a few ways to provide comments for the getopts loop.
+  #@opt_a When specified, turns on AWESOME mode... yea.
+  #@opt_b Override the default book name to use.
+
+  local my_opt
+  local AWESOME_MODE=false
+  local BOOK_NAME='Plumbing Guide to Angling'
+  while getopts 'ab:' my_opt ; do
+    case "${my_opt}" in
+      'a' ) AWESOME_MODE=true     ;;
+      'b' ) BOOK_NAME="${OPTARG}" ;;
+      *   ) echo "Invalid option -${OPTARG}" >&2
+            return 1
+            ;;
+    esac
+  done
+
+  return 0
+}
+
+
+# --
+# -- Examples 90 - 99:  Complex Examples
+# --
 function doc_examples_99-ComplexZelda {
   #@Author Hank BoFrank
   #@Date   2013.03.04
