@@ -34,9 +34,8 @@
 #   1. Desc
 
 # -- Line-End Tags
-# Bash supports line-end comments, therefore Docker does too.  The two benefits to line-end comments are 1) 'cleaner' code visually and 2) certain line-end tags infer information.  This is quite popular for variable tag, getopt tags, and similar because it allows you to leave off the tag name.  For example, if you wanted to document a variable named VERBOSE, you could do:
-# VERBOSE=false  #@$VEBOSE <description text>
-# (or... since it's line-end...)
+# Bash supports line-end comments, therefore Docker does too.  The two benefits to line-end comments are 1) 'cleaner' code visually and 2) certain line-end tags infer information.  This is quite popular for variable tags, getopt tags, and similar because it allows you to leave off the tag name.  For example, if you wanted to document a variable named VERBOSE, you could do:
+# VERBOSE=false  #@$VEBOSE <description text>   or...
 # VERBOSE=false  #@$ <description text>
 
 # -- Federated Tags
@@ -45,6 +44,10 @@
 
 # -- Variable Tags
 # Variables are auto-detected by the local keyword.  If a variable tag (#@$) is used as a line-end comment, the text following will be used as a description.  You do not need to specify the variable name again (#$@var), it will be inferred from the declaration.  Can can treat variable tags like all others, if desired.  Their unique prefix (#@$) allows Docker to still group them all up, so where you place them in the function is irrelevant to Docker.
+#
+# Parameters should be passed as switches (see getopts below) and combined with pre-flight logic for mandatory things.  If, however, your function expects things like $1, you need to let the document script know.  Do this by placing a variable tag (#@$1) INSIDE the function.
+# Note: While its tag looks funny, you are welcome to use the $@ variable.  Its variable tag would be:  #@$@
+# Note: Same with the $* variable:  #@$*
 
 # -- GetOpt Tags
 # These are specifically for the getopts function.  More details in the code-crawling below.  For brevity the syntax is: #@opt_ <description text>
@@ -57,22 +60,34 @@
 # Docker is designed to crawl code and scan for functions, variables, and certain structures. It uses the information it finds to generate a report about each function.  The information is then stored in a meta-file which is used to generate HTML files, plain text, IDE pop-ups, and so forth.
 
 # -- Function Declarations
-# You do NOT need to use special comments and tags.  You ONLY need to write the function using valid bash syntax.  The documentation tool will read everything after it.  The braces for the function simply need to comply with bash rules.  The opening is on the same line or directly after.  The closing must be on it's own line, or preceeded by a semicolon.  Again, whatever bash allows.
+# You do NOT need to use special comments and tags, though tags do help end-users understand your functions better later.  You ONLY need to write the function using valid bash syntax.  The documentation tool will read everything after it.  The braces for the function simply need to comply with bash rules.  The opening is on the same line or directly after.  The closing must be on it's own line, or preceeded by a semicolon.  Again, whatever bash allows.
 
-# -- Function Variables
-# Functions act more like code macros than subroutines (ignoring async/fork calls for now).  While you can assign values to a variable inside a function and have it exposed to the caller, this is not always easy to detect.  Docker will, however, attempt to treat anything that looks like a variable assignment to a non-local defined variable (via the local keyword) as either by-ref or out.  Variables declared with the local keyword are always scoped to the function, so by-ref/by-val is nonsensical.
+# -- Parameters
+# Functions act more like code macros than subroutines (ignoring async/fork calls for now).  You cannot create functions with parameters defined as by-value, reference, out, and so forth.  All parameters sent to a function are by-value.  While Bash supports indirect referencing, and we could use that to emulte some reference-style parameters... it would be extremely hacky and deviate from the globally accepted rule for linux command output: it should go to STDOUT.
 #
-REWRITE THIS SECTION, or all of FUNC VARIABLES
-# By-Ref Params: if the variable name was already 
-# Out Params:
+# Parameters should be passed and accepted via getopts (read more about that below) or anticipated in $@.  If you need to set variables from the command output of a function, swallow it like you would any other command output:  myvar=$(myfunction -p somevalue)
 #
-#
-# The above assumes you call a function synchronously.  Docker cannot know how the function will be called.  Please keep in mind that calling a function asynchronously (via fork, <command>&, etc) will always make a copy of all variables and prevent exposure to the caller (in other words: they're now by-val).
+# Given the aforementioned, Docker will not attempt to discern anything about parameter types; all are by-value.
 
-# -- Method Signature (Parameters)
-# Generally, options should be passed as switches (see getopts below) and combined with pre-flight logic for mandatory things.  If, however, your function expects things like $1, you need to let the document script know.  Do this by placing a variable tag (#@$1) INSIDE the function.
-# Note: While its tag looks funny, you are welcome to use the $@ variable.  Its variable tag would be:  #@$@
-# Note: Same with the $* variable:  #@$*
+# -- Variables & Scope
+# Variables in a bash script are thrown into a global top-level scope, even those made inside of functions.  The only exceptions are when calling a function asynchronously (forking) or when the function declares a variable using the keyword: local.  Note that you cannot use the local keyword for variables inside your main process.  This means the more you cram into the 'main' of your shell script the more expensive your async function calls and forking will be, since all variables are copied to forked processes.
+#
+# As mentioned in the parameters section, you should never set a variable in a function for use outside the function (see thread safety).  If Docker identifies what looks like a variable being set or used which was NOT defined previously in the function with the local keyword, it will flag the function as non-thread safe.
+
+# -- Thread Safety
+# While bash doesn't support true threading, it can spawn sub-processes and emulate a similar behavior.  Docker will mark all functions thread-safe until it finds a reason not to.  The primary reason for marking a function as non-thread safe is if Docker finds variables in use that are no delcared with the local keyword.  It will also mark non-thread safe any function with a hard-coded path (why would you ever...)?
+#
+# Note:  Docker is a static-analysis tool.  It cannot begin to comprehend how you're using various functions.  A function marked thread-safe does not mean it'll magically protect you from race conditions and data corruption if you use the functions with shared resources (and no locking system).
+
+# -- Returns
+# You should:
+#   ALWAYS include a return statement.
+#   ALWAYS return 0 to indicate the function executed as anticipated.
+#   ALWAYS return non-zero to indicate an error occurred.
+#   ALWAYS send error messages to stderr.
+#   NEVER  use the return value to pass data back to the caller.
+#
+# Docker will send a warning for any function without a return statement.  Every function should have at least 1, regardless.
 
 # -- Declare & Typeset
 # Bash variables are generally untyped.  If you use the declare keyword, the document script will note this and update correctly.  Declare is preferred, but typeset is acceptable too.  Any valid declare type will be detected.  E.g. -r, -i, etc.  Docker will attempt to point out conflicts and warn about them, but don't rely on this.  (For example: declare -a -A some_var ).
@@ -85,7 +100,7 @@ REWRITE THIS SECTION, or all of FUNC VARIABLES
 # while getopts '<string>' $some_var ; do   # You CAN use double quotes around <string> too.
 #   case $some_var in                       # You CAN use any variable name you want.  $some_var is an example.
 #     ...                                   # You CAN put the 'do' keyword on a separate line, if you want.
-#   esac                                    # You CAN quote $some_var in your case statement if desired.
+#   esac                                    # You CAN quote $some_var or the case items in your case statement if desired.
 # done                                      # You CAN NOT make a description for \? (default) in the case statement.  This would be silly.
 #
 # When Docker sees the aforementioned, it will scan for getopt tags (#@opt_).  Typically you will place these tags inside each case item.  Docker will understand which case item the tag is in and record it appropriately.  You can also specify the name of the option if desired (e.g. #@opt_a).  This will override Docker's auto-detected case-item at run time... though it should always be the same, so why would you?
