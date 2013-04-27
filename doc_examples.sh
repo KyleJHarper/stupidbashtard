@@ -108,6 +108,9 @@
 # For those who like making me work more...  If you specify the option name (e.g. #@opt_a), you can technically place the tag anywhere inside the function, though I recommend against this.  This would allow you to, for example, cram all your tags at the top of the function.  /shrugs
 # TODO: Write a getopts_long function and allow docker to read it.  (2013.03.30 - Kyle)
 
+# -- Required Programs & Functions (SBt core_ToolExists)
+# Docker is capable of reading the core_ToolExists function calls (from StupidBashtard).  If a function invokes core_ToolExists, all arguments listed afterward will be listed in the documentation as dependencies of the caller.
+
 
 # +------------+
 # |  Examples  |
@@ -395,6 +398,7 @@ function doc_examples_99-ComplexZelda {
   done
 
   # Pre-flight Checks
+  if ! core_ToolExists 'grep'     ; then echo 'The required tools to run this function were not found.' >&2 ; return ${E_GENERIC}   ; fi
   if [ ${#index_array[@]} -lt 2 ] ; then echo "You must provide at least 1 Hyrule item (via -D option)" >&2 ; return ${E_BAD_INPUT} ; fi
   if [ ! -f ${1} ]                ; then echo "Cannot find specified file to read: ${1}"                >&2 ; return ${E_BAD_INPUT} ; fi
   ${VERBOSE} && echo "Verbosity enabled.  Done processing variables and cleared pre-flight checks."
@@ -402,15 +406,15 @@ function doc_examples_99-ComplexZelda {
   # Main function logic
   i=1
   while read line ; do
-    # If the line matches a Hyrule keyword, store it in associative array.
+    # If the line matches a Hyrule keyword, store it in associative array.  Use grep, simply so we can add it to core_ToolExists check above.
     for temp in ${index_array[@]} ; do
-      if [[ "${line}" =~ ${temp} ]] ; then assoc_array["${i}"]="${temp}" ; break ; fi
+      if echo "${line}" | grep -q -s ${temp} ; then assoc_array["${i}"]="${temp}" ; break ; fi
     done
     let i++
   done <$1
 
-  # Print results
+  # Print results & leave
   if [ ${#assoc_array[@]} -eq 0 ] ; then echo "No matches found." ; return 0 ; fi
   for temp in ${!assoc_array[@]} ; do echo "Found match for keyword ${assoc_array[${temp}]} on line number ${temp}." ; done
+  return 0
 }
-

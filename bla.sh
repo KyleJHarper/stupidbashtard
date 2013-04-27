@@ -1,6 +1,18 @@
 #!/bin/bash
 
+function asdf-1 {
+  echo 'bla'
+}
 
+asdf-1
+
+exit
+which hi >/dev/null || declare -F | grep -F 'hi'
+exit
+test=('abc' 'adr' '34g')
+echo "${test[@]}"
+
+exit
 declare -i i
 typeset -i -r j=55
 
