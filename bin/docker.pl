@@ -24,14 +24,16 @@ my $E_GENERIC    =  1 ;
 my $E_IO_MISSING = 10 ;
 my @FILES ;
 my $QUIET        = "" ;
+my $TESTING      = "" ;
 my $VERBOSE      = "" ;
 
 # -- GetOpts Overrides
-getopts('d:hqv') or &usage ;
-our ($opt_d, $opt_h, $opt_q, $opt_v) ;
+getopts('d:hqtv') or &usage ;
+our ($opt_d, $opt_h, $opt_q, $opt_t, $opt_v) ;
 if ( defined $opt_d ) { $DOC_DIR = $opt_d ; }
 if ( defined $opt_h ) { &usage            ; }
 if ( defined $opt_q ) { $QUIET   = "Yep"  ; }
+if ( defined $opt_t ) { $TESTING = "Yep"  ; }
 if ( defined $opt_v ) { $VERBOSE = "Yep"  ; }
 
 
@@ -40,8 +42,7 @@ if ( defined $opt_v ) { $VERBOSE = "Yep"  ; }
 # +--------+
 &load_files ;
 &preflight_checks ;
-&print_so("${DOC_DIR}\n") ;
-
+if ( $TESTING ) { &run_tests ; }
 
 # +----------------+
 # |  Sub-Routines  |
@@ -54,8 +55,6 @@ sub load_files {
   # If nothing was in ARGV above, try to load files from LIB_DIR.
   @FILES = split("\n", `find $LIB_DIR -type f -iname '*.sh'` ) ;
 }
-
-sub add_file { push ( @FILES, $_ ) ; }
 
 sub preflight_checks {
   # Do the files and directories we need exist?
@@ -72,6 +71,18 @@ sub preflight_checks {
   # Conflicting options
   if ( $VERBOSE && $QUIET ) { &fatal($E_GENERIC,    "Cannot specify both 'quiet' (-q) and 'verbose' (-v).") ; }
 }
+
+# --
+# -- Testing Functions
+# --
+sub run_tests {
+  # Print a normal message
+  &print_so( "Test: normal message from print_so\n" ) ;
+
+  # Print a verbose message
+  &print_so_verbose( "Test: verbose message from print_so_verbose\n" ) ;
+}
+
 
 # --
 # -- Printing Functions
