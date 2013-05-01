@@ -22,8 +22,9 @@ function fail {
 # Vars
 E_GENERIC=1
 E_IO_MISSING=10
+BIN_DIR='../bin'
 cmd=''
-dt='./docker.pl -t'
+dt="${BIN_DIR}/docker.pl -t"
 
 # -- TEST PARAMETERS -- #
 # 1. A message to STDOUT
