@@ -3,12 +3,14 @@
 # +------------------+
 # |  Pre-Requisites  |
 # +------------------+
-# --Import required items
+# -- Import required items
 use strict ;
 use warnings ;
 use Getopt::Std ;
 use Cwd 'abs_path' ;
 use File::Basename ;
+use lib '.' ;
+use Function ;
 
 
 # +-----------------------+
@@ -40,9 +42,27 @@ if ( defined $opt_v ) { $VERBOSE = "Yep"  ; }
 # +--------+
 # |  Main  |
 # +--------+
+# -- Load @FILES and run pre-flight checks.
 &load_files ;
 &preflight_checks ;
-if ( $TESTING ) { &run_tests ; }
+
+# -- If we're testing, run test output function and leave.
+if ( $TESTING ) { &run_tests ; exit ; }
+
+# -- Process @FILES now
+foreach ( @FILES ) {
+  # Reset variables and open the file.
+  my $in_function = "" ;
+  my $func = Function->new() ;
+  my $fh ;
+  open( $fh, '<', $_ ) or &fatal($E_IO_MISSING, "Unable to open file for reading:  $_ .") ;
+
+  # Read file line by line and generate documentation.
+  while ( <$fh> ) {
+    chomp ;
+    if ( ! $in_function ) { &enter_function $_ || next ; }
+  } 
+}
 
 # +----------------+
 # |  Sub-Routines  |
@@ -58,8 +78,8 @@ sub load_files {
 
 sub preflight_checks {
   # Do the files and directories we need exist?
-  if ( ! -d $LIB_DIR )      { &fatal($E_IO_MISSING, "Cannot find lib dir and no specific files listed.")    ; }
-  if ( ! -d $DOC_DIR )      { &fatal($E_IO_MISSING, "Cannot find doc dir specified: ${DOC_DIR}")            ; }
+  if ( ! -r $LIB_DIR )      { &fatal($E_IO_MISSING, "Cannot find lib dir and no specific files listed.")    ; }
+  if ( ! -w $DOC_DIR )      { &fatal($E_IO_MISSING, "Cannot find doc dir specified: ${DOC_DIR}.")           ; }
 
   # Check that we have files to work with.
   if ( $#FILES eq -1 )      { &fatal($E_IO_MISSING, "No files found for processing.")                       ; }
@@ -71,6 +91,19 @@ sub preflight_checks {
   # Conflicting options
   if ( $VERBOSE && $QUIET ) { &fatal($E_GENERIC,    "Cannot specify both 'quiet' (-q) and 'verbose' (-v).") ; }
 }
+
+
+# --
+# -- Crawler Functions
+# --
+sub enter_function {
+  my @tokens = split(" ", $@);
+  if ( $tokens[0] =~ /
+}
+
+# --
+# -- Tag Functions
+# --
 
 # --
 # -- Testing Functions
