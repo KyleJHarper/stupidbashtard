@@ -97,8 +97,9 @@ sub preflight_checks {
 # -- Crawler Functions
 # --
 sub enter_function {
-  my @tokens = split(" ", $@);
-  if ( $tokens[0] =~ /
+# FINISH THIS REGEX
+  if ( @_ =~ /^[\s]*function[\s]+([a-Z0-9_-]+)[\s]?/ ) { $func->name = $1 ; return 1 ; }
+  if ( @_ =~ /^[\s]*(\S+)[\s]*\([\s]*\)
 }
 
 # --

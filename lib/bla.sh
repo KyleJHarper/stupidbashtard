@@ -1,10 +1,11 @@
 #!/bin/bash
 
-function asdf-1 {
+function fun.whee
+{
   echo 'bla'
 }
 
-asdf-1
+fun.whee
 
 exit
 which hi >/dev/null || declare -F | grep -F 'hi'
