@@ -23,6 +23,18 @@ sub name {
   return $self->{"name"};
 }
 
+sub openedbraces {
+  my $self = shift;
+  if ( scalar(@_) == 1) { $self->{"name"} = shift; }
+  return $self->{"name"};
+}
+
+sub closedbraces {
+  my $self = shift;
+  if ( scalar(@_) == 1) { $self->{"name"} = shift; }
+  return $self->{"name"};
+}
+
 
 
 # +-----------+

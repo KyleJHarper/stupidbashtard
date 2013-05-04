@@ -24,6 +24,7 @@ my $DOC_DIR   = "${SELF_DIR}/../doc" ;
 # -- Order 9
 my $E_GENERIC    =  1 ;
 my $E_IO_MISSING = 10 ;
+my $E_BAD_SYNTAX = 20 ;
 my @FILES ;
 my $QUIET        = "" ;
 my $TESTING      = "" ;
@@ -52,7 +53,6 @@ if ( $TESTING ) { &run_tests ; exit ; }
 # -- Process @FILES now
 foreach ( @FILES ) {
   # Reset variables and open the file.
-  my $in_function = "" ;
   my $func = Function->new() ;
   my $fh ;
   open( $fh, '<', $_ ) or &fatal($E_IO_MISSING, "Unable to open file for reading:  $_ .") ;
@@ -60,9 +60,23 @@ foreach ( @FILES ) {
   # Read file line by line and generate documentation.
   while ( <$fh> ) {
     chomp ;
-    if ( ! $in_function ) { &enter_function $_ || next ; }
-  } 
+    # If in a function, we shouldn't enter a new one.  If not in a function, enter one or skip this line.
+    if (   $func->name() ) { &is_new_function($_) && &fatal($E_BAD_SYNTAX, "Found function declaration inside a function: $func->name().") ; }
+    if ( ! $func->name() ) { &is_new_function($_) || next ; }
+
+    # Update the brace count
+    &count_braces( $_ );
+    if ( ! $func->openedbraces() ) { next ; }
+
+
+    if ( &braces_match() ) { &leave_function ; }
+  }
+
+  # Save any function in progress and close the file.
+  # FINISH THIS
+  close( $fh );
 }
+
 
 # +----------------+
 # |  Sub-Routines  |
@@ -96,10 +110,35 @@ sub preflight_checks {
 # --
 # -- Crawler Functions
 # --
-sub enter_function {
-# FINISH THIS REGEX
-  if ( @_ =~ /^[\s]*function[\s]+([a-Z0-9_-]+)[\s]?/ ) { $func->name = $1 ; return 1 ; }
-  if ( @_ =~ /^[\s]*(\S+)[\s]*\([\s]*\)
+sub count_braces {
+  # Setup string and strip anything between quotes (braces inside quotes don't affect flow).
+  my $line = @_ ;
+  $line =~ s/["][^"]*["]// ;
+  $line =~ s/['][^']*[']// ;
+
+  # Count braces and update properties
+  my $opened = $line =~ tr/\{// ;
+  my $closed = $line =~ tr/\}// ;
+  $func->openedbraces( $func->openedbraces() + $opened );
+  $func->closedbraces( $func->closedbraces() + $closed );
+}
+
+sub braces_match {
+  # This primarily checks for braces to be greater than zero and matching, to signify we're out of a function.
+  if ( $func->closedbraces() gt $func->openedbraces() ) {
+}
+
+sub is_new_function {
+  # Determine if this line is starting a new function
+  if ( @_ =~ /^[\s]*function[\s]+([a-Z0-9_-]+)[\s]?/ ) { $func->name($1) ; }
+  if ( @_ =~ /^[\s]*([a-Z0-9_-]+)[\s]*\([\s]*\) / )    { $func->name($1) ; }
+  return 0;
+}
+
+sub leave_function {
+  # This should be called when we have a loaded function object.
+  $func->save();
+  $func = Function->new();
 }
 
 # --

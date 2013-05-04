@@ -1,11 +1,12 @@
 #!/bin/bash
 
-function fun.whee
+function fun
+
 {
   echo 'bla'
 }
 
-fun.whee
+fun
 
 exit
 which hi >/dev/null || declare -F | grep -F 'hi'
