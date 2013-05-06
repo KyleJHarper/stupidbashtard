@@ -61,19 +61,20 @@ foreach ( @FILES ) {
   while ( <$fh> ) {
     chomp ;
     # If in a function, we shouldn't enter a new one.  If not in a function, enter one or skip this line.
-    if (   $func->name() ) { &is_new_function($_) && &fatal($E_BAD_SYNTAX, "Found function declaration inside a function: $func->name().") ; }
+    if (   $func->name() ) { &is_new_function($_) && &fatal($E_BAD_SYNTAX, "Found function declaration inside a function: " . $func->name()) ; }
     if ( ! $func->name() ) { &is_new_function($_) || next ; }
 
-    # Update the brace count
+    # Update the brace count.  Leave if we haven't found one yet (new function with starting brace on next line).
     &count_braces( $_ );
     if ( ! $func->openedbraces() ) { next ; }
+    if ( $func->braces_match() )   { $func->ready_to_leave("Yep") ; }
 
+    # Read any tag that might exist.  Can't fail, and a line can only have 1 tag.
+    &add_tag( $_ );
 
-    if ( &braces_match() ) { &leave_function ; }
+    # If we're ready to leave, save the function and re-instantiate it.
+    if ( $func->ready_to_leave() ) { $func->save() ; $func = Function->new() ; }
   }
-
-  # Save any function in progress and close the file.
-  # FINISH THIS
   close( $fh );
 }
 
@@ -92,14 +93,14 @@ sub load_files {
 
 sub preflight_checks {
   # Do the files and directories we need exist?
-  if ( ! -r $LIB_DIR )      { &fatal($E_IO_MISSING, "Cannot find lib dir and no specific files listed.")    ; }
-  if ( ! -w $DOC_DIR )      { &fatal($E_IO_MISSING, "Cannot find doc dir specified: ${DOC_DIR}.")           ; }
+  if ( ! -r $LIB_DIR ) { &fatal($E_IO_MISSING, "Cannot find lib dir and no specific files listed.") ; }
+  if ( ! -w $DOC_DIR ) { &fatal($E_IO_MISSING, "Cannot find doc dir specified: ${DOC_DIR}.") ; }
 
   # Check that we have files to work with.
-  if ( $#FILES eq -1 )      { &fatal($E_IO_MISSING, "No files found for processing.")                       ; }
+  if ( $#FILES eq -1 ) { &fatal($E_IO_MISSING, "No files found for processing.") ; }
   foreach ( @FILES ) {
-    if ( ! -f $_ )          { &fatal($E_IO_MISSING, "Cannot find specified file: $_ .")                     ; }
-    if ( ! -r $_ )          { &fatal($E_IO_MISSING, "Cannot read specified file: $_ .")                     ; }
+    if ( ! -f $_ )    { &fatal($E_IO_MISSING, "Cannot find specified file: $_ .") ; }
+    if ( ! -r $_ )    { &fatal($E_IO_MISSING, "Cannot read specified file: $_ .") ; }
   }
 
   # Conflicting options
@@ -121,11 +122,17 @@ sub count_braces {
   my $closed = $line =~ tr/\}// ;
   $func->openedbraces( $func->openedbraces() + $opened );
   $func->closedbraces( $func->closedbraces() + $closed );
+
+  # Report an error if the closed braces outnumber opened ones.  This should never happen.
+  if ( $func->openedbraces() < $func->closedbraces() ) { &fatal($E_BAD_SYNTAX, "Found extraneous closing braces in function: " . $func->name()) ; }
 }
 
 sub braces_match {
   # This primarily checks for braces to be greater than zero and matching, to signify we're out of a function.
-  if ( $func->closedbraces() gt $func->openedbraces() ) {
+  if ( $func->openedbraces() <  $func->closedbraces() ) { &fatal($E_BAD_SYNTAX, "Found extraneous closing braces in function: " . $func->name()) ; }
+  if ( $func->openedbraces() >  $func->closedbraces() ) { return 0 ; }
+  if ( $func->openedbraces() == 0 )                     { return 0 ; }
+  if ( $func->openedbraces() == $func->closedbraces() ) { return 1 ; }
 }
 
 sub is_new_function {
@@ -144,6 +151,20 @@ sub leave_function {
 # --
 # -- Tag Functions
 # --
+sub add_tag {
+  my $tag_name ;
+  my $tag_text ;
+
+  # Try to get a tag name and text.  Leave if we don't get a name.
+  if ( @_ =~ /#@([\S]*)[\s]+(.*)/ ) { $tag_name = $1 ; $tag_text = $2 ; }
+  if ( ! $tag_name ) { return 0 ; }
+
+  # Test to see if name is 'opt_'.
+  if ( $tag_name eq "opt_" ) {
+    # IF CURRENT_OPT ISN'T SET; ERROR.
+  }
+}
+
 
 # --
 # -- Testing Functions
@@ -161,7 +182,7 @@ sub run_tests {
 # -- Printing Functions
 # --
 sub fatal {
-  print STDERR "error:  $_[1]  Aborting\n" ;
+  print STDERR "error:  $_[1]  (Aborting)\n" ;
   exit $_[0] ;
 }
 
