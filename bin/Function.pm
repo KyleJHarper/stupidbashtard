@@ -31,13 +31,13 @@ sub name {
   return $self->{"name"};
 }
 
-sub openedbraces {
+sub opened_braces {
   my $self = shift;
   if ( scalar(@_) == 1) { $self->{"openedbraces"} = shift; }
   return $self->{"openedbraces"};
 }
 
-sub closedbraces {
+sub closed_braces {
   my $self = shift;
   if ( scalar(@_) == 1) { $self->{"closedbraces"} = shift; }
   return $self->{"closedbraces"};
@@ -53,7 +53,7 @@ sub tags {
   my $self  = shift;
   my $key   = shift;
   my $value = shift;
-  if ( $key && $value ) { $self->{"tags"}{$key} = $self->{"tags"}{$key} . $value . "\n"; return 1 ; }
+  if ( $key && $value ) { $self->{"tags"}{$key} = $self->{"tags"}{$key} . $value ; return 1 ; }
   if ( $key )           { return $self->{"tags"}{$key} ; }
   return keys $self->{"tags"};
 }
