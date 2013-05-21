@@ -21,7 +21,7 @@ my $SELF_DIR  = dirname ( abs_path( __FILE__ ) ) ;
 # -- Order 2
 my $LIB_DIR   = "${SELF_DIR}/../lib" ;
 my $DOC_DIR   = "${SELF_DIR}/../doc" ;
-# -- Order 9
+# -- Order 8
 my $E_GOOD       =   0 ;
 my $E_GENERIC    =   1 ;
 my $E_IO_FAILURE =  10 ;
@@ -30,7 +30,9 @@ my @FILES              ;
 my $QUIET        =  "" ;
 my $TESTING      =  "" ;
 my $VERBOSE      =  "" ;
+# -- Order 9
 my $func               ;
+my $last_opt_name = "" ;
 
 # -- GetOpts Overrides
 getopts('d:hqtv') or &usage ;
@@ -56,8 +58,8 @@ if ( $TESTING ) { &run_tests ; exit $E_GOOD ; }
 foreach ( @FILES ) {
   # Reset variables and open the file.
   my $fh ;
-  my $func = Function->new() ;
-  my $last_opt_name ;
+  $func = Function->new() ;
+  $last_opt_name = "" ;
   open( $fh, '<', $_ ) or &fatal($E_IO_FAILURE, "Unable to open file for reading:  $_ .") ;
 
   # Read file line by line and generate documentation.
@@ -165,7 +167,7 @@ sub add_tag {
   # If name is 'opt_', this is an inferred getopts tag.  We need to read current opt, otherwise we're screwed.
   if ( $tag_name eq "opt_" ) {
     if (   $last_opt_name ) { $tag_name = $last_opt_name ; }
-    if ( ! $last_opt_name ) { &print_se("Implied opt tag '#@opt_' found, but cannot infer the option name.") ; return 0 ; }
+    if ( ! $last_opt_name ) { &print_se("Implied opt tag'" . '#@opt_' . "' found, but cannot infer the option name.") ; return 0 ; }
     $func->tags($tag_name . $last_opt_name, $tag_text . "\n");
     return 1;
   }
@@ -173,7 +175,7 @@ sub add_tag {
   # If name is '$', this is an inferred variable tag.  We need to find '[whitespace]someVar=' to name the tag 'someVar'.
   if ( $tag_name eq '$' ) {
     if ( /^[\s]*([a-zA-Z_][a-zA-Z0-9_]*)[=]/ ) { $tag_name = $tag_name . $1 ; }
-    if ( $tag_name eq '$' ) { &print_se("Implied variable tag '#@$' found, but no variable found at the front of the line.") ; return 0 ; }
+    if ( $tag_name eq '$' ) { &print_se("Implied variable tag '" . '#@$' . "' found, but no variable found at the front of the line.") ; return 0 ; }
     $func->tags($tag_name, $tag_text . "\n");
     return 1;
   }

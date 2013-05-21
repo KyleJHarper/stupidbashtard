@@ -20,8 +20,10 @@ function fail {
 }
 
 # Vars
+E_GOOD=0
 E_GENERIC=1
 E_IO_MISSING=10
+E_BAD_SYNTAX=20
 HERE="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 BIN_DIR="${HERE}/../bin"
 TMP_FILE='/tmp/test_docker_file'
