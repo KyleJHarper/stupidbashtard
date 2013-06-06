@@ -14,7 +14,6 @@ sub new {
   if ( ! $self->{"name"} )           { $self->{"name"} = "" ; }
   if ( ! $self->{"openedbraces"} )   { $self->{"openedbraces"} = 0 ; }
   if ( ! $self->{"closedbraces"} )   { $self->{"closedbraces"} = 0 ; }
-  if ( ! $self->{"ready_to_leave"} ) { $self->{"ready_to_leave"} = "" ; }
 
   # Return me
   return $self;
@@ -31,24 +30,21 @@ sub name {
   return $self->{"name"};
 }
 
+# -- Count of opened braces outside of any quotations
 sub opened_braces {
   my $self = shift;
   if ( scalar(@_) == 1) { $self->{"openedbraces"} = shift; }
   return $self->{"openedbraces"};
 }
 
+# -- Count of closed braces outside of any quotations
 sub closed_braces {
   my $self = shift;
   if ( scalar(@_) == 1) { $self->{"closedbraces"} = shift; }
   return $self->{"closedbraces"};
 }
 
-sub ready_to_leave {
-  my $self = shift;
-  if ( scalar(@_) == 1) { $self->{"ready_to_leave"} = shift; }
-  return $self->{"ready_to_leave"};
-}
-
+# -- Associative array of tags
 sub tags {
   my $self  = shift;
   my $key   = shift;
@@ -56,6 +52,13 @@ sub tags {
   if ( $key && $value ) { $self->{"tags"}{$key} = $self->{"tags"}{$key} . $value ; return 1 ; }
   if ( $key )           { return $self->{"tags"}{$key} ; }
   return keys $self->{"tags"};
+}
+
+# -- The last option name found.  Use for auto-detection of names via inferred tags.
+sub last_opt_name {
+  my $self = shift;
+  if ( scalar(@_) == 1) { $self->{"name"} = shift; }
+  return $self->{"name"};
 }
 
 

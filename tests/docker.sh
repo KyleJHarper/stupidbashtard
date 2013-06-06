@@ -22,8 +22,9 @@ function fail {
 # Vars
 E_GOOD=0
 E_GENERIC=1
-E_IO_MISSING=10
+E_IO_FAILURE=10
 E_BAD_SYNTAX=20
+
 HERE="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 BIN_DIR="${HERE}/../bin"
 TMP_FILE='/tmp/test_docker_file'
@@ -64,7 +65,7 @@ pass
 cmd="${dt} Idonotexist"
 echo -n 'Testing with a non-existent file:  '
 $cmd >/dev/null 2>/dev/null
-[ $? -eq ${E_IO_MISSING} ] || fail
+[ $? -eq ${E_IO_FAILURE} ] || fail
 pass
 
 # Testing with a file I cannot read (unless this is running as root)
@@ -73,7 +74,7 @@ echo -n 'Testing with a file I cannot read:  '
 touch ${TMP_FILE}          || fail
 chmod 0000 ${TMP_FILE}     || fail
 $cmd >/dev/null 2>/dev/null
-[ $? -eq ${E_IO_MISSING} ] || fail
+[ $? -eq ${E_IO_FAILURE} ] || fail
 chmod 0600 ${TMP_FILE}     || fail
 rm ${TMP_FILE}             || fail
 pass
@@ -82,13 +83,13 @@ pass
 cmd="${dt} /I/do/not/exist"
 echo -n 'Testing with a non-existent LIB_DIR:  '
 $cmd >/dev/null 2>/dev/null
-[ $? -eq ${E_IO_MISSING} ] || fail
+[ $? -eq ${E_IO_FAILURE} ] || fail
 pass
 
 # Specify a document directory that I don't have write permission to.
 cmd="${dt} /I/do/not/exist"
 echo -n 'Testing with a non-existent DOC_DIR:  '
 $cmd >/dev/null 2>/dev/null
-[ $? -eq ${E_IO_MISSING} ] || fail
+[ $? -eq ${E_IO_FAILURE} ] || fail
 pass
 

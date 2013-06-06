@@ -26,13 +26,14 @@ my $E_GOOD       =   0 ;
 my $E_GENERIC    =   1 ;
 my $E_IO_FAILURE =  10 ;
 my $E_BAD_SYNTAX =  20 ;
+my $E_OH_SNAP    = 255 ;
 my @FILES              ;
 my $QUIET        =  "" ;
 my $TESTING      =  "" ;
 my $VERBOSE      =  "" ;
 # -- Order 9
-my $func               ;
-my $last_opt_name = "" ;
+my $func                ;
+my $inside_getopts = "" ;
 
 # -- GetOpts Overrides
 getopts('d:hqtv') or &usage ;
@@ -59,26 +60,36 @@ foreach ( @FILES ) {
   # Reset variables and open the file.
   my $fh ;
   $func = Function->new() ;
-  $last_opt_name = "" ;
-  open( $fh, '<', $_ ) or &fatal($E_IO_FAILURE, "Unable to open file for reading:  $_ .") ;
+  $inside_getopts = "" ;
+  open( $fh, '<', $_ ) or &fatal($E_IO_FAILURE, "Unable to open file for reading:  " . $_ ) ;
 
   # Read file line by line and generate documentation.
   while ( <$fh> ) {
     chomp ;
+
+    # If the whole line is blank or a comment, leave.
+    if ( /^[\s]*$/ )      { next ; }
+    if ( /^[\s]*#(?!@)/ ) { next ; }
+
     # If in a function, we shouldn't enter a new one.  If not in a function, enter one or skip this line.
-    #if (   $func->name() ) { &is_new_function($_) && &fatal($E_BAD_SYNTAX, "Found function declaration inside a function: " . $func->name()) ; }
-    #if ( ! $func->name() ) { &is_new_function($_) || next ; }
+    if (   $func->name() ) { &is_new_function($_) && &fatal($E_BAD_SYNTAX, "Found function declaration inside a function: " . $func->name()) ; }
+    if ( ! $func->name() ) { &is_new_function($_) || next ; }
 
-    # Update the brace count.  Leave if we haven't found one yet (new function with starting brace on next line).
-    #&count_braces( $_ );
-    #if ( ! $func->opened_braces() ) { next ; }
-    #if ( $func->braces_match() )   { $func->ready_to_leave("Yep") ; }
+    # Update the brace count and see if they match.  If no braces are opened, continue.  If they match, flush and continue.
+    &count_braces( $_ );
+    if ( ! $func->opened_braces() ) { next ; }
+    if (   $func->braces_match() )  { $func->save() ; $func = Function->new() ; next ; }
 
-    #Read any tag that might exist.  Can't fail, and a line can only have 1 tag.
-    #&add_tag( $_ );
+    # If we're in getopts we need to set the last_opt_name, if it changed.
+    if ( /^[\s]*while[\s]+(getopts|core_getopts_Long)[\s]+['"][a-zA-Z0-9]+['"] ) {
+      # FINISH ME!!!  Need regix fixed/finished and then some actual logic here.
+    }
+    if ( $inside_getopts ) {
+      if ( /^[\s]*case   # FINISH THIS
+ }
 
-    # If we're ready to leave, save the function and re-instantiate it.
-    #if ( $func->ready_to_leave() ) { $func->save() ; $func = Function->new() ; }
+    # Read any tag that might exist.  Can't fail, and a line can only have 1 tag.
+    &add_tag( $_ );
   }
   close( $fh );
 }
@@ -109,7 +120,7 @@ sub preflight_checks {
   }
 
   # Conflicting options
-  if ( $VERBOSE && $QUIET ) { &fatal($E_GENERIC,    "Cannot specify both 'quiet' (-q) and 'verbose' (-v).") ; }
+  if ( $VERBOSE && $QUIET ) { &fatal($E_GENERIC, "Cannot specify both 'quiet' (-q) and 'verbose' (-v).") ; }
 }
 
 
