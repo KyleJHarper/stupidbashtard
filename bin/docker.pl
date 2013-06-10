@@ -34,6 +34,8 @@ my $VERBOSE      =  "" ;
 # -- Order 9
 my $func                ;
 my $inside_getopts = "" ;
+my $getopts_offset = 0  ;
+my $last_opt_name  = "" ;
 
 # -- GetOpts Overrides
 getopts('d:hqtv') or &usage ;
@@ -59,8 +61,7 @@ if ( $TESTING ) { &run_tests ; exit $E_GOOD ; }
 foreach ( @FILES ) {
   # Reset variables and open the file.
   my $fh ;
-  $func = Function->new() ;
-  $inside_getopts = "" ;
+  &reset_variables ;
   open( $fh, '<', $_ ) or &fatal($E_IO_FAILURE, "Unable to open file for reading:  " . $_ ) ;
 
   # Read file line by line and generate documentation.
@@ -78,15 +79,16 @@ foreach ( @FILES ) {
     # Update the brace count and see if they match.  If no braces are opened, continue.  If they match, flush and continue.
     &count_braces( $_ );
     if ( ! $func->opened_braces() ) { next ; }
-    if (   $func->braces_match() )  { $func->save() ; $func = Function->new() ; next ; }
+    if ( braces_match() )           { &save_function() ; &reset_variables ; next ; }
 
-    # If we're in getopts we need to set the last_opt_name, if it changed.
-    if ( /^[\s]*while[\s]+(getopts|core_getopts_Long)[\s]+['"][a-zA-Z0-9]+['"] ) {
-      # FINISH ME!!!  Need regix fixed/finished and then some actual logic here.
+    # Check for the invocation of getopts and setup the offset.  Offset will be +1 since braces are already counted.
+    if ( /^[\s]*while[\s]+(getopts|core_getopts_Long)[\s]+['"]([a-zA-Z0-9 ]+)['"]/ ) {
+      $inside_getopts = "Yep" ;
+      $getopts_offset = $func->opened_braces() - $func->closed_braces();
     }
-    if ( $inside_getopts ) {
-      if ( /^[\s]*case   # FINISH THIS
- }
+    # If we're in getopts we need to set the last_opt_name, if it changed.
+    if ( $inside_getopts && /^[\s]*case[\s]+['"]?([a-zA-Z0-9]+)['"]?/ )       { $last_opt_name = $1  ; }
+    if ( $getopts_offset gt $func->opened_braces() - $func->closed_braces() ) { $inside_getopts = "" ; }
 
     # Read any tag that might exist.  Can't fail, and a line can only have 1 tag.
     &add_tag( $_ );
@@ -121,6 +123,10 @@ sub preflight_checks {
 
   # Conflicting options
   if ( $VERBOSE && $QUIET ) { &fatal($E_GENERIC, "Cannot specify both 'quiet' (-q) and 'verbose' (-v).") ; }
+}
+
+sub save_function {
+  # Write the function out to a file.
 }
 
 
@@ -158,9 +164,11 @@ sub is_new_function {
   return 0;
 }
 
-sub leave_function {
+sub reset_variables {
   # This should be called when we have a loaded function object.
-  $func->save();
+  $inside_getopts = ""   ;
+  $getopts_offset = 0    ;
+  $last_opt_name  = ""   ;
   $func = Function->new();
 }
 
@@ -177,9 +185,9 @@ sub add_tag {
 
   # If name is 'opt_', this is an inferred getopts tag.  We need to read current opt, otherwise we're screwed.
   if ( $tag_name eq "opt_" ) {
-    if (   $last_opt_name ) { $tag_name = $last_opt_name ; }
+    if (   $last_opt_name ) { $tag_name = $tag_name . $last_opt_name ; }
     if ( ! $last_opt_name ) { &print_se("Implied opt tag'" . '#@opt_' . "' found, but cannot infer the option name.") ; return 0 ; }
-    $func->tags($tag_name . $last_opt_name, $tag_text . "\n");
+    $func->tags($tag_name, $tag_text . "\n");
     return 1;
   }
 

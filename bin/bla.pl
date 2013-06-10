@@ -1,5 +1,9 @@
 #!/usr/bin/perl
 
+if ( 1 ge 3 - 1 ) { print "hello\n" ; }
+
+exit ;
+
 while (<>) {
   chomp;
 

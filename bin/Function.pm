@@ -54,13 +54,6 @@ sub tags {
   return keys $self->{"tags"};
 }
 
-# -- The last option name found.  Use for auto-detection of names via inferred tags.
-sub last_opt_name {
-  my $self = shift;
-  if ( scalar(@_) == 1) { $self->{"name"} = shift; }
-  return $self->{"name"};
-}
-
 
 # +-----------+
 # |  Ze End!  |
