@@ -49,11 +49,18 @@ sub tags {
   my $self  = shift;
   my $key   = shift;
   my $value = shift;
-  if ( $key && $value ) { $self->{"tags"}{$key} = $self->{"tags"}{$key} . $value ; return 1 ; }
+  if ( $key && $value ) { $self->{"tags"}{$key} = $self->{"tags"}{$key} . &escape_quotes($value) ; return 1 ; }
   if ( $key )           { return $self->{"tags"}{$key} ; }
   return keys $self->{"tags"};
 }
 
+
+# +-----------------+
+# |  Miscellaneous  |
+# +-----------------+
+sub escape_quotes {
+  return s/["]/\\"/g ;
+}
 
 # +-----------+
 # |  Ze End!  |

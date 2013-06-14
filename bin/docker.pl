@@ -33,6 +33,7 @@ my $QUIET        =  "" ;
 my $TESTING      =  "" ;
 my $VERBOSE      =  "" ;
 # -- Order 9
+my %defaults            ;
 my $func                ;
 my $inside_getopts = "" ;
 my $getopts_offset = 0  ;
@@ -75,7 +76,10 @@ foreach ( @FILES ) {
 
     # If in a function, we shouldn't enter a new one.  If not in a function, enter one or skip this line.
     if (   $func->name() ) { &is_new_function($_) && &fatal($E_BAD_SYNTAX, "Found function declaration inside a function: " . $func->name()) ; }
-    if ( ! $func->name() ) { &is_new_function($_) || next ; }
+    if ( ! $func->name() ) {
+      if ( /^[\s]*#@(Author|Date|Version|Namespace|Description)[\s]+(.*)$/ ) { $defaults{$1} = $2 ; }
+      &is_new_function($_) || next ;
+    }
 
     # Update the brace count and see if they match.  If no braces are opened, continue.  If they match, flush and continue.
     &count_braces( $_ );
@@ -134,6 +138,13 @@ sub save_function {
   if ( $func->opened_braces() == 0 ) { &fatal($E_BAD_INPUT, "Cannot save function.  No open braces found.")        ; }
   if ( $func->tags() ) eq ""       ) { &print_se("No tags found for function " . $func->name() . ".  Continuing.") ; }
 
+  # Load defaults if nothing was specified for soft-required tags.
+  if ( $func->tags("Author") eq "" )      { $func->tags("Author",      defaults{"Author"})      ; }
+  if ( $func->tags("Date") eq "" )        { $func->tags("Date",        defaults{"Date"})        ; }
+  if ( $func->tags("Version") eq "" )     { $func->tags("Version",     defaults{"Version"})     ; }
+  if ( $func->tags("Namespace") eq "" )   { $func->tags("Namespace",   defaults{"Namespace"})   ; }
+  if ( $func->tags("Description") eq "" ) { $func->tags("Description", defaults{"Description"}) ; }
+
   # Setup file path and try to open the handle.
   my $file = $DOC_DIR . $func->name() ;
   my $file_handle ;
@@ -141,7 +152,7 @@ sub save_function {
     &print_so_verbose("File exists, overwriting: " . $file) ;
     if ( ! -w $file ) { &fatal($E_IO_FAILURE, "Cannot overwrite file (permission denied).") ;
   }
-  open( $filehandle, '>>', $file ) or &fatal($E_IO_FAILURE, "Unable to open file for writing while saving:  " . $file ) ;
+  open( $file_handle, '>>', $file ) or &fatal($E_IO_FAILURE, "Unable to open file for writing while saving:  " . $file ) ;
 
   # Save the file to disk
   print $file_handle "---\n"                             or &fatal($E_IO_FAILURE, "Failure writing line to file.");
@@ -150,7 +161,14 @@ sub save_function {
   print $file_handle "# UUID: " . `uuidgen` . "\n"       or &fatal($E_IO_FAILURE, "Failure writing line to file.");
   print $file_handle "\n"                                or &fatal($E_IO_FAILURE, "Failure writing line to file.");
   print $file_handle "name: " . $func->name() . "\n"     or &fatal($E_IO_FAILURE, "Failure writing line to file.");
-# FINISH THIS
+  print $file_handle "tags:\n"                           or &fatal($E_IO_FAILURE, "Failure writing line to file.");
+  foreach ( $func->tags() ) {
+    print $file_handle '  - "' . $func->tags($_) . '"\n' or &fatal($E_IO_FAILURE, "Failure writing line to file.");
+  }
+
+  # Close the file and leave.
+  close( $file_handle );
+  return 1;
 }
 
 
@@ -193,7 +211,10 @@ sub reset_variables {
   $inside_getopts = ""   ;
   $getopts_offset = 0    ;
   $last_opt_name  = ""   ;
+
+  # Initialize at least a new set of soft-required tags for function.
   $func = Function->new();
+# FINISH THIS
 }
 
 # --
