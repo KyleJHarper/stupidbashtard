@@ -44,14 +44,41 @@ sub closed_braces {
   return $self->{"closedbraces"};
 }
 
-# -- Associative array of tags
-sub tags {
+# -- Associative arrays of tags
+sub basic_tags {
   my $self  = shift;
   my $key   = shift;
   my $value = shift;
-  if ( $key && $value ) { $self->{"tags"}{$key} = $self->{"tags"}{$key} . &escape_quotes($value) ; return 1 ; }
-  if ( $key )           { return $self->{"tags"}{$key} ; }
-  return keys $self->{"tags"};
+  if ( $key && $value ) { $self->{"basic_tags"}{$key} = $self->{"basic_tags"}{$key} . &escape_quotes($value) ; return 1 ; }
+  if ( $key )           { return $self->{"basic_tags"}{$key} ; }
+  return keys $self->{"basic_tags"};
+}
+
+sub variable_tags {
+  my $self  = shift;
+  my $key   = shift;
+  my $value = shift;
+  if ( $key && $value ) { $self->{"variable_tags"}{$key} = $self->{"variable_tags"}{$key} . &escape_quotes($value) ; return 1 ; }
+  if ( $key )           { return $self->{"variable_tags"}{$key} ; }
+  return keys $self->{"variable_tags"};
+}
+
+sub exit_tags {
+  my $self  = shift;
+  my $key   = shift;
+  my $value = shift;
+  if ( $key && $value ) { $self->{"exit_tags"}{$key} = $self->{"exit_tags"}{$key} . &escape_quotes($value) ; return 1 ; }
+  if ( $key )           { return $self->{"exit_tags"}{$key} ; }
+  return keys $self->{"exit_tags"};
+}
+
+sub option_tags {
+  my $self  = shift;
+  my $key   = shift;
+  my $value = shift;
+  if ( $key && $value ) { $self->{"option_tags"}{$key} = $self->{"option_tags"}{$key} . &escape_quotes($value) ; return 1 ; }
+  if ( $key )           { return $self->{"option_tags"}{$key} ; }
+  return keys $self->{"option_tags"};
 }
 
 
