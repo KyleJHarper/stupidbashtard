@@ -44,7 +44,7 @@ sub closed_braces {
   return $self->{"closedbraces"};
 }
 
-# -- Associative arrays of tags
+# -- Associative arrays of basic tags
 sub basic_tags {
   my $self  = shift;
   my $key   = shift;
@@ -54,6 +54,7 @@ sub basic_tags {
   return keys $self->{"basic_tags"};
 }
 
+# -- Associative arrays of variable tags
 sub variable_tags {
   my $self  = shift;
   my $key   = shift;
@@ -63,6 +64,7 @@ sub variable_tags {
   return keys $self->{"variable_tags"};
 }
 
+# -- Associative arrays of exit tags
 sub exit_tags {
   my $self  = shift;
   my $key   = shift;
@@ -72,6 +74,7 @@ sub exit_tags {
   return keys $self->{"exit_tags"};
 }
 
+# -- Associative arrays of option tags
 sub option_tags {
   my $self  = shift;
   my $key   = shift;
@@ -87,6 +90,30 @@ sub option_tags {
 # +-----------------+
 sub escape_quotes {
   return s/["]/\\"/g ;
+}
+
+sub count_braces {
+  # Setup string and strip anything between quotes (braces inside quotes don't affect flow).
+  my $line = shift ;
+  $line =~ s/["][^"]*["]// ;
+  $line =~ s/['][^']*[']// ;
+
+  # Count braces and update properties
+  my $opened = $line =~ tr/\{// ;
+  my $closed = $line =~ tr/\}// ;
+  $self->opened_braces( $self->opened_braces() + $opened );
+  $self->closed_braces( $self->closed_braces() + $closed );
+
+  # Report an error if the closed braces outnumber opened ones.  This should never happen.
+  if ( $self->opened_braces() < $self->closed_braces() ) { return 0 ; }
+  return 1;
+}
+
+sub braces_match {
+  # This primarily checks for braces to be greater than zero and matching, to signify we're out of a function.
+  if ( $self->opened_braces() >  $self->closed_braces() ) { return 0 ; }
+  if ( $self->opened_braces() == 0 )                      { return 0 ; }
+  if ( $self->opened_braces() == $self->closed_braces() ) { return 1 ; }
 }
 
 # +-----------+

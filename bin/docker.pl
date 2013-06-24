@@ -64,6 +64,7 @@ foreach ( @FILES ) {
   # Reset variables and open the file.
   my $fh ;
   &reset_variables ;
+  &reset_defaults  ;
   open( $fh, '<', $_ ) or &fatal($E_IO_FAILURE, "Unable to open file for reading:  " . $_ ) ;
 
   # Read file line by line and generate documentation.
@@ -77,14 +78,14 @@ foreach ( @FILES ) {
     # If in a function, we shouldn't enter a new one.  If not in a function, enter one or skip this line.
     if (   $func->name() ) { &is_new_function($_) && &fatal($E_BAD_SYNTAX, "Found function declaration inside a function: " . $func->name()) ; }
     if ( ! $func->name() ) {
-      if ( /^[\s]*#@(Author|Date|Version|Namespace|Description)[\s]+(.*)$/ ) { $defaults{$1} = $2 ; }
+      if ( /^[\s]*#@(Author|Date|Version|Namespace|Description)[\s]+(.*)$/ ) { $defaults{$1} .= $2 ; }
       &is_new_function($_) || next ;
     }
 
     # Update the brace count and see if they match.  If no braces are opened, continue.  If they match, flush and continue.
-    &count_braces( $_ );
+    $func->count_braces( $_ );
     if ( ! $func->opened_braces() ) { next ; }
-    if ( braces_match() )           { &save_function() ; &reset_variables ; next ; }
+    if ( $func->braces_match() )    { &save_function() ; &reset_variables ; next ; }
 
     # Check for the invocation of getopts and setup the offset.  Offset will be +1 since braces are already counted.
     if ( /^[\s]*while[\s]+(getopts|core_getopts_Long)[\s]+['"]([a-zA-Z0-9 ]+)['"]/ ) {
@@ -151,7 +152,7 @@ sub save_function {
   if ( $func->option_tags() )   eq "" ) { &print_so_verbose("No option tags found for function " . $func->name() . ".  Continuing.")   ; }
 
   # Setup file path and try to open the handle.
-  my $file = $DOC_DIR . $func->name() ;
+  my $file = $DOC_DIR . '/' . $func->name() ;
   my $file_handle ;
   if ( -f $file ) {
     &print_so_verbose("File exists, overwriting: " . $file) ;
@@ -193,30 +194,6 @@ sub save_function {
 # --
 # -- Crawler Functions
 # --
-sub count_braces {
-  # Setup string and strip anything between quotes (braces inside quotes don't affect flow).
-  my $line = @_ ;
-  $line =~ s/["][^"]*["]// ;
-  $line =~ s/['][^']*[']// ;
-
-  # Count braces and update properties
-  my $opened = $line =~ tr/\{// ;
-  my $closed = $line =~ tr/\}// ;
-  $func->opened_braces( $func->opened_braces() + $opened );
-  $func->closed_braces( $func->closed_braces() + $closed );
-
-  # Report an error if the closed braces outnumber opened ones.  This should never happen.
-  if ( $func->opened_braces() < $func->closed_braces() ) { &fatal($E_BAD_SYNTAX, "Found extraneous closing braces in function: " . $func->name()) ; }
-}
-
-sub braces_match {
-  # This primarily checks for braces to be greater than zero and matching, to signify we're out of a function.
-  if ( $func->opened_braces() <  $func->closed_braces() ) { &fatal($E_BAD_SYNTAX, "Found extraneous closing braces in function: " . $func->name()) ; }
-  if ( $func->opened_braces() >  $func->closed_braces() ) { return 0 ; }
-  if ( $func->opened_braces() == 0 )                      { return 0 ; }
-  if ( $func->opened_braces() == $func->closed_braces() ) { return 1 ; }
-}
-
 sub is_new_function {
   # Determine if this line is starting a new function
   if ( /^[\s]*function[\s]+([a-zA-Z0-9_-]+)[\s]?/ ) { $func->name($1) ; }
@@ -226,14 +203,25 @@ sub is_new_function {
 
 sub reset_variables {
   # This should be called when we have a loaded function object.
-  $inside_getopts = ""   ;
-  $getopts_offset = 0    ;
-  $last_opt_name  = ""   ;
+  $inside_getopts = "" ;
+  $getopts_offset = 0  ;
+  $last_opt_name  = "" ;
 
   # Initialize at least a new set of soft-required tags for function.
+  undef $func ;
   $func = Function->new();
   %$defaults = ();
 }
+
+sub reset_defaults {
+  %$defaults = ();
+  $defaults{"Author"} = ""      ;
+  $defaults{"Date"} = ""        ;
+  $defaults{"Version"} = ""     ;
+  $defaults{"Namespace"} = ""   ;
+  $defaults{"Description"} = "" ;
+}
+
 
 # --
 # -- Tag Functions
@@ -248,23 +236,27 @@ sub add_tag {
 
   # If name is 'opt_', this is an inferred getopts tag.  We need to read current opt, otherwise we're screwed.
   if ( $tag_name eq "opt_" ) {
-    if (   $last_opt_name ) { $tag_name = $tag_name . $last_opt_name ; }
-    if ( ! $last_opt_name ) { &print_se("Implied opt tag'" . '#@opt_' . "' found, but cannot infer the option name.") ; return 0 ; }
-    $func->tags($tag_name, $tag_text . "\n");
+    if ( ! $last_opt_name ) { &print_se("Implied opt tag'" . '#@opt_' . "' found, but cannot infer the option name.\n") ; return 0 ; }
+    if (   $last_opt_name ) { $tag_name .= $last_opt_name ; }
+  }
+  if ( $tag_name =~ /^opt_[a-zA-Z0-9_]+/ ) {
+    $func->option_tags($tag_name, $tag_text . "\n");
     return 1;
   }
 
   # If name is '$', this is an inferred variable tag.  We need to find '[whitespace]someVar=' to name the tag 'someVar'.
   if ( $tag_name eq '$' ) {
-    if ( /^[\s]*([a-zA-Z_][a-zA-Z0-9_]*)[=]/ ) { $tag_name = $tag_name . $1 ; }
-    if ( $tag_name eq '$' ) { &print_se("Implied variable tag '" . '#@$' . "' found, but no variable found at the front of the line.") ; return 0 ; }
+    if ( /^[\s]*([a-zA-Z_][a-zA-Z0-9_]*)[=]/ ) { $tag_name .= $1 ; }
+    if ( $tag_name eq '$' ) { &print_se("Implied variable tag '" . '#@$' . "' found, but no variable found at the front of the line.\n") ; return 0 ; }
     $func->tags($tag_name, $tag_text . "\n");
     return 1;
   }
+  if ( $tag_name =~ /$[a-zA-Z_][a-zA-Z0-9_]*
 
   # If name doesn't require inferrence, it's absolute.  Federated or line-end is irrelevant.
   $func->tags($tag_name, $tag_text . "\n");
   return 1;  
+FIX THE ABOVE
 }
 
 
@@ -283,10 +275,10 @@ sub run_tests {
 # --
 # -- Fatal, Usage, and Printing Functions
 # --
-sub fatal { &print_se($_[1] . "  (aborting)") ; exit $_[0] ; }
+sub fatal { &print_se($_[1] . "  (aborting)\n") ; exit $_[0] ; }
 
 sub print_se {
-  print STDERR "error:  @_\n" ;
+  print STDERR "error:  @_" ;
 }
 sub print_so {
   if ( $QUIET ) { return 0 ; }
