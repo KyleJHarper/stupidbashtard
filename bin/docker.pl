@@ -231,16 +231,32 @@ sub add_tag {
   my $tag_text ;
 
   # Try to get a tag name and text.  Leave if we don't get a name.
-  if ( /#@([\S]*)[\s]+(.*)/ ) { $tag_name = $1 ; $tag_text = $2 ; }
-  if ( ! $tag_name ) { return 0 ; }
+  if ( ! /#@[\S]+/ ) { return 0 ; }
+  if ( /#@([\S]+)([\s]+(.*))?/ ) { $tag_name = $1 ; $tag_text = $3 ; }
+  if ( ! $tag_name ) { &print_so_verbose("Passed the regex check to ensure this line has a tag, but somehow I can't find a name... odd.") ; return 0 ; }
 
   # If name is 'opt_', this is an inferred getopts tag.  We need to read current opt, otherwise we're screwed.
   if ( $tag_name eq "opt_" ) {
     if ( ! $last_opt_name ) { &print_se("Implied opt tag'" . '#@opt_' . "' found, but cannot infer the option name.\n") ; return 0 ; }
-    if (   $last_opt_name ) { $tag_name .= $last_opt_name ; }
+    $tag_name .= $last_opt_name ;
   }
   if ( $tag_name =~ /^opt_[a-zA-Z0-9_]+/ ) {
     $func->option_tags($tag_name, $tag_text . "\n");
+    return 1;
+  }
+
+  # If name is '$@' or '$*' these are argument tags.
+  if ( $tag_name eq '$@' || $tag_name eq '$*' ) {
+    $func->argument_tags($tag_name, $tag_text . "\n");
+  }
+
+  # If name is '$E_' this is an exit/error tag.
+  if ( $tag_name eq '$E_' ) {
+    if ( /^[\s]*(E_[a-zA-Z0-9_]+)[=]/ ) { $tag_name .= $1 ; }
+    if ( $tag_name eq '$E_' ) { &print_se("Implied exit tag '" . '#@$E_' . "' found, but no exit constant found at the front of the line.\n") ; return 0 ; }
+  }
+  if ( $tag_name =~ /\$E_[a-zA-Z0-9_]+/ ) {
+    $func->exit_tags($tag_name, $tag_text . "\n");
     return 1;
   }
 
@@ -248,15 +264,15 @@ sub add_tag {
   if ( $tag_name eq '$' ) {
     if ( /^[\s]*([a-zA-Z_][a-zA-Z0-9_]*)[=]/ ) { $tag_name .= $1 ; }
     if ( $tag_name eq '$' ) { &print_se("Implied variable tag '" . '#@$' . "' found, but no variable found at the front of the line.\n") ; return 0 ; }
-    $func->tags($tag_name, $tag_text . "\n");
+  }
+  if ( $tag_name =~ /\$[a-zA-Z_][a-zA-Z0-9_]*/ ) {
+    $func->variable_tags($tag_name, $tag_text . "\n");
     return 1;
   }
-  if ( $tag_name =~ /$[a-zA-Z_][a-zA-Z0-9_]*
 
   # If name doesn't require inferrence, it's absolute.  Federated or line-end is irrelevant.
-  $func->tags($tag_name, $tag_text . "\n");
-  return 1;  
-FIX THE ABOVE
+  $func->basic_tags($tag_name, $tag_text . "\n");
+  return 1;
 }
 
 

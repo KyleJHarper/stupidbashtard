@@ -84,6 +84,16 @@ sub option_tags {
   return keys $self->{"option_tags"};
 }
 
+# -- Associative arrays of argument tags
+sub argument_tags {
+  my $self  = shift;
+  my $key   = shift;
+  my $value = shift;
+  if ( $key && $value ) { $self->{"argument_tags"}{$key} = $self->{"argument_tags"}{$key} . &escape_quotes($value) ; return 1 ; }
+  if ( $key )           { return $self->{"argument_tags"}{$key} ; }
+  return keys $self->{"argument_tags"};
+}
+
 
 # +-----------------+
 # |  Miscellaneous  |
