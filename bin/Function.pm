@@ -10,6 +10,18 @@ sub new {
   my $self = { @_ };
   bless $self;
 
+  # Initialize empty strings for keys
+  $self->{"argument_tags"} = {};
+  $self->{"basic_tags"}    = {};
+    $self->{"basic_tags"}{"Author"}      = "";
+    $self->{"basic_tags"}{"Date"}        = "";
+    $self->{"basic_tags"}{"Description"} = "";
+    $self->{"basic_tags"}{"Namespace"}   = "";
+    $self->{"basic_tags"}{"Version"}     = "";
+  $self->{"exit_tags"}     = {};
+  $self->{"option_tags"}   = {};
+  $self->{"variable_tags"} = {};
+
   # Set defaults if none provided
   if ( ! $self->{"name"} )           { $self->{"name"} = "" ; }
   if ( ! $self->{"openedbraces"} )   { $self->{"openedbraces"} = 0 ; }
@@ -44,6 +56,16 @@ sub closed_braces {
   return $self->{"closedbraces"};
 }
 
+# -- Associative arrays of argument tags
+sub argument_tags {
+  my $self  = shift;
+  my $key   = shift;
+  my $value = shift;
+  if ( $key && $value ) { $self->{"argument_tags"}{$key} = $self->{"argument_tags"}{$key} . &escape_quotes($value) ; return 1 ; }
+  if ( $key )           { return $self->{"argument_tags"}{$key} ; }
+  return keys $self->{"argument_tags"};
+}
+
 # -- Associative arrays of basic tags
 sub basic_tags {
   my $self  = shift;
@@ -52,16 +74,6 @@ sub basic_tags {
   if ( $key && $value ) { $self->{"basic_tags"}{$key} = $self->{"basic_tags"}{$key} . &escape_quotes($value) ; return 1 ; }
   if ( $key )           { return $self->{"basic_tags"}{$key} ; }
   return keys $self->{"basic_tags"};
-}
-
-# -- Associative arrays of variable tags
-sub variable_tags {
-  my $self  = shift;
-  my $key   = shift;
-  my $value = shift;
-  if ( $key && $value ) { $self->{"variable_tags"}{$key} = $self->{"variable_tags"}{$key} . &escape_quotes($value) ; return 1 ; }
-  if ( $key )           { return $self->{"variable_tags"}{$key} ; }
-  return keys $self->{"variable_tags"};
 }
 
 # -- Associative arrays of exit tags
@@ -84,14 +96,16 @@ sub option_tags {
   return keys $self->{"option_tags"};
 }
 
-# -- Associative arrays of argument tags
-sub argument_tags {
+# -- Associative arrays of variable tags
+sub variable_tags {
   my $self  = shift;
   my $key   = shift;
   my $value = shift;
-  if ( $key && $value ) { $self->{"argument_tags"}{$key} = $self->{"argument_tags"}{$key} . &escape_quotes($value) ; return 1 ; }
-  if ( $key )           { return $self->{"argument_tags"}{$key} ; }
-  return keys $self->{"argument_tags"};
+  if ( $key && $value ) { $self->{"variable_tags"}{$key} = $self->{"variable_tags"}{$key} . &escape_quotes($value) ; return 1 ; }
+  if ( $key )           { return $self->{"variable_tags"}{$key} ; }
+  #my @key_list = keys $self->{"variable_tags"};
+  return keys $self->{"variable_tags"};
+  #return @key_list ;
 }
 
 
@@ -104,6 +118,7 @@ sub escape_quotes {
 
 sub count_braces {
   # Setup string and strip anything between quotes (braces inside quotes don't affect flow).
+  my $self = shift ;
   my $line = shift ;
   $line =~ s/["][^"]*["]// ;
   $line =~ s/['][^']*[']// ;
@@ -121,6 +136,7 @@ sub count_braces {
 
 sub braces_match {
   # This primarily checks for braces to be greater than zero and matching, to signify we're out of a function.
+  my $self  = shift;
   if ( $self->opened_braces() >  $self->closed_braces() ) { return 0 ; }
   if ( $self->opened_braces() == 0 )                      { return 0 ; }
   if ( $self->opened_braces() == $self->closed_braces() ) { return 1 ; }

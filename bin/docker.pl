@@ -22,12 +22,12 @@ my $SELF_DIR  = dirname ( abs_path( __FILE__ ) ) ;
 my $LIB_DIR   = "${SELF_DIR}/../lib" ;
 my $DOC_DIR   = "${SELF_DIR}/../doc" ;
 # -- Order 8
-my $E_GOOD       =   0 ;
-my $E_GENERIC    =   1 ;
-my $E_IO_FAILURE =  10 ;
-my $E_BAD_SYNTAX =  20 ;
-my $E_BAD_INPUT  =  30 ;
-my $E_OH_SNAP    = 255 ;
+my $E_GOOD       =   0 ;  # Successful exit.
+my $E_GENERIC    =   1 ;  # Generic failure, should likely never use this.
+my $E_IO_FAILURE =  10 ;  # Any problems related to reading or writing to files.
+my $E_BAD_SYNTAX =  20 ;  # Syntax problems invoking docker.
+my $E_BAD_INPUT  =  30 ;  # Errors with the input given to docker for processing.
+my $E_OH_SNAP    = 255 ;  # Fun
 my @FILES              ;
 my $QUIET        =  "" ;
 my $TESTING      =  "" ;
@@ -76,14 +76,15 @@ foreach ( @FILES ) {
     if ( /^[\s]*#(?!@)/ ) { next ; }
 
     # If in a function, we shouldn't enter a new one.  If not in a function, enter one or skip this line.
-    if (   $func->name() ) { &is_new_function($_) && &fatal($E_BAD_SYNTAX, "Found function declaration inside a function: " . $func->name()) ; }
+    if (   $func->name() ) { &is_new_function($_) && &fatal($E_BAD_INPUT, "Found this function declaration inside a function: " . $func->name()) ; }
     if ( ! $func->name() ) {
-      if ( /^[\s]*#@(Author|Date|Version|Namespace|Description)[\s]+(.*)$/ ) { $defaults{$1} .= $2 ; }
+      if ( /^[\s]*#@(Author|Date|Version|Namespace|Description)([\s]+(.*))?$/ ) { if ($3) { $defaults{$1} .= $3 ;} }
       &is_new_function($_) || next ;
     }
 
     # Update the brace count and see if they match.  If no braces are opened, continue.  If they match, flush and continue.
     $func->count_braces( $_ );
+    if ( $func->opened_braces() < $func->closed_braces() ) { &fatal($E_BAD_INPUT, "Closed braces out-paced opening ones in function: " . $func->name()) ; }
     if ( ! $func->opened_braces() ) { next ; }
     if ( $func->braces_match() )    { &save_function() ; &reset_variables ; next ; }
 
@@ -130,7 +131,7 @@ sub preflight_checks {
   }
 
   # Conflicting options
-  if ( $VERBOSE && $QUIET ) { &fatal($E_GENERIC, "Cannot specify both 'quiet' (-q) and 'verbose' (-v).") ; }
+  if ( $VERBOSE && $QUIET ) { &fatal($E_BAD_SYNTAX, "Cannot specify both 'quiet' (-q) and 'verbose' (-v).") ; }
 }
 
 sub save_function {
@@ -139,24 +140,24 @@ sub save_function {
   if ( $func->opened_braces() == 0 ) { &fatal($E_BAD_INPUT, "Cannot save function.  No open braces found.") ; }
 
   # Load defaults if nothing was specified for soft-required tags.
-  if ( $func->basic_tags("Author") eq "" )      { $func->basic_tags("Author",      defaults{"Author"})      ; }
-  if ( $func->basic_tags("Date") eq "" )        { $func->basic_tags("Date",        defaults{"Date"})        ; }
-  if ( $func->basic_tags("Version") eq "" )     { $func->basic_tags("Version",     defaults{"Version"})     ; }
-  if ( $func->basic_tags("Namespace") eq "" )   { $func->basic_tags("Namespace",   defaults{"Namespace"})   ; }
-  if ( $func->basic_tags("Description") eq "" ) { $func->basic_tags("Description", defaults{"Description"}) ; }
+  if ( $func->basic_tags("Author") eq "" )      { $func->basic_tags("Author",      $defaults{"Author"})      ; }
+  if ( $func->basic_tags("Date") eq "" )        { $func->basic_tags("Date",        $defaults{"Date"})        ; }
+  if ( $func->basic_tags("Version") eq "" )     { $func->basic_tags("Version",     $defaults{"Version"})     ; }
+  if ( $func->basic_tags("Namespace") eq "" )   { $func->basic_tags("Namespace",   $defaults{"Namespace"})   ; }
+  if ( $func->basic_tags("Description") eq "" ) { $func->basic_tags("Description", $defaults{"Description"}) ; }
 
   # Send a verbose message if any of the tags are missing.  Particularly the basic ones.
-  if ( $func->basic_tags() )    eq "" ) { &print_so("No basic tags found for function " . $func->name() . ".  Continuing.")            ; }
-  if ( $func->variable_tags() ) eq "" ) { &print_so_verbose("No variable tags found for function " . $func->name() . ".  Continuing.") ; }
-  if ( $func->exit_tags() )     eq "" ) { &print_so_verbose("No exit tags found for function " . $func->name() . ".  Continuing.")     ; }
-  if ( $func->option_tags() )   eq "" ) { &print_so_verbose("No option tags found for function " . $func->name() . ".  Continuing.")   ; }
+  if ( $func->basic_tags()    eq "" ) { &print_so("No basic tags found for function " . $func->name() . ".  Continuing.")            ; }
+  if ( $func->variable_tags() eq "" ) { &print_so_verbose("No variable tags found for function " . $func->name() . ".  Continuing.") ; }
+  if ( $func->exit_tags()     eq "" ) { &print_so_verbose("No exit tags found for function " . $func->name() . ".  Continuing.")     ; }
+  if ( $func->option_tags()   eq "" ) { &print_so_verbose("No option tags found for function " . $func->name() . ".  Continuing.")   ; }
 
   # Setup file path and try to open the handle.
   my $file = $DOC_DIR . '/' . $func->name() ;
   my $file_handle ;
   if ( -f $file ) {
     &print_so_verbose("File exists, overwriting: " . $file) ;
-    if ( ! -w $file ) { &fatal($E_IO_FAILURE, "Cannot overwrite file (permission denied).") ;
+    if ( ! -w $file ) { &fatal($E_IO_FAILURE, "Cannot overwrite file (permission denied).") ; }
   }
   open( $file_handle, '>>', $file ) or &fatal($E_IO_FAILURE, "Unable to open file for writing while saving:  " . $file ) ;
 
@@ -168,21 +169,30 @@ sub save_function {
   print $file_handle "\n"                                           or &fatal($E_IO_FAILURE, "Failure writing line to file.");
   print $file_handle "name: " . $func->name() . "\n"                or &fatal($E_IO_FAILURE, "Failure writing line to file.");
   print $file_handle "tags:\n"                                      or &fatal($E_IO_FAILURE, "Failure writing line to file.");
-  print $file_handle "  - basic:\n"                                 or &fatal($E_IO_FAILURE, "Failure writing line to file.");
+  print $file_handle "  - argument:\n"                               or &fatal($E_IO_FAILURE, "Failure writing line to file.");
+  foreach ( $func->argument_tags() ) {
+    print $file_handle '    - ' . $_ . ": |\n"                           or &fatal($E_IO_FAILURE, "Failure writing line to file.");
+    print $file_handle '      ' . $func->argument_tags($_) . "\n"      or &fatal($E_IO_FAILURE, "Failure writing line to file.");
+  }
+  print $file_handle "  - basic:\n"                               or &fatal($E_IO_FAILURE, "Failure writing line to file.");
   foreach ( $func->basic_tags() ) {
-    print $file_handle '    - "' . $func->basic_tags($_) . '"\n'    or &fatal($E_IO_FAILURE, "Failure writing line to file.");
+    print $file_handle '    - ' . $_ . ": |\n"                           or &fatal($E_IO_FAILURE, "Failure writing line to file.");
+    print $file_handle '      ' . $func->basic_tags($_) . "\n"      or &fatal($E_IO_FAILURE, "Failure writing line to file.");
   }
-  print $file_handle "  - variable:\n"                              or &fatal($E_IO_FAILURE, "Failure writing line to file.");
-  foreach ( $func->variable_tags() ) {
-    print $file_handle '    - "' . $func->variable_tags($_) . '"\n' or &fatal($E_IO_FAILURE, "Failure writing line to file.");
-  }
-  print $file_handle "  - exit:\n"                                  or &fatal($E_IO_FAILURE, "Failure writing line to file.");
+  print $file_handle "  - exit:\n"                                or &fatal($E_IO_FAILURE, "Failure writing line to file.");
   foreach ( $func->exit_tags() ) {
-    print $file_handle '    - "' . $func->exit_tags($_) . '"\n'     or &fatal($E_IO_FAILURE, "Failure writing line to file.");
+    print $file_handle '    - ' . $_ . ": |\n"                           or &fatal($E_IO_FAILURE, "Failure writing line to file.");
+    print $file_handle '      ' . $func->exit_tags($_) . "\n"       or &fatal($E_IO_FAILURE, "Failure writing line to file.");
   }
-  print $file_handle "  - option:\n"                                or &fatal($E_IO_FAILURE, "Failure writing line to file.");
+  print $file_handle "  - option:\n"                              or &fatal($E_IO_FAILURE, "Failure writing line to file.");
   foreach ( $func->option_tags() ) {
-    print $file_handle '    - "' . $func->option_tags($_) . '"\n'   or &fatal($E_IO_FAILURE, "Failure writing line to file.");
+    print $file_handle '    - ' . $_ . ": |\n"                           or &fatal($E_IO_FAILURE, "Failure writing line to file.");
+    print $file_handle '      ' . $func->option_tags($_) . "\n"     or &fatal($E_IO_FAILURE, "Failure writing line to file.");
+  }
+  print $file_handle "  - variable:\n"                            or &fatal($E_IO_FAILURE, "Failure writing line to file.");
+  foreach ( $func->variable_tags() ) {
+    print $file_handle '    - ' . $_ . ": |\n"                           or &fatal($E_IO_FAILURE, "Failure writing line to file.");
+    print $file_handle '      ' . $func->variable_tags($_) . "\n"   or &fatal($E_IO_FAILURE, "Failure writing line to file.");
   }
 
   # Close the file and leave.
@@ -196,8 +206,8 @@ sub save_function {
 # --
 sub is_new_function {
   # Determine if this line is starting a new function
-  if ( /^[\s]*function[\s]+([a-zA-Z0-9_-]+)[\s]?/ ) { $func->name($1) ; }
-  if ( /^[\s]*([a-zA-Z0-9_-]+)[\s]*\([\s]*\) / )    { $func->name($1) ; }
+  if ( /^[\s]*function[\s]+([a-zA-Z0-9_-]+)[\s]?/ ) { $func->name($1) ; return 1 ; }
+  if ( /^[\s]*([a-zA-Z0-9_-]+)[\s]*\([\s]*\) / )    { $func->name($1) ; return 1 ; }
   return 0;
 }
 
@@ -210,11 +220,10 @@ sub reset_variables {
   # Initialize at least a new set of soft-required tags for function.
   undef $func ;
   $func = Function->new();
-  %$defaults = ();
 }
 
 sub reset_defaults {
-  %$defaults = ();
+  %defaults = () ;
   $defaults{"Author"} = ""      ;
   $defaults{"Date"} = ""        ;
   $defaults{"Version"} = ""     ;
@@ -228,16 +237,16 @@ sub reset_defaults {
 # --
 sub add_tag {
   my $tag_name ;
-  my $tag_text ;
+  my $tag_text = "" ;
 
   # Try to get a tag name and text.  Leave if we don't get a name.
   if ( ! /#@[\S]+/ ) { return 0 ; }
-  if ( /#@([\S]+)([\s]+(.*))?/ ) { $tag_name = $1 ; $tag_text = $3 ; }
+  if ( /#@([\S]+)([\s]+(.*))?/ ) { $tag_name = $1 ; if ($3) { $tag_text = $3 ; } }
   if ( ! $tag_name ) { &print_so_verbose("Passed the regex check to ensure this line has a tag, but somehow I can't find a name... odd.") ; return 0 ; }
 
   # If name is 'opt_', this is an inferred getopts tag.  We need to read current opt, otherwise we're screwed.
   if ( $tag_name eq "opt_" ) {
-    if ( ! $last_opt_name ) { &print_se("Implied opt tag'" . '#@opt_' . "' found, but cannot infer the option name.\n") ; return 0 ; }
+    if ( ! $last_opt_name ) { &print_se($func->name() . " - Implied opt tag'" . '#@opt_' . "' found, but cannot infer the option name.\n") ; return 0 ; }
     $tag_name .= $last_opt_name ;
   }
   if ( $tag_name =~ /^opt_[a-zA-Z0-9_]+/ ) {
@@ -245,28 +254,31 @@ sub add_tag {
     return 1;
   }
 
-  # If name is '$@' or '$*' these are argument tags.
+  # If name is '$@', '$<number>', or '$*' these are argument tags.
   if ( $tag_name eq '$@' || $tag_name eq '$*' ) {
-    $func->argument_tags($tag_name, $tag_text . "\n");
+    $func->argument_tags(substr($tag_name, 1), $tag_text . "\n");
+  }
+  if ( $tag_name =~ /\$[0-9]+/ ) {
+    $func->argument_tags(substr($tag_name, 1), $tag_text . "\n");
   }
 
   # If name is '$E_' this is an exit/error tag.
   if ( $tag_name eq '$E_' ) {
-    if ( /^[\s]*(E_[a-zA-Z0-9_]+)[=]/ ) { $tag_name .= $1 ; }
-    if ( $tag_name eq '$E_' ) { &print_se("Implied exit tag '" . '#@$E_' . "' found, but no exit constant found at the front of the line.\n") ; return 0 ; }
+    if ( /^(.*[\s]+)?(E_[a-zA-Z0-9_]+)[=]/ ) { $tag_name .= $2 ; }
+    if ( $tag_name eq '$E_' ) { &print_se($func->name() . " - Implied exit tag '" . '#@$E_' . "' found, but no exit constant found at the front of the line.\n") ; return 0 ; }
   }
   if ( $tag_name =~ /\$E_[a-zA-Z0-9_]+/ ) {
-    $func->exit_tags($tag_name, $tag_text . "\n");
+    $func->exit_tags(substr($tag_name, 1), $tag_text . "\n");
     return 1;
   }
 
   # If name is '$', this is an inferred variable tag.  We need to find '[whitespace]someVar=' to name the tag 'someVar'.
   if ( $tag_name eq '$' ) {
     if ( /^[\s]*([a-zA-Z_][a-zA-Z0-9_]*)[=]/ ) { $tag_name .= $1 ; }
-    if ( $tag_name eq '$' ) { &print_se("Implied variable tag '" . '#@$' . "' found, but no variable found at the front of the line.\n") ; return 0 ; }
+    if ( $tag_name eq '$' ) { &print_se($func->name() . " - Implied variable tag '" . '#@$' . "' found, but no variable found at the front of the line.\n") ; return 0 ; }
   }
   if ( $tag_name =~ /\$[a-zA-Z_][a-zA-Z0-9_]*/ ) {
-    $func->variable_tags($tag_name, $tag_text . "\n");
+    $func->variable_tags(substr($tag_name, 1), $tag_text . "\n");
     return 1;
   }
 

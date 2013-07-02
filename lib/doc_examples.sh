@@ -3,13 +3,13 @@
 #@Author    Kyle Harper
 #@Date      2013.03.19
 #@Version   0.1-beta
-#@namespace doc_examples
+#@Namespace doc_examples
 
-#@Desc This is a series of examples to help demonstrate how code should be written in the stupidbashtard modules.  It is important to follow the style guidelines so that the self-documenting system will work.  Also, if this is ever put into an IDE, it will enable intelligent description popups.
-#@Desc
-#@Desc Using the same tag multiple times in succession is how you span lines.
+#@Description This is a series of examples to help demonstrate how code should be written in the stupidbashtard modules.  It is important to follow the style guidelines so that the self-documenting system will work.  Also, if this is ever put into an IDE, it will enable intelligent description popups.
+#@Description
+#@Description Using the same tag multiple times in succession is how you span lines.
 
-#@Desc ^^ Empty lines mean nothing, but please avoid them for readability.
+#@Description ^^ Empty lines mean nothing, but please avoid them for readability.
 
 
 # +----------+
@@ -130,8 +130,8 @@
 # -- Examples 01 - 09:  Function Declarations
 # --
 function doc_examples_01-DoNothing {
-  #@Desc This function does nothing.  Just gives a description.  It inherits global tags from above
-  #@Desc such as Author and Version.
+  #@Description This function does nothing.  Just gives a description.  It inherits global tags from above
+  #@Description such as Author and Version.
   return 0
 }
 
@@ -142,7 +142,7 @@ function doc_examples_02-OneLiner { return 0 ; }
 
 doc_examples_03-AnnoyingDeclaration ()
 {
-  #@Desc  Proving that even annoying function declarations like this one will still get discovered.
+  #@Description  Proving that even annoying function declarations like this one will still get discovered.
   echo "Please use the unambiguous keyword: function.  It's for the kittens!"
   return 0
 }
@@ -153,7 +153,7 @@ doc_examples_04-AnnoyingDeclarationOneLiner () { return 0 ; }
 
 
 function doc_examples_05-MixedDeclaration () {
-  #@Desc  This form of declaration is valid in bash too, and still annoying.  But Docker will accept it.
+  #@Description  This form of declaration is valid in bash too, and still annoying.  But Docker will accept it.
   return 0
 }
 
@@ -162,7 +162,7 @@ function doc_examples_05-MixedDeclaration () {
 # -- Examples 10 - 19:  Variables (Typing & Scope)
 # --
 function doc_examples_10-SimpleLocalVariables {
-  #@Desc  This function will setup a few local variables.  That's it. (No tags).
+  #@Description  This function will setup a few local variables.  That's it. (No tags).
 
   local VERBOSE=false
   local MAX_THINGS=20
@@ -176,7 +176,7 @@ function doc_examples_10-SimpleLocalVariables {
 
 
 function doc_examples_11-MixedVariables {
-  #@Desc  This function establishes both local variables and a few non-locals.
+  #@Description  This function establishes both local variables and a few non-locals.
 
   local VERBOSE=false
   ITEMS_FOUND
@@ -187,9 +187,9 @@ function doc_examples_11-MixedVariables {
 
 
 function doc_examples_12-ThreadSafe {
-  #@Desc  Thread safety is possible in limited capacity.  Obviously this only applies when the function is called
-  #@Desc  asynchronously.  If all detected variables are declared with the local keyword, the function will be flagged
-  #@Desc  as thread safe.
+  #@Description  Thread safety is possible in limited capacity.  Obviously this only applies when the function is called
+  #@Description  asynchronously.  If all detected variables are declared with the local keyword, the function will be flagged
+  #@Description  as thread safe.
 
   local START_TIME="$(date +%s)"
   local VERBOSE=false
@@ -199,8 +199,8 @@ function doc_examples_12-ThreadSafe {
 
 
 function doc_examples_13-NonThreadSafe {
-  #@Desc  This simple function will be flaged as non-thread safe because there is a variable defined without a local
-  #@Desc  keyword.  Ruh roh!
+  #@Description  This simple function will be flaged as non-thread safe because there is a variable defined without a local
+  #@Description  keyword.  Ruh roh!
 
   local START_TIME="$(date +%s)"
   VERBOSE=false
@@ -210,8 +210,8 @@ function doc_examples_13-NonThreadSafe {
 
 
 function doc_examples_14-TypedVariables {
-  #@Desc  This function will specify attributes about some variables by way of the keyword: declare.  It is also possible
-  #@Desc  to use the typeset keyword.
+  #@Description  This function will specify attributes about some variables by way of the keyword: declare.  It is also possible
+  #@Descrition  to use the typeset keyword.
 
   # Docker will note the special attributes for the following variables
   declare -r local my_uuid="$(uuidgen)"  # Read only
@@ -233,7 +233,7 @@ function doc_examples_14-TypedVariables {
 # -- Examples 20 - 29:  Parameters
 # --
 function doc_examples_20-NumericParameters {
-  #@Desc  This function accepts $1 and $2 as parameters.
+  #@Description  This function accepts $1 and $2 as parameters.
 
 }
 
@@ -242,7 +242,7 @@ function doc_examples_20-NumericParameters {
 # -- Examples 40 - 49:  Variable Tags
 # --
 function doc_examples_40-SimpleVariableTag {
-  #@Desc  A single, simple variable tag (happens to be a line-end tag too)
+  #@Description  A single, simple variable tag (happens to be a line-end tag too)
 
   local VERBOSE=false  #@$VERBOSE  Disable verbosity unless the user enables it with -v
   return 0
@@ -250,7 +250,7 @@ function doc_examples_40-SimpleVariableTag {
 
 
 function doc_examples_41-LineEndVariableTags {
-  #@Desc  This function will show simple variable tags:  Line-End and federated.
+  #@Description  This function will show simple variable tags:  Line-End and federated.
 
   local VERBOSE=false  #@$VERBOSE  Disable verbosity unless the user enables it with -v
   local SUPPRESS=false #@$SUPPRESS Don't sent error messages if the user specifies -s
@@ -263,7 +263,7 @@ function doc_examples_41-LineEndVariableTags {
 
 
 function doc_examples_42-FederatedVariableTags {
-  #@Desc  This function shows how variable tags can be federated from the actual code declaring the variable; if desired.
+  #@Description  This function shows how variable tags can be federated from the actual code declaring the variable; if desired.
   #@$VERBOSE  Disable verbosity unless the user enables it with -v
   #@$SUPPRESS Don't sent error messages if the user specifies -s
   #@$QUIET    Limit output of regular messages.  Will NOT disable error message output (see -s).
@@ -277,8 +277,8 @@ function doc_examples_42-FederatedVariableTags {
 
 
 function doc_examples_43-ParameterVariableTags {
-  #@Desc  In this function we will accept $1 and $2 parameters.  We will assign descriptions to them.
-  #@Desc  These must always be federated, as there is no declaration for them.
+  #@Description  In this function we will accept $1 and $2 parameters.  We will assign descriptions to them.
+  #@Description  These must always be federated, as there is no declaration for them.
 
   #@$1  The file we will use for <whatever>.
   #@$2  The maximum results to find before leaving.
@@ -294,7 +294,7 @@ function doc_examples_43-ParameterVariableTags {
 # -- Examples 50 - 59:  GetOpts Tags
 # --
 function doc_examples_50-GetOptsTags {
-  #@Desc  This function will show a few ways to provide comments for the getopts loop.
+  #@Description  This function will show a few ways to provide comments for the getopts loop.
 
   local my_opt
   local AWESOME_MODE=false
@@ -316,7 +316,7 @@ function doc_examples_50-GetOptsTags {
 
 
 function doc_examples_51-LineEndGetOptsTags {
-  #@Desc  This function will show a few ways to provide comments for the getopts loop.
+  #@Description  This function will show a few ways to provide comments for the getopts loop.
 
   local my_opt
   local AWESOME_MODE=false
@@ -336,7 +336,7 @@ function doc_examples_51-LineEndGetOptsTags {
 
 
 function doc_examples_52-FederatedGetOptsTags {
-  #@Desc  This function will show a few ways to provide comments for the getopts loop.
+  #@Description  This function will show a few ways to provide comments for the getopts loop.
   #@opt_a When specified, turns on AWESOME mode... yea.
   #@opt_b Override the default book name to use.
 
@@ -364,10 +364,10 @@ function doc_examples_99-ComplexZelda {
   #@Author Hank BoFrank
   #@Date   2013.03.04
 
-  #@Desc   A complex function attempting to show most (or all) of the things/ways you can document stuff.
-  #@Desc   We will attempt to read a file and list the line number and first occurence of a Zelda keyword.
-  #@Desc
-  #@Desc   This is a SILLY script that is untested; for demonstration purposes only.
+  #@Description   A complex function attempting to show most (or all) of the things/ways you can document stuff.
+  #@Description   We will attempt to read a file and list the line number and first occurence of a Zelda keyword.
+  #@Description
+  #@Description   This is a SILLY script that is untested; for demonstration purposes only.
 
   # Variables
   #@$1 The first option (after shifting from getopts) will be a file name to operate on.
