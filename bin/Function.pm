@@ -11,6 +11,7 @@ sub new {
   bless $self;
 
   # Initialize empty strings for keys
+  $self->{"YAML_SPACE"}    = "      ";
   $self->{"argument_tags"} = {};
   $self->{"basic_tags"}    = {};
     $self->{"basic_tags"}{"Author"}      = "";
@@ -61,7 +62,7 @@ sub argument_tags {
   my $self  = shift;
   my $key   = shift;
   my $value = shift;
-  if ( $key && $value ) { $self->{"argument_tags"}{$key} = $self->{"argument_tags"}{$key} . &escape_quotes($value) ; return 1 ; }
+  if ( $key && $value ) { $self->{"argument_tags"}->{$key} .= $value . "\n" ; return 1 ; }
   if ( $key )           { return $self->{"argument_tags"}{$key} ; }
   return keys $self->{"argument_tags"};
 }
@@ -71,7 +72,7 @@ sub basic_tags {
   my $self  = shift;
   my $key   = shift;
   my $value = shift;
-  if ( $key && $value ) { $self->{"basic_tags"}{$key} = $self->{"basic_tags"}{$key} . &escape_quotes($value) ; return 1 ; }
+  if ( $key && $value ) { $self->{"basic_tags"}->{$key} .= $value . "\n" ; return 1 ; }
   if ( $key )           { return $self->{"basic_tags"}{$key} ; }
   return keys $self->{"basic_tags"};
 }
@@ -81,7 +82,7 @@ sub exit_tags {
   my $self  = shift;
   my $key   = shift;
   my $value = shift;
-  if ( $key && $value ) { $self->{"exit_tags"}{$key} = $self->{"exit_tags"}{$key} . &escape_quotes($value) ; return 1 ; }
+  if ( $key && $value ) { $self->{"exit_tags"}->{$key} .= $value . "\n" ; return 1 ; }
   if ( $key )           { return $self->{"exit_tags"}{$key} ; }
   return keys $self->{"exit_tags"};
 }
@@ -91,7 +92,7 @@ sub option_tags {
   my $self  = shift;
   my $key   = shift;
   my $value = shift;
-  if ( $key && $value ) { $self->{"option_tags"}{$key} = $self->{"option_tags"}{$key} . &escape_quotes($value) ; return 1 ; }
+  if ( $key && $value ) { $self->{"option_tags"}->{$key} .= $value . "\n" ; return 1 ; }
   if ( $key )           { return $self->{"option_tags"}{$key} ; }
   return keys $self->{"option_tags"};
 }
@@ -101,21 +102,15 @@ sub variable_tags {
   my $self  = shift;
   my $key   = shift;
   my $value = shift;
-  if ( $key && $value ) { $self->{"variable_tags"}{$key} = $self->{"variable_tags"}{$key} . &escape_quotes($value) ; return 1 ; }
+  if ( $key && $value ) { $self->{"variable_tags"}->{$key} .= $value . "\n" ; return 1 ; }
   if ( $key )           { return $self->{"variable_tags"}{$key} ; }
-  #my @key_list = keys $self->{"variable_tags"};
   return keys $self->{"variable_tags"};
-  #return @key_list ;
 }
 
 
 # +-----------------+
 # |  Miscellaneous  |
 # +-----------------+
-sub escape_quotes {
-  return s/["]/\\"/g ;
-}
-
 sub count_braces {
   # Setup string and strip anything between quotes (braces inside quotes don't affect flow).
   my $self = shift ;

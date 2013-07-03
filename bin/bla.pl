@@ -14,72 +14,17 @@ use Function ;
 
 
 
-my $stuff = "local declare -A E_HOWDY=134";
-if ( $stuff =~ /^(.*[\s]+)?(E_[a-zA-Z0-9_]+)[=]/ ) { print $2 . "\n" ; }
-
-my $stuff = "local E_HOWDY=134";
-if ( $stuff =~ /^(.*[\s]+)?(E_[a-zA-Z0-9_]+)[=]/ ) { print $2 . "\n" ; }
-
-my $stuff = "declare -A E_HOWDY=134";
-if ( $stuff =~ /^(.*[\s]+)?(E_[a-zA-Z0-9_]+)[=]/ ) { print $2 . "\n" ; }
-
-my $stuff = "declare -A local E_HOWDY=134";
-if ( $stuff =~ /^(.*[\s]+)?(E_[a-zA-Z0-9_]+)[=]/ ) { print $2 . "\n" ; }
-
-
-exit 0;
-
-
-my $func = Function->new();
-my %defaults            ;
-$defaults{"Author"} = ""      ;
-$defaults{"Date"} = ""        ;
-$defaults{"Version"} = ""     ;
-$defaults{"Namespace"} = ""   ;
-$defaults{"Description"} = "" ;
-
-
-$func->variable_tags("chicka", "bow wow");
-
-  if ( $func->basic_tags("Author") eq "" )      { $func->basic_tags("Author",      $defaults{"Author"})      ; }
-  if ( $func->basic_tags("Date") eq "" )        { $func->basic_tags("Date",        $defaults{"Date"})        ; }
-  if ( $func->basic_tags("Version") eq "" )     { $func->basic_tags("Version",     $defaults{"Version"})     ; }
-  if ( $func->basic_tags("Namespace") eq "" )   { $func->basic_tags("Namespace",   $defaults{"Namespace"})   ; }
-  if ( $func->basic_tags("Description") eq "" ) { $func->basic_tags("Description", $defaults{"Description"}) ; }
-
-print $func->variable_tags() ;
-exit 0;
-
-
-
-
-$func->count_braces("some text");
-$func->count_braces("function bob {");
-print "Opened braces: " .$func->opened_braces() . "\n" ;
-print "Closed braces: " .$func->closed_braces() . "\n" ;
-
-undef $func ;
+my $func;
+my @lines;
 $func = Function->new();
-$func->count_braces("some text");
-$func->count_braces("function bob {");
-$func->count_braces("}");
-print "Opened braces: " .$func->opened_braces() . "\n" ;
-print "Closed braces: " .$func->closed_braces() . "\n" ;
+$func->variable_tags("SOME_VAR", "Text 1 for SOME_VAR");
+$func->variable_tags("SOME_VAR", "Text 2 for SOME_VAR");
+$func->variable_tags("OTHER_VAR", "Text for OTHER_VAR");
+
+foreach ($func->variable_tags()) {
+  foreach my $line (split /\n/, $func->variable_tags($_)) {
+    print "      ${line}\n";
+  }
+}
 
 exit 0;
-
-
-
-
-
-
-
-$func->name("wheee");
-print $func->name() . "\n";
-
-undef $func ;
-$func = Function->new();
-print $func->name() . "\n";
-$func->name("dsfidsjfio");
-print $func->name() . "\n";
-
