@@ -11,7 +11,6 @@ sub new {
   bless $self;
 
   # Initialize empty strings for keys
-  $self->{"YAML_SPACE"}    = "      ";
   $self->{"argument_tags"} = {};
   $self->{"basic_tags"}    = {};
     $self->{"basic_tags"}{"Author"}      = "";
@@ -57,54 +56,23 @@ sub closed_braces {
   return $self->{"closedbraces"};
 }
 
-# -- Associative arrays of argument tags
-sub argument_tags {
+# -- Tags
+sub tags {
   my $self  = shift;
+  my $root  = shift;
   my $key   = shift;
   my $value = shift;
-  if ( $key && $value ) { $self->{"argument_tags"}->{$key} .= $value . "\n" ; return 1 ; }
-  if ( $key )           { return $self->{"argument_tags"}{$key} ; }
-  return keys $self->{"argument_tags"};
-}
+  $root    .= "_tags";
+  chomp $value;
 
-# -- Associative arrays of basic tags
-sub basic_tags {
-  my $self  = shift;
-  my $key   = shift;
-  my $value = shift;
-  if ( $key && $value ) { $self->{"basic_tags"}->{$key} .= $value . "\n" ; return 1 ; }
-  if ( $key )           { return $self->{"basic_tags"}{$key} ; }
-  return keys $self->{"basic_tags"};
-}
+  # Set a value if specified.
+  if ( $key && $value ) { $self->{$root}->{$key} .= $value =~ s/^-//r . "\n"; return 1 ; }
 
-# -- Associative arrays of exit tags
-sub exit_tags {
-  my $self  = shift;
-  my $key   = shift;
-  my $value = shift;
-  if ( $key && $value ) { $self->{"exit_tags"}->{$key} .= $value . "\n" ; return 1 ; }
-  if ( $key )           { return $self->{"exit_tags"}{$key} ; }
-  return keys $self->{"exit_tags"};
-}
+  # Return a value if a key has been provided.
+  if ( $key ) { return $self->{$root}{$key} ; }
 
-# -- Associative arrays of option tags
-sub option_tags {
-  my $self  = shift;
-  my $key   = shift;
-  my $value = shift;
-  if ( $key && $value ) { $self->{"option_tags"}->{$key} .= $value . "\n" ; return 1 ; }
-  if ( $key )           { return $self->{"option_tags"}{$key} ; }
-  return keys $self->{"option_tags"};
-}
-
-# -- Associative arrays of variable tags
-sub variable_tags {
-  my $self  = shift;
-  my $key   = shift;
-  my $value = shift;
-  if ( $key && $value ) { $self->{"variable_tags"}->{$key} .= $value . "\n" ; return 1 ; }
-  if ( $key )           { return $self->{"variable_tags"}{$key} ; }
-  return keys $self->{"variable_tags"};
+  # Return keys of the root if no key or value was sent.
+  return keys $self->{$root};
 }
 
 
@@ -136,6 +104,7 @@ sub braces_match {
   if ( $self->opened_braces() == 0 )                      { return 0 ; }
   if ( $self->opened_braces() == $self->closed_braces() ) { return 1 ; }
 }
+
 
 # +-----------+
 # |  Ze End!  |

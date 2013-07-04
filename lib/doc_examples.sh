@@ -6,8 +6,8 @@
 #@Namespace doc_examples
 
 #@Description This is a series of examples to help demonstrate how code should be written in the stupidbashtard modules.  It is important to follow the style guidelines so that the self-documenting system will work.  Also, if this is ever put into an IDE, it will enable intelligent description popups.
-#@Description
-#@Description Using the same tag multiple times in succession is how you span lines.
+#@Description -
+#@Description Using the same tag multiple times in succession is how you span lines.  A single hyphen means "blank" line; like above.
 
 #@Description ^^ Empty lines mean nothing, but please avoid them for readability.
 
@@ -28,10 +28,10 @@
 # -- Tag Basics
 # Tags are the indicator that the documentation building script ("Docker") should include info about something it normally wouldn't capture.  Docker will look for certain tags by default, such as author, date, namespace, et cetera.  Custom tags are valid as well, and will be placed in the docuemntation in the order they are found.  Built-ins (like the aforementioned) will always go in default placeholders.
 #
-# You can specify a tag by using the comment and @ symbol combination:  #@SomeAttribute bla (see the #@Desc above for a multi-line example).
+# You can specify a tag by using the comment and @ symbol combination:  #@SomeAttribute bla (see the #@Description above for a multi-line example).
 #
-# If you specify a tag at the top of the file, and do not override it in a function, the value provided at the top will be used.  This can be disabled via the document generation script switches.  The only tags that don't propagate are:
-#   1. Desc
+# If you specify a tag at the top of the file (outisde a function), and do not override it in a function, the value provided at the top will be used.  This can be disabled via the document generation script switches.  The only tags that don't propagate are:
+#   1. Description
 
 # -- Line-End Tags
 # Bash supports line-end comments, therefore Docker does too.  The two benefits to line-end comments are 1) 'cleaner' code visually and 2) certain line-end tags infer information.  This is quite popular for variable tags, getopt tags, and similar because it allows you to leave off the tag name.  For example, if you wanted to document a variable named VERBOSE, you could do:
@@ -43,14 +43,14 @@
 # #@$VERBOSE <description text>
 
 # -- Variable Tags
-# Variables are auto-detected by the local keyword.  If a variable tag (#@$) is used as a line-end comment, the text following will be used as a description.  You do not need to specify the variable name again (#$@var), it will be inferred from the declaration.  Can can treat variable tags like all others, if desired.  Their unique prefix (#@$) allows Docker to still group them all up, so where you place them in the function is irrelevant to Docker.
+# Variables are auto-detected by the local keyword or the assignment operator (=).  If a variable tag (#@$) is used as a line-end comment, the text following will be used as a description.  You do not need to specify the variable name again (#@$var), it will be inferred from the declaration.  Docker can treat variable tags like all others, if desired.  Their unique prefix (#@$) allows Docker to still group them all up, so where you place them in the function is irrelevant to Docker.
 #
-# Parameters should be passed as switches (see getopts below) and combined with pre-flight logic for mandatory things.  If, however, your function expects things like $1, you need to let the document script know.  Do this by placing a variable tag (#@$1) INSIDE the function.
+# Parameters should usually be passed as switches (see getopts below) and combined with pre-flight logic for mandatory things.  If, however, your function expects things like $1, you need to let Docker know.  Do this by placing a variable tag (#@$1) INSIDE the function.  These are always, of course, federated.
 # Note: While its tag looks funny, you are welcome to use the $@ variable.  Its variable tag would be:  #@$@
 # Note: Same with the $* variable:  #@$*
 
 # -- GetOpt Tags
-# These are specifically for the getopts function.  More details in the code-crawling below.  For brevity the syntax is: #@opt_ <description text>
+# These are specifically for the getopts function.  More details in the code-crawling section below.  For brevity the syntax is: #@opt_ <description text>
 
 
 # +-----------------+
@@ -63,7 +63,13 @@
 # You do NOT need to use special comments and tags, though tags do help end-users understand your functions better later.  You ONLY need to write the function using valid bash syntax.  The documentation tool will read everything after it.  The braces for the function simply need to comply with bash rules.  The opening is on the same line or directly after.  The closing must be on it's own line, or preceeded by a semicolon.  Again, whatever bash allows.
 
 # -- Parameters
-# Functions act more like code macros than subroutines (ignoring async/fork calls for now).  You cannot create functions with parameters defined as by-value, reference, out, and so forth.  All parameters sent to a function are by-value.  While Bash supports indirect referencing, and we could use that to emulte some reference-style parameters... it would be extremely hacky and deviate from the globally accepted rule for linux command output: it should go to STDOUT.
+# Functions act more like code macros than subroutines (ignoring async/fork calls for now).  You cannot create functions with parameters defined as by-value, reference, out, and so forth.  All parameters sent to a function are by-value.  While Bash supports indirect referencing, and we could use that with funky naming conventions to emulate some reference-style parameters... it would be extremely hacky and deviate from the globally accepted rule for linux command output: it should go to STDOUT.
+#
+# By-Ref can be helpful at times.  For example, if a function sorts an array it's easier to simply return 
+
+FINISH ME
+
+
 #
 # Parameters should be passed and accepted via getopts (read more about that below) or anticipated in $@.  If you need to set variables from the command output of a function, swallow it like you would any other command output:  myvar=$(myfunction -p somevalue)
 #
@@ -284,7 +290,7 @@ function doc_examples_43-ParameterVariableTags {
   #@$2  The maximum results to find before leaving.
 
   declare -r    local INPUT_FILE="$1"  #@$  This will hold the contents of $1, mostly for readability later.
-  delcare -r -i local MAX_RESULTS=$2   #@$  This will hold the value of $2, mostly for readability later.
+  declare -r -i local MAX_RESULTS=$2   #@$  This will hold the value of $2, mostly for readability later.
 
   return 0
 }
@@ -366,7 +372,7 @@ function doc_examples_99-ComplexZelda {
 
   #@Description   A complex function attempting to show most (or all) of the things/ways you can document stuff.
   #@Description   We will attempt to read a file and list the line number and first occurence of a Zelda keyword.
-  #@Description
+  #@Description   -
   #@Description   This is a SILLY script that is untested; for demonstration purposes only.
 
   # Variables
@@ -378,7 +384,7 @@ function doc_examples_99-ComplexZelda {
   declare -r local wife_is_hot=true      #@$ Pointless boolean flag, and it is now read only (and accurate).
   declare -a local index_array=( Zelda ) #@$ Index array with 1 element (element 0, value of Zelda)
   declare -A local assoc_array           #@$ Associative array (hash) to hold misc things as we read file.
-  delcare -i local i                     #@$ A counter variable, forced to be integer only.
+  declare -i local i                     #@$ A counter variable, forced to be integer only.
   final_value=''                         #@$ The final value to expose to the caller after we exit. (Note: Docker will flag as by-ref.)
 
   # Process options

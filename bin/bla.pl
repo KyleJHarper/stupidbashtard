@@ -12,19 +12,20 @@ use File::Basename ;
 use lib dirname ( abs_path( __FILE__ ) ) ;
 use Function ;
 
-
-
-my $func;
-my @lines;
+my $func ;
 $func = Function->new();
-$func->variable_tags("SOME_VAR", "Text 1 for SOME_VAR");
-$func->variable_tags("SOME_VAR", "Text 2 for SOME_VAR");
-$func->variable_tags("OTHER_VAR", "Text for OTHER_VAR");
 
-foreach ($func->variable_tags()) {
-  foreach my $line (split /\n/, $func->variable_tags($_)) {
-    print "      ${line}\n";
-  }
+while(<>) {
+  #my $tag_name ;
+  #my $tag_text = "" ;
+
+  # Try to get a tag name and text.  Leave if we don't get a name.
+  #if ( ! /#@[\S]+/ ) { return 0 ; }
+  #if ( /#@([\S]+)([\s]+(.*))?/ ) { $tag_name = $1 ; $tag_text = $3 ; }
+
+  if ( /^[\s]*([a-zA-Z_][a-zA-Z0-9_]*)[=]/ ) { print $1 . "\n" ; }
+  if ( /^[\s]*(declare[\s]+(-[a-zA-Z][\s]+)+)?local[\s]+([a-zA-Z_][a-zA-Z0-9_]*)/ ) { print $3 . "\n" ; }
+
 }
 
 exit 0;

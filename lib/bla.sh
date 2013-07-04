@@ -1,5 +1,21 @@
 #!/bin/bash
 
+
+while getopts 'ab:_:$:' my_opt ; do
+  case "$my_opt" in
+    'a' ) #@opt_ When specified, turns on AWESOME mode... yea.
+          AWESOME_MODE=true     ;;
+    'b' ) #@opt_ Override the default book name to use.
+          BOOK_NAME="${OPTARG}" ;;
+    '_' ) echo "${OPTARG}" ;;
+    '$' ) echo "${OPTARG}" ;;
+    *   ) echo "Invalid option -${OPTARG}" >&2
+          return 1
+          ;;
+  esac
+done
+
+exit
 function fun
 
 {
