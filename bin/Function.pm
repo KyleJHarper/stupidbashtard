@@ -13,13 +13,11 @@ sub new {
   # Initialize empty strings for keys
   $self->{"argument_tags"} = {};
   $self->{"basic_tags"}    = {};
-    $self->{"basic_tags"}{"Author"}      = "";
-    $self->{"basic_tags"}{"Date"}        = "";
-    $self->{"basic_tags"}{"Description"} = "";
-    $self->{"basic_tags"}{"Namespace"}   = "";
-    $self->{"basic_tags"}{"Version"}     = "";
   $self->{"exit_tags"}     = {};
+  $self->{"options"}       = {};
   $self->{"option_tags"}   = {};
+  $self->{"thread_safe"}   = {};
+  $self->{"variables"}     = {};
   $self->{"variable_tags"} = {};
 
   # Set defaults if none provided
@@ -56,6 +54,13 @@ sub closed_braces {
   return $self->{"closedbraces"};
 }
 
+# -- Thread Safety
+sub thread_safe {
+  my $self = shift;
+  if ( scalar(@_) == 1) { $self->{"thread_safe"} = shift; }
+  return $self->{"thread_safe"};
+}
+
 # -- Tags
 sub tags {
   my $self  = shift;
@@ -69,10 +74,51 @@ sub tags {
   if ( $key && $value ) { $self->{$root}->{$key} .= $value =~ s/^-//r . "\n"; return 1 ; }
 
   # Return a value if a key has been provided.
-  if ( $key ) { return $self->{$root}{$key} ; }
+  if ( $key ) { return $self->{$root}->{$key} ; }
 
   # Return keys of the root if no key or value was sent.
   return keys $self->{$root};
+}
+
+# -- Options
+sub options {
+  my $self  = shift;
+  my $opt   = shift;
+  my $value = shift;
+  chomp $value;
+
+  # Set a value if specified.
+  if ( $opt && $value ) { $self->{'options'}->{$opt} = $value ; return 1 ; }
+
+  # Return a value if a key has been provided.
+  if ( $opt ) { return $self->{'options'}->{$opt} ; }
+
+  # Return keys of the root if no key or value was sent.
+  return keys $self->{'options'};
+}
+
+# -- Variables
+sub variables {
+  my $self     = shift;
+  my $variable = shift;
+  my $property = shift;
+  my $value    = shift;
+  chomp $value;
+
+  # Setup anonymous hash if it hasn't been created yet.
+  if ( ! $self->{'variables'}->{$variable} ) { $self->{'variables'}{$variable} = {} ; }
+
+  # Set a value if value, variable name, and property specified.
+  if ( $variable && $property && $value ) { $self->{'variables'}->{$variable}->{$property} = $value ; return 1 ; }
+
+  # Return a value if only a variable name and property were sent.
+  if ( $variable && $property ) { return $self->{'variables'}->{$property} ; }
+
+  # Return keys (properties) of the variable specified, if only variable specified.
+  if ( $variable ) { return keys $self->{'variables'}->{$variables} ; }
+
+  # Return keys (variable names) if nothing was sent.
+  return keys $self->{'variables'};
 }
 
 

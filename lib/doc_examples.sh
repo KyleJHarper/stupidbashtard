@@ -4,6 +4,7 @@
 #@Date      2013.03.19
 #@Version   0.1-beta
 #@Namespace doc_examples
+#@rawr whee
 
 #@Description This is a series of examples to help demonstrate how code should be written in the stupidbashtard modules.  It is important to follow the style guidelines so that the self-documenting system will work.  Also, if this is ever put into an IDE, it will enable intelligent description popups.
 #@Description -
