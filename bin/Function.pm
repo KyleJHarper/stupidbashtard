@@ -16,14 +16,14 @@ sub new {
   $self->{"exit_tags"}     = {};
   $self->{"options"}       = {};
   $self->{"option_tags"}   = {};
-  $self->{"thread_safe"}   = {};
   $self->{"variables"}     = {};
   $self->{"variable_tags"} = {};
 
   # Set defaults if none provided
-  if ( ! $self->{"name"} )           { $self->{"name"} = "" ; }
-  if ( ! $self->{"openedbraces"} )   { $self->{"openedbraces"} = 0 ; }
-  if ( ! $self->{"closedbraces"} )   { $self->{"closedbraces"} = 0 ; }
+  if ( ! $self->{"name"} )         { $self->{"name"} = ""            ; }
+  if ( ! $self->{"closedbraces"} ) { $self->{"closedbraces"} = 0     ; }
+  if ( ! $self->{"openedbraces"} ) { $self->{"openedbraces"} = 0     ; }
+  if ( ! $self->{"thread_safe"}  ) { $self->{"thread_safe"} = "true" ; }
 
   # Return me
   return $self;
@@ -106,19 +106,21 @@ sub variables {
   chomp $value;
 
   # Setup anonymous hash if it hasn't been created yet.
-  if ( ! $self->{'variables'}->{$variable} ) { $self->{'variables'}{$variable} = {} ; }
+  if ( $variable ) {
+    if ( ! $self->{'variables'}->{$variable} ) { $self->{'variables'}{$variable} = {} ; }
+  }
 
   # Set a value if value, variable name, and property specified.
   if ( $variable && $property && $value ) { $self->{'variables'}->{$variable}->{$property} = $value ; return 1 ; }
 
   # Return a value if only a variable name and property were sent.
-  if ( $variable && $property ) { return $self->{'variables'}->{$property} ; }
+  if ( $variable && $property ) { return $self->{'variables'}->{$variable}->{$property} ; }
 
   # Return keys (properties) of the variable specified, if only variable specified.
-  if ( $variable ) { return keys $self->{'variables'}->{$variables} ; }
+  if ( $variable ) { return keys $self->{'variables'}->{$variable} ; }
 
   # Return keys (variable names) if nothing was sent.
-  return keys $self->{'variables'};
+  return keys %{$self->{'variables'}};
 }
 
 
