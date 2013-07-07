@@ -26,6 +26,7 @@ function doc_examples_43-ParameterVariableTags {
   echo "${TOUGH}"
   echo "${TOUGHER}"
   echo "${TOUGHEST}"
+  echo "${TOUGHEST}"
   return 0
 }
 
