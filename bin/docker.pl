@@ -187,16 +187,16 @@ sub save_function {
   # -- Options
   print $file_handle "\noptions:\n"                                     or &fatal($E_IO_FAILURE, "Failure writing line to file.");
   foreach ( $func->options() ) {
-    print $file_handle '  - ' . $_ . ': ' . $func->options($_) . "\n"   or &fatal($E_IO_FAILURE, "Failure writing line to file.");
+    print $file_handle '  ' . $_ . ': ' . $func->options($_) . "\n"     or &fatal($E_IO_FAILURE, "Failure writing line to file.");
   }
   # -- Thread Safe
   print $file_handle "\nthread_safe: " . $func->thread_safe() . "\n"    or &fatal($E_IO_FAILURE, "Failure writing line to file.");
   # -- Variables
   print $file_handle "\nvariables:\n"                                   or &fatal($E_IO_FAILURE, "Failure writing line to file.");
   foreach my $variable ( $func->variables() ) {
-    print $file_handle "  - ${variable}:\n"                             or &fatal($E_IO_FAILURE, "Failure writing line to file.");
+    print $file_handle "  - name: ${variable}\n"                        or &fatal($E_IO_FAILURE, "Failure writing line to file.");
     foreach my $property ( $func->variables($variable) ) {
-      print $file_handle "    - $property: "                            or &fatal($E_IO_FAILURE, "Failure writing line to file.");
+      print $file_handle "    $property: "                              or &fatal($E_IO_FAILURE, "Failure writing line to file.");
       print $file_handle $func->variables($variable, $property) . "\n"  or &fatal($E_IO_FAILURE, "Failure writing line to file.");
     }
   }
