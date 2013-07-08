@@ -1,0 +1,16 @@
+Welcome to Stupid BashTard (SBT).
+
+
+-- Stupid BashTard
+SBT is a framework comprised of shell scripts full of functions.  In short, I got tired of rewriting, and watching others rewrite, the same exact types of functionality over and over again.  The goal of SBT is to create an open-source library of functions usable in Bash shell scripting (and possibly others eventually).
+
+-- Tools Driving SBT
+Bash, like all tools, has pros and cons.  All functions in SBT are Bash functions, but they will often push the real work on to other linux tools: perl, sed, awk, coreutils programs, and so forth.  These tools are usually part of most linux distributions (GNU/Linux).  But for portability, all the external tools SBT uses will have source code included, and a build script to compile them locally.
+
+-- Docker
+A static analysis tool is used to read functions and put information about them into YAML files.  Ultimately, these could be useful as description pop-ups in an IDE.
+
+
+MORE INFO
+More details about SBT and Docker are available in the SBT namespace 'doc_examples.sh'.
+
