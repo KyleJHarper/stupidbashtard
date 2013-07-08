@@ -1,0 +1,251 @@
+*   056291d3acffac783cfa00ef7f4f6532ea13f2f0
+|\    Author: kyle
+| |   Date: 2013-07-06 20:21:51 -0500
+| |   Comment: Merge branch 'master' of https://github.com/KyleJHarper/stupidbashtard
+| | 
+| |   
+| * 975adb20d07e1a05ee19d71ba601fb6ddee6a5d2
+| |   Author: administrator
+| |   Date: 2013-07-06 20:01:27 -0500
+| |   Comment: Fixed the YAML format to be compliant.  Woot.  Final commit before pushing to remote repo (setup a github account finally).
+| | 
+| |   
+* | 00f169efe9390cb28b1a09e83ffbd371444e0879
+| |   Author: kyle
+| |   Date: 2013-07-06 20:21:05 -0500
+| |   Comment: Stupid change to see if remote pushing works as expected.
+| | 
+| |   
+* | c516d0e5f739267d7896234b305a5ac72d50e5de
+|/    Author: kyle
+|     Date: 2013-07-06 20:15:47 -0500
+|     Comment: Fixed the YAML format to be compliant.  Woot.  Final commit before pushing to remote repo (setup a github account finally).
+|   
+|  
+* 9e613eca9fb86c1af322510447f73ffa33a03863
+|   Author: administrator
+|   Date: 2013-07-06 01:13:01 -0500
+|   Comment: YAML lists are wrong.  Need to fix them.
+| 
+|  
+* 93e34e0f91a34c1a779ae9bd3de0e11a1b7b036f
+|   Author: administrator
+|   Date: 2013-07-06 00:19:43 -0500
+|   Comment: Finished the alpha version of docker, woohoo.  Time to do extensive testing.  Yay... ugh.
+| 
+|  
+* aae9ad16a00daf60bbe949198c398cfb8dc0557b
+|   Author: administrator
+|   Date: 2013-07-05 01:26:01 -0500
+|   Comment: Got tags all fixed nice and pretty.  Options are now captured in a simplistic property with only 1 attribute: has_arg.  Might want to redo this one like the variables property if more than 1 property attribute is required, but for now it works.  Need to finish the add_variable function.  It should be quite simple if my anonymous array stuff works right.
+| 
+|  
+* 7a6bc339662a24e12a0f3dc33ad502dd11482efd
+|   Author: administrator
+|   Date: 2013-07-04 00:33:25 -0500
+|   Comment: Got the tag adding logic done.  Finished the file writing logic too.  Need to write two new functions to rip out variable and getopts information.  Also have a list of bugs that need to be worked out.  After that, I need to extensively test docker and build new functions in doc_example.sh to regression test docker.
+| 
+|  
+* e84f7febe0f6d2416176b1a4396347b661eb7427
+|   Author: administrator
+|   Date: 2013-07-02 22:34:54 -0500
+|   Comment: Fixed some of the regex, but most of it still needs fixed.  Got derailed trying to find out why my getters and setters weren't working.  Had to fix them in Function.pm.  I now need to modify the save function to save each tag set line by line to prepend the spacing, otherwise the yaml will fold back and get confused.
+| 
+|  
+* a9e567fa59684af101d0be07ddb47a644299df91
+|   Author: administrator
+|   Date: 2013-07-01 22:09:40 -0500
+|   Comment: Finished the save functions.  Tweaking regex patterns in it to be more useful.  Currently working on getting the variable tags to infer properly.  Regex pattern in bla.pl works but isn't working in my if statement for some reason.  I think my understanding of the if construct is wrong.  I should proabably disuse the parenthesis if its just a pattern match.  After the regex patterns are fixed, I need to find a way to distinguish between local and global variable to mark thread safety (or quit this feature).  Also need to find out why the actual text of the tags isn't going into the yaml file.  Then confirm my yaml format is valid.
+| 
+|  
+* de450dbb923c2ff98dd8acff372bea965d02c7c1
+|   Author: administrator
+|   Date: 2013-06-24 21:26:36 -0500
+|   Comment: Finished the adjustments to the add_tag function.  Docker will now store basic, variable, exit, option, and argument tags.  Probably time to start testing.
+| 
+|  
+* 26432cdcbdbd6ee6166753ad2ac44898fd5d4de5
+|   Author: administrator
+|   Date: 2013-06-23 23:16:06 -0500
+|   Comment: Switched more function logic into the actual object.  Still not going extreme OO as it's largely uncessecary and I don't quite care at the moment.  Finished up more of the flush to disk logic, should be YAML format now.  Still need to change the add_tag function to find and place items into the correct tag hashes.
+| 
+|  
+* 4160d9cb9a353db2bd62631a767c4e01318eb4ef
+|   Author: administrator
+|   Date: 2013-06-22 23:54:12 -0500
+|   Comment: Tried to break out the tags into basic, variable, exit, and option.  Modified the Function module to support it.  Wrote the basics of the save function to write this all to file.  Should consider either committing to OO or going strictly procedural.  Mostly for consistency.
+| 
+|  
+* e93d6dd7f7649d7fe1fe019911c14b355f0bfd4e
+|   Author: administrator
+|   Date: 2013-06-13 23:04:29 -0500
+|   Comment: Finished more of the save logic.  Need to get default tags finished.  Then I need to break out the tags into 3 or 4 major categories instead of making the consumer systems decihper it later.
+| 
+|  
+* ceb948b13eacc1574b25d4e7635b1a2be9123f52
+|   Author: administrator
+|   Date: 2013-06-10 22:08:09 -0500
+|   Comment: Added logic to save function.  Still need to debate on how much to save and where to save it.  Right now I have a name and tags... that's about it.
+| 
+|  
+* 8c838f70aec3a8d55a8a79dfc09fd3621e4ead9e
+|   Author: administrator
+|   Date: 2013-06-09 19:18:14 -0500
+|   Comment: Wrote the logic to check for inferred opt tags.  Need to finish the save function and start testing this stuff.
+| 
+|  
+* 4c62a2e22e8b613495f3027e1b6b17010f84b75a
+|   Author: administrator
+|   Date: 2013-06-05 21:12:20 -0500
+|   Comment: Started adding logic to process the getopts and core_getopts_Long stuff.  Very rough, needs core logic finished and then some polishing and eventually unit/regression testing.
+| 
+|  
+* 5f2307cd8492d6f365e9937336bf30a684a60eb8
+|   Author: administrator
+|   Date: 2013-05-20 23:29:52 -0500
+|   Comment: Fixed an invalidly scoped variable.  Moved exit codes to order 8, not sure this was necessary but whatever, it groups them nicely.  Also fixed a syntax error in docker.pl wherein my tag name was being interpreted inside a string.
+| 
+|  
+* 1aa4df4b89cbb10ae6c843f07677f9a8a34eae06
+|   Author: administrator
+|   Date: 2013-05-19 22:22:40 -0500
+|   Comment: Forgot to git rm the renamed file.  Not sure why git didn't understand it was the same file... oh wewell.
+| 
+|  
+* 45e9df8517e5f055f6aaa38cf8cf29d510a39725
+|   Author: administrator
+|   Date: 2013-05-19 22:22:04 -0500
+|   Comment: Finished the add_tag function.  Still needs testing but it should work.  Renamed test script to match the name of the item it's testing (removed the test_ prefix, it was excessive).
+| 
+|  
+* e5e7fc2ee5d65828daa3434cd0cc7798284efbd7
+|   Author: administrator
+|   Date: 2013-05-05 22:41:21 -0500
+|   Comment: More progress on docker.  Added a tags property.  Added a test pakage.
+| 
+|  
+* d5c8c14032db4363d70e953e0c5ab1a3f4e71994
+|   Author: administrator
+|   Date: 2013-05-04 00:49:39 -0500
+|   Comment: More progress on crawling the start of a function and brace tracking to know when we're leaving one.
+| 
+|  
+* 9de82fb2ea65ceb582f58366a2057a2a6977783a
+|   Author: administrator
+|   Date: 2013-05-02 22:09:33 -0500
+|   Comment: A little work.
+| 
+|  
+* f1f6245578f9d0494c6465ec0db031db18293c0c
+|   Author: administrator
+|   Date: 2013-05-02 01:40:56 -0500
+|   Comment: Started main crawling logic of docker.  Also created a custom package so I can program in OO style for each function.
+| 
+|  
+* fcac7384e817bd535d9bea9bc69391f61cf44cf4
+|   Author: administrator
+|   Date: 2013-04-30 22:46:28 -0500
+|   Comment: Removed placeholder and modified test script to have bin dir set.
+| 
+|  
+* 4a18e740166d6ecf8142c983cf95a6f3aec56ba6
+|   Author: administrator
+|   Date: 2013-04-30 22:39:29 -0500
+|   Comment: Renamed test.sh to test_docker.sh.  Not sure this naming convention is ideal, but whatever.
+| 
+|  
+* 3c2149a4872d77d458092bae2a49686d8d931ee1
+|   Author: administrator
+|   Date: 2013-04-30 22:38:16 -0500
+|   Comment: Moved test.sh to test folder.
+| 
+|  
+* 44eab1616f7720dbe371c082f1a12cf8496ad6d7
+|   Author: administrator
+|   Date: 2013-04-29 22:53:44 -0500
+|   Comment: Created unit tests for the purpose of regression testing docker.  This should be moved out of bin and into the tests folder.
+| 
+|  
+* a43adb173cde6c818ffc3fcb0cc4ffb2cc45c6c2
+|   Author: administrator
+|   Date: 2013-04-29 22:36:23 -0500
+|   Comment: Added a function to spit out some lines if we're testing.  I also started a unit script test to help me develop faster.
+| 
+|  
+* 49457d7958311fe1a798862962947d4439be93eb
+|   Author: administrator
+|   Date: 2013-04-29 21:54:07 -0500
+|   Comment: Added placeholders to grab folders.
+| 
+|  
+* a3dd8b8838d396c0649432f04f9b9b735cd62a1d
+|   Author: administrator
+|   Date: 2013-04-28 18:54:29 -0500
+|   Comment: Add a testing file for perl (bla.pl).  Added some switches to handle the usage.  Added functions to print out intelligently based on switches (verbose and quiet, as well as error).  Made the fatal routine always exit (was named print_err); always goes to STDERR.  Created the routine (load_files) to read arguments first, then if empty read all .sh files from LIB_DIR.
+| 
+|  
+* 598f10be442bad00a03cc5e2c7e49b46e48f2e4e
+|   Author: administrator
+|   Date: 2013-04-28 01:04:33 -0500
+|   Comment: Added getopts for quiet and verbose stuff.
+| 
+|  
+* 87f0517987aa2967e207c04790fe145653a3a759
+|   Author: administrator
+|   Date: 2013-04-27 00:14:46 -0500
+|   Comment: Started getting basics in place for docker.  Usage, printing, etc.  Still need to test the print_so function's respect for if QUIET logic.
+| 
+|  
+* 1fb36df4629cc16c762ba8bacb7480077fda4dfb
+|   Author: administrator
+|   Date: 2013-04-26 23:42:00 -0500
+|   Comment: Created bin and lib directories to organize things better.
+| 
+|  
+* dee8055f460dfe1ecf0e5cb230cf101d6112567f
+|   Author: administrator
+|   Date: 2013-04-26 23:31:39 -0500
+|   Comment: Updated some documents examples, including the ability to use core_ToolExists.  Created the first version of Docker as docker.pl (yes, perl).
+| 
+|  
+* 10197d1c4febbb97ab411ba29fe7c5e355c8ae0c
+|   Author: administrator
+|   Date: 2013-04-10 22:35:52 -0500
+|   Comment: Added a lot of changes to doc_example.  Got rid of the concept of reference and out params.  Too unreliable IMO.
+| 
+|  
+* dd9874f0f82e48df79b172e3dc6794fb491ed6de
+|   Author: administrator
+|   Date: 2013-03-31 23:06:59 -0500
+|   Comment: Added several examples and updated some of the description text.
+| 
+|  
+* ffc615457911f6fb630af81c213630459a605d50
+|   Author: administrator
+|   Date: 2013-03-31 00:45:05 -0500
+|   Comment: Added some example functions.  Need to do a lot more.
+| 
+|  
+* e1c2d4134b1d647ad76a6f536781f4bb598e23da
+|   Author: administrator
+|   Date: 2013-03-30 23:30:59 -0500
+|   Comment: Renamed template.sh to doc_examples.sh to match its namespace.  Added a lot of info to the doc.
+| 
+|  
+* 476468dd99e24a3fa7c2078bc8167eb878f2c14f
+|   Author: administrator
+|   Date: 2013-03-16 23:43:12 -0500
+|   Comment: Made almost no changes; still thinking through how to pass variables and whatnot.  I'd like to be able to specify byref and byval but I'm not sure that sort of thing is a wise decision.  It has implications to thread safety.
+| 
+|  
+* 7852cd8ef0444cd56b5abc13cc9a8e4031efd944
+|   Author: administrator
+|   Date: 2013-03-04 22:37:16 -0600
+|   Comment: Created some basic outlines for the template.sh file.  This will describe how to build future functions and whatnot so the automated documentation thingy I write later will work correctly... I hope.
+| 
+|  
+* 88c557fe5875794b8ab67cc67bc8838a6c371b6b
+    Author: administrator
+    Date: 2013-03-04 20:52:42 -0600
+    Comment: Initial commit, for kicks.
+  

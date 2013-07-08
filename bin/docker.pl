@@ -1,5 +1,9 @@
 #!/usr/bin/perl
 
+# Copyright 2013 Kyle Harper
+# Licensed per the details in the LICENSE file in this package.
+
+
 # +------------------+
 # |  Pre-Requisites  |
 # +------------------+
@@ -22,6 +26,7 @@ my $SELF_DIR  = dirname ( abs_path( __FILE__ ) ) ;
 # -- Order 2
 my $LIB_DIR   = "${SELF_DIR}/../lib" ;
 my $DOC_DIR   = "${SELF_DIR}/../doc" ;
+my $SBT_DIR   = "${SELF_DIR}/../sbt"  ;
 # -- Order 3
 my $E_GOOD       =   0 ;  # Successful exit.
 my $E_GENERIC    =   1 ;  # Generic failure, should likely never use this.
@@ -45,9 +50,10 @@ my $inside_getopts = '' ;
 my $getopts_offset = 0  ;
 my $last_opt_name  = '' ;
 my $line_num       = 0  ;
+my $saw_return     = '' ;
 
 # -- GetOpts Overrides
-getopts('d:hnqtv') or &usage ;
+getopts('d:hnqtuv') or &usage ;
 our ($opt_d, $opt_h, $opt_n, $opt_q, $opt_t, $opt_v) ;
 if ( defined $opt_d ) { $DOC_DIR      = $opt_d ; }
 if ( defined $opt_h ) { &usage                 ; }
@@ -93,16 +99,19 @@ foreach ( @FILES ) {
       &is_new_function($_) || next ;
     }
 
-    # Update the brace count and see if they match.  If no braces are opened, continue.  If they match, flush and continue.
+    # Update the brace count and see if they match.  If no braces are opened, continue.
     $func->count_braces( $_ );
     if ( $func->opened_braces() < $func->closed_braces() ) { &fatal($E_BAD_INPUT, "Closed braces out-paced opening ones on line $line_num in function: " . $func->name()) ; }
     if ( ! $func->opened_braces() ) { next ; }
-    if ( $func->braces_match() )    { &save_function() ; &reset_variables ; next ; }
 
     # Scan the line for multiple things to help build YAML data with later.
     &add_options( $_ )  ;
     &add_tag( $_ )      ;
     &add_variable( $_ ) ;
+    &add_tools( $_ )    ;
+
+    # If the braces match, save and leave.
+    if ( $func->braces_match() ) { &save_function() ; &reset_variables ; next ; }
   }
   close( $fh );
 }
@@ -116,14 +125,14 @@ sub load_files {
   foreach ( @ARGV ) { push ( @FILES, $_ ) ; }
   if ( $#FILES ne -1 ) { return 0 ; }
 
-  # If nothing was in ARGV above, try to load files from LIB_DIR.
-  @FILES = split("\n", `find $LIB_DIR -type f -iname '*.sh'` ) ;
+  # If nothing was in ARGV above, try to load files from SBT_DIR.
+  @FILES = split("\n", `find $SBT_DIR -type f -iname '*.sh'` ) ;
 }
 
 sub preflight_checks {
   # Do the files and directories we need exist?
-  if ( ! -d $LIB_DIR ) { &fatal($E_IO_FAILURE, "Cannot find lib dir and no specific files listed.")  ; }
-  if ( ! -r $LIB_DIR ) { &fatal($E_IO_FAILURE, "Cannot read lib dir.")                               ; }
+  if ( ! -d $SBT_DIR ) { &fatal($E_IO_FAILURE, "Cannot find sbt dir and no specific files listed.")  ; }
+  if ( ! -r $SBT_DIR ) { &fatal($E_IO_FAILURE, "Cannot read sbt dir.")                               ; }
   if ( ! -d $DOC_DIR ) { &fatal($E_IO_FAILURE, "Cannot find doc dir specified: ${DOC_DIR}.")         ; }
   if ( ! -w $DOC_DIR ) { &fatal($E_IO_FAILURE, "Cannot write to the doc dir specified: ${DOC_DIR}.") ; }
 
@@ -157,7 +166,7 @@ sub save_function {
   }
 
   # Setup file path and try to open the handle.
-  my $file = $DOC_DIR . '/' . $func->name() ;
+  my $file = $DOC_DIR . '/' . $func->name() . '.yaml' ;
   my $file_handle ;
   if ( -f $file ) {
     &print_so_verbose('File exists, overwriting: ' . $file) ;
@@ -189,8 +198,16 @@ sub save_function {
   foreach ( $func->options() ) {
     print $file_handle '  ' . $_ . ': ' . $func->options($_) . "\n"     or &fatal($E_IO_FAILURE, "Failure writing line to file.");
   }
+  # -- Required Tools
+  print $file_handle "\nrequired_tools:\n"                              or &fatal($E_IO_FAILURE, "Failure writing line to file.");
+  foreach ( split /,/, $func->tools() ) {
+    print $file_handle '  - ' . $_ . "\n"                               or &fatal($E_IO_FAILURE, "Failure writing line to file.");
+  }
   # -- Thread Safe
   print $file_handle "\nthread_safe: " . $func->thread_safe() . "\n"    or &fatal($E_IO_FAILURE, "Failure writing line to file.");
+  # -- Allow Indirect Output
+  print $file_handle "\nallow_indirect_output: "                        or &fatal($E_IO_FAILURE, "Failure writing line to file.");
+  print $file_handle $func->indirect_output() . "\n"                    or &fatal($E_IO_FAILURE, "Failure writing line to file.");
   # -- Variables
   print $file_handle "\nvariables:\n"                                   or &fatal($E_IO_FAILURE, "Failure writing line to file.");
   foreach my $variable ( $func->variables() ) {
@@ -219,13 +236,27 @@ sub is_new_function {
 
 sub reset_variables {
   # This should be called when we have a loaded function object.
-  $inside_getopts = "" ;
+  $inside_getopts = '' ;
   $getopts_offset = 0  ;
-  $last_opt_name  = "" ;
+  $last_opt_name  = '' ;
+  $saw_return     = '';
 
   # Initialize at least a new set of soft-required tags for function.
   undef $func ;
   $func = Function->new();
+}
+
+sub add_tools {
+  # Search for core_ToolExists to build a list of required tools
+  if ( /core_ToolExists(([\s]+['"]?[a-zA-Z0-9_\-.\/]+['"]?)+)/ ) {
+    TOOL: foreach my $tool ( split / /, $1 ) {
+      if ( ! $tool ) { next ; }
+      foreach my $existing_tool ( split /,/, $func->tools() ) {
+        if ( $existing_tool eq $tool ) { next TOOL ; }
+      }
+      $func->tools( $tool ) ;
+    }
+  }
 }
 
 sub add_variable {
@@ -326,6 +357,7 @@ sub add_options {
   # Process short opts
   if ( $SHORT_OPTS ) {
     foreach my $opt ( split //, $SHORT_OPTS ) {
+      if ( $opt eq 'R' ) { $func->indirect_output('true')    ;        }
       if ( $opt eq ':' ) { $func->options($last_opt, 'true') ; next ; }
       $func->options($opt, 'false') ;
       $last_opt = $opt ;

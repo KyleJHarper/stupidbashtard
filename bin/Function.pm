@@ -1,5 +1,9 @@
 #!/usr/bin/perl
 
+# Copyright 2013 Kyle Harper
+# Licensed per the details in the LICENSE file in this package.
+
+
 package Function;
 
 # +---------------+
@@ -11,19 +15,21 @@ sub new {
   bless $self;
 
   # Initialize empty strings for keys
-  $self->{"argument_tags"} = {};
-  $self->{"basic_tags"}    = {};
-  $self->{"exit_tags"}     = {};
-  $self->{"options"}       = {};
-  $self->{"option_tags"}   = {};
-  $self->{"variables"}     = {};
-  $self->{"variable_tags"} = {};
+  $self->{'argument_tags'} = {};
+  $self->{'basic_tags'}    = {};
+  $self->{'exit_tags'}     = {};
+  $self->{'options'}       = {};
+  $self->{'option_tags'}   = {};
+  $self->{'variables'}     = {};
+  $self->{'variable_tags'} = {};
 
   # Set defaults if none provided
-  if ( ! $self->{"name"} )         { $self->{"name"} = ""            ; }
-  if ( ! $self->{"closedbraces"} ) { $self->{"closedbraces"} = 0     ; }
-  if ( ! $self->{"openedbraces"} ) { $self->{"openedbraces"} = 0     ; }
-  if ( ! $self->{"thread_safe"}  ) { $self->{"thread_safe"} = "true" ; }
+  if ( ! $self->{'closedbraces'}    ) { $self->{'closedbraces'}    = 0       ; }
+  if ( ! $self->{'indirect_output'} ) { $self->{'indirect_output'} = 'false' ; }
+  if ( ! $self->{'name'}            ) { $self->{'name'}            = ''      ; }
+  if ( ! $self->{'openedbraces'}    ) { $self->{'openedbraces'}    = 0       ; }
+  if ( ! $self->{'required_tools'}  ) { $self->{'required_tools'}  = ''      ; }
+  if ( ! $self->{'thread_safe'}     ) { $self->{'thread_safe'}     = 'true'  ; }
 
   # Return me
   return $self;
@@ -38,6 +44,13 @@ sub name {
   my $self = shift;
   if ( scalar(@_) == 1) { $self->{"name"} = shift; }
   return $self->{"name"};
+}
+
+# -- Indirect Output flag
+sub indirect_output {
+  my $self = shift;
+  if ( scalar(@_) == 1) { $self->{"indirect_output"} = shift; }
+  return $self->{"indirect_output"};
 }
 
 # -- Count of opened braces outside of any quotations
@@ -59,6 +72,14 @@ sub thread_safe {
   my $self = shift;
   if ( scalar(@_) == 1) { $self->{"thread_safe"} = shift; }
   return $self->{"thread_safe"};
+}
+
+# -- Tools required for the function.  A simple comma-separated list is fine.
+sub tools {
+  my $self = shift;
+  my $tool = shift;
+  if ( $tool ) { $self->{"required_tools"} .= $tool . ',' ; }
+  return $self->{"required_tools"};
 }
 
 # -- Tags
