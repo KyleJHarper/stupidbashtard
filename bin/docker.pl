@@ -380,8 +380,8 @@ sub add_tag {
   my $tag_text = "" ;
 
   # If we're in getopts we need to set the last_opt_name, if it changed.
-  if ( $inside_getopts && /^[\s]*['"]?(${OPT_CC}+)['"]?[\s]+\)/ )           { $last_opt_name = $1  ; }
-  if ( $getopts_offset gt $func->opened_braces() - $func->closed_braces() ) { $inside_getopts = "" ; }
+  if ( $inside_getopts && /^[\s]*(([\s]*['"]?${OPT_CC}+['"]?[\s]*\|?)+)\)/ ) { $last_opt_name = $1  ; }
+  if ( $getopts_offset gt $func->opened_braces() - $func->closed_braces() )  { $inside_getopts = "" ; }
 
   # Try to get a tag name and text.  Leave if we don't get a name.
   if ( ! /#@[\S]+/ ) { return 0 ; }
@@ -391,7 +391,11 @@ sub add_tag {
   # If name is 'opt_', this is an inferred getopts tag.  We need to read current opt, otherwise we're screwed.
   if ( $tag_name eq "opt_" ) {
     if ( ! $last_opt_name ) { &print_se($func->name() . " - Implied opt tag'" . '#@opt_' . "' found, but cannot infer the option name on line $line_num.\n") ; return 0 ; }
-    $tag_name .= $last_opt_name ;
+    foreach ( split /\|/, $last_opt_name ) {
+      s/(['"]|[\s])//g;
+      $func->tags('option', $_, $tag_text . "\n");
+    }
+    return 1;
   }
   if ( $tag_name =~ /^opt_${OPT_CC}+/ ) {
     $func->tags('option', substr($tag_name, 4), $tag_text . "\n");

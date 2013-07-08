@@ -469,19 +469,17 @@ function doc_examples_99-ComplexZeldaLongOpts {
   final_value=''                         #@$ The final value to expose to the caller after we exit. (Note: Docker will flag as by-ref.)
 
   # Process options
-  while core_getopts ":D:hv" opt 'data,help,verbose'; do
+  while core_getopts ":D:hv" opt 'help,verbose'; do
     case $opt in
-      D  ) #@opt_ Add bonus items to the index_array variable.
-           #@opt_ Note, this option can be specified multiple times, so always concatenate the array.
-           index_array+=("${OPTARG}")
-           ;;
-      h  ) #@opt_     Display an error and return non-zero if the user tries to use -h for this function.
-           #@opt_help Display an error and return non-zero if the user tries to use -h for this function.
-           echo 'No help exists for this function yet.' >&2
-           return ${E_GENERIC}
-           ;;
-      v  ) VERBOSE=true ;; #@opt_ Change the verbose flag to true so we can send more output to the caller.
-      \? ) echo "Invalid option: -$OPTARG" >&2 ; return ${E_GENERIC} ;;
+      D           ) #@opt_ Add bonus items to the index_array variable.
+                    index_array+=("${OPTARG}")
+                    ;;
+      h|help      ) #@opt_     Display an error and return non-zero if the user tries to use -h for this function.
+                    echo 'No help exists for this function yet.' >&2
+                    return ${E_GENERIC}
+                    ;;
+      v | verbose ) VERBOSE=true ;; #@opt_ Change the verbose flag to true so we can send more output to the caller.
+      \?          ) echo "Invalid option: -$OPTARG" >&2 ; return ${E_GENERIC} ;;
     esac
   done
 

@@ -100,7 +100,7 @@ pass
 
 # Generate the test_function yaml file and make sure the MD5 matches.
 cmd="${d} ../sbt/test_function.sh"
-KNOWN_SUM='7a7ae74a617f38476ba1d17eed22f37a'
+KNOWN_SUM='d76063fc223de7f5aa549b14f672023e'
 echo -n "Test ${test_number}: complete function output (YAML file):  "
 $cmd >/dev/null 2>/dev/null
 [ $? -eq ${E_GOOD} ] || fail
