@@ -1,5 +1,15 @@
 #!/bin/bash
 
-bob='--bob-hope'
+#./docker.sh
+#./core.sh
 
-[[ "${bob}" =~ ^--[a-zA-Z0-9][a-zA-Z0-9-]*$ ]] && echo "rawr"
+
+while getopts 'ab:c' opt ; do
+  case "${opt}" in
+    a ) temp='' ;;
+    b ) [ -z "${OPTARG}" ] ;;
+    c ) temp='' ;;
+#    * ) echo "Unknown option -${opt}" >&2 ;;
+  esac
+done
+
