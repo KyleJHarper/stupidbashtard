@@ -4,12 +4,12 @@
 #./core.sh
 
 
-while getopts 'ab:c' opt ; do
-  case "${opt}" in
-    a ) temp='' ;;
-    b ) [ -z "${OPTARG}" ] ;;
-    c ) temp='' ;;
-#    * ) echo "Unknown option -${opt}" >&2 ;;
-  esac
-done
 
+bob='-abcd'
+
+echo "'${bob:0:1}'"
+echo "'${bob:1:1}'"
+echo "'${bob:2:1}'"
+echo "'${bob:3:1}'"
+echo "'${bob:4:1}'"
+echo "'${bob:5:1}'"

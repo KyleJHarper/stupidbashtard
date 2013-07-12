@@ -5,7 +5,6 @@ function pass {
   local GREEN_F="${ESC}1;32m"
   local NORM="${ESC}0m"
   echo -e "${GREEN_F}SUCCESS${NORM}"
-  let test_number++
   return 0
 }
 
@@ -15,6 +14,19 @@ function fail {
   local NORM="${ESC}0m"
   echo -e "${RED_F}FAILURE (item $1)${NORM}"
   exit 1
+}
+
+function new_test {
+  let test_number++
+  printf '%-11s%6s%-s' "    * (Test " "${function_number}.${test_number})" "  $1"
+  return 0
+}
+
+function new_function {
+  test_number=0
+  let function_number++
+  echo ''
+  echo "  --- $1"
 }
 
 E_GOOD=0
@@ -27,7 +39,8 @@ E_OH_SNAP=255
 HERE="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 BIN_DIR="${HERE}/../bin"
 TMP_FILE="/tmp/$(uuidgen)"
-test_number=1
+test_number=0
+function_number=0
 
 echo
 echo "$0"
