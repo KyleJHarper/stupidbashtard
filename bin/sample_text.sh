@@ -1,5 +1,8 @@
 #!/bin/bash
 
+# Copyright 2013 Kyle Harper
+# Licensed per the details in the LICENSE file in this package.
+
 function doc_examples_43-ParameterVariableTags {
   #@Description  In this function we will accept $1 and $2 parameters.  We will assign descriptions to them.
   #@Description  These must always be federated, as there is no declaration for them.

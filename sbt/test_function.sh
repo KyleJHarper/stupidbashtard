@@ -1,5 +1,8 @@
 #!/bin/bash
 
+# Copyright 2013 Kyle Harper
+# Licensed per the details in the LICENSE file in this package.
+
 function test_function {
   #@Author Hank BoFrank
   #@Date   2013.03.04

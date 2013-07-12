@@ -1,5 +1,9 @@
 #!/bin/bash
 
+# Copyright 2013 Kyle Harper
+# Licensed per the details in the LICENSE file in this package.
+
+
 #@Author    Kyle Harper
 #@Date      2013.07.07
 #@Version   0.1-beta

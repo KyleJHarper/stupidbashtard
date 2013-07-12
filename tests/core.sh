@@ -1,5 +1,8 @@
 #!/bin/bash
 
+# Copyright 2013 Kyle Harper
+# Licensed per the details in the LICENSE file in this package.
+
 # Source shared
 . __shared.inc.sh
 . ../sbt/core.sh

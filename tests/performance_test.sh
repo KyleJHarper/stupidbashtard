@@ -1,5 +1,8 @@
 #!/bin/bash
 
+# Copyright 2013 Kyle Harper
+# Licensed per the details in the LICENSE file in this package.
+
 if [ -z "${1}" ] ; then
   echo "You didn't specify a test to do metrics on." >&2
   exit 1
