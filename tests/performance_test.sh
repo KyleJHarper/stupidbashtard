@@ -13,14 +13,18 @@ if [ ! -f "${1}" ] ; then
   exit 1
 fi
 
+
+
 i=0
 ITERATIONS=100
+TEST_FILE="${1}"
+RESULTS_FILE="performance_logs/$(basename ${TEST_FILE})_results.log"
 time (while [ ${i} -lt ${ITERATIONS} ] ; do
-        if ! ./${1} >/dev/null ; then
+        if ! ./${TEST_FILE} >/dev/null ; then
           echo "Test failed.  Fix test before trying to do a performance test." >&2
           exit 1
         fi
         let i++
-        printf '\r%6s' "      " "${i}%"
+        printf '\r%6s' "      " "${i}%" >&2
       done)
 echo ''

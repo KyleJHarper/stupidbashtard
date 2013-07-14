@@ -15,25 +15,31 @@
 #
 # -- Initialize Globals for this Namespace
 #
-__SBT_NONOPT_ARGS=()
+__SBT_SHORT_OPTIND=1      #@$ Tracks the position of the short option if they're side by side -abcd etc.  Unique to SBT.
+__SBT_NONOPT_ARGS=()      #@$ Holds all arguments sent to getopts that are not part of the switch syntax.  Unique to SBT.  Similar to BASH_ARGV, only better.  Can store unlimited options, BASH_ARGV stores a max of 10, and in reverse order which is unintuitive when processing as-passed-in.
+OPTIND=1                  #@$ Tracks the position of the argument we're reading.  Bash internal.
+OPTARG=''                 #@$ Holds either the switch active in getopts, or the value sent to the switch if it's compulsory.  Bash internal.
+OPTERR=1                  #@$ Flag to determine if getopts should report invalid switches itself or rely in case statement in caller.  Bash internal.
 
 
 
 function core_getopts {
-  #@Description  Largely backward compatible replacement for the built-in getopts routine in Bash.  It allows long options, that's the only change.  Long and short options can use a-z A-Z and 0-9 (and hyphens for long opts).
-  #@Description  Long options are comma separated.  Adding a colon after an option (but before the comma) implies an argument should follow; same as the built-in getopts.
+  #@Description  Largely backward compatible replacement for the built-in getopts routine in Bash.  It allows long options, that's the only major change.  Long and short options can use a-z A-Z and 0-9 (and hyphens for long opts, but long opt names cannot start or end with a hyphen).  Long options are comma separated.  Adding a colon after an option (but before the comma) implies an argument should follow; same as the built-in getopts.
   #@Description  -
-  #@Description  We will use positional numeric parameters because BASH_ARGV only exists when extdebug is on and it pushes/pops up to $9.  Positionals go up to ${10}+ if you use braces for proper interpolation.
+  #@Description  We will use positional numeric parameters because BASH_ARGV only exists when extdebug is on and it pushes/pops up to $9.  Positionals go up to ${10}+ if you use braces for proper interpolation.  Additional non-option arguments are stored in __SBT_NONOPT_ARGS to make life easier.  You're welcome.
   #@Description  -
-  #@Description  This breaks the typical naming convention (upper/proper-casing  latter segement of function name) on purpose.
+  #@Description  This function breaks the typical naming convention (upper/proper-casing  latter segement of function name) on purpose.  It makes it more in line with the internal getopts naming convention, plus it makes scanning with Docker easier.
   #@Description  -
   #@Description  A note about the OPTIND global.  Bash uses this and so do we.  But we have added a niceness feature.  This is it:
-  #@Description  Ok... this will send OPTIND back to default when we're done.  The normal getopts doesn't do this niceness.  I deviate here because the only time it'll conflict is if getopts case statement in a caller hits a function which does its own getopts. BUT!!!  For this to work in normal bash getopts, you need:  local OPTIND=1 anyway.
+  #@Description  SBT's getopts will set OPTIND back to default when we're done.  The normal getopts doesn't do this niceness.  I deviate here because the only time it'll conflict is if a getopts case statement in a caller hits a function which does its own getopts. BUT!!!  For this to work in normal bash getopts, you need:  local OPTIND=1 anyway.  So we fix add one niceness without affecting anticipated logic.
 
-  #@$1  The list short options, same as bash built-in getopts.
+  #@Date  2013.07.13
+
+  #@$1  The list short options, same format as bash built-in getopts.
   #@$2  Textual name of the variable to send back to the caller, same as built-in getopts.
-  #@$3  A list of the allowed long options.  Even if it's blank, it must be passed: ""
-  #@$4  The arguments sent to the caller and now passed to us.  It should always be passed quoted, like so:  "$@"
+  #@$3  A list of the allowed long options.  Even if it's blank, it must be passed: "" or ''
+  #@$4  The arguments sent to the caller and now passed to us.  It should always be passed quoted, like so:  "$@"  (NOT "$*").
+  #@$4  You must use the 'at' symbol, not asterisk.  Otherwise the positionals will be merged into a single word.
 
   # Make sure we have positional arguments 1 2 3 and 4.
   if [ -z "${4}" ] || [ -z "${2}" ] || [ -z "${1}" ] ; then
@@ -42,17 +48,16 @@ function core_getopts {
   fi
 
   # Clean out OPTARG
-  OPTARG=''             #@$ Stores the value for any options require an additional argument.
+  OPTARG=''
   local __OPT=''        #@$ Holds the positional argument based on OPTIND.
   local temp_opt        #@$ Used for parsing against __OPT to find a match.
   local -i i            #@$ Loop control, that's it.
   local MY_OPTIND       #@$ Holds the correctly offset OPTIND for grabbing arguments (because this function absorbs 1, 2, and 3 for control).
-                        #@$SHORT_OPTIND Index of shortopts if multiple are passed in a single switch: -abc
 
   # If we're on the first index, turn off OPTERR if our prescribed opts start with a colon.
   if [ ${OPTIND} -eq 1 ] ; then
     OPTERR=1
-    SHORT_OPTIND=1
+    __SBT_SHORT_OPTIND=1
     if [ "${1:0:1}" == ':' ] || [ "${3:0:1}" == ':' ] ; then
       OPTERR=0
     fi
@@ -76,16 +81,16 @@ function core_getopts {
       __OPT="${__OPT%%=*}"
     fi
 
-    # If __OPT is a short opt with muliple switches at once, read/modify the SHORT_OPTIND and __OPT.
+    # If __OPT is a short opt with muliple switches at once, read/modify the __SBT_SHORT_OPTIND and __OPT.
     # Also need to decrement OPTIND, it can't have an optarg unless it's the last one.
     if [[ "${__OPT}" =~ ^-[a-zA-Z0-9][a-zA-Z0-9]+ ]] ; then
-      if [ -z "${__OPT:${SHORT_OPTIND}:1}" ] ; then
-        SHORT_OPTIND=1
+      if [ -z "${__OPT:${__SBT_SHORT_OPTIND}:1}" ] ; then
+        __SBT_SHORT_OPTIND=1
         break
       fi
-      __OPT="-${__OPT:${SHORT_OPTIND}:1}"
-      let SHORT_OPTIND++
-      [ ! -z "${__OPT:${SHORT_OPTIND}:1}" ] && let OPTIND--
+      __OPT="-${__OPT:${__SBT_SHORT_OPTIND}:1}"
+      let __SBT_SHORT_OPTIND++
+      [ ! -z "${__OPT:${__SBT_SHORT_OPTIND}:1}" ] && let OPTIND--
     fi
 
     ##############################################
@@ -175,7 +180,6 @@ function core_Error {
   #@Description  Still under development, needs a lot of work.
 
   #@Date    2013.07.09
-  #@Version alpha
 
   local opt=''                #@$ Temporary variable to hold option for getopts parsing.
   local switches=''           #@$ The switches to send to echo.

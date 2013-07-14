@@ -1,3 +1,45 @@
+* 5c8c32669816582a48db3fe8586b10bc7198c25c
+|   Author: kyle
+|   Date: 2013-07-12 00:10:26 -0500
+|   Comment: Added a check for license declaration in all files.  Probably overkill but meh.  It was a quick fix.
+| 
+|  
+* 18f05eb99623d7f81325f79162ff9cd4081f907c
+|   Author: kyle
+|   Date: 2013-07-11 23:49:56 -0500
+|   Comment: Added core_Error and core_getopts to the sbt core.sh namespace.  I'm going to need getopts immensely, and core is always required.  So this will help.  Wrote several tests to help with the core namespace.
+| 
+|  
+* f5986c5e8e19c2c74e1d95c22a58498ba47ce0ef
+|   Author: kyle
+|   Date: 2013-07-10 05:21:29 -0500
+|   Comment: Finally got core_getopts largely finished.  The actual test and loop structures bug me for some reason, but I think that's just the I-hate-nested-if-blocks person in me.  Now that I've solidified the outcome, I might be able to step back and improve the code.  That said, it's realllly fast in my testing.  Still need to finish writing unit tests for it.  These are getting big too... might need to write entire scripts, one for each function rather than for a whole namespace.
+| 
+|  
+* 92bdb81c988d8e55a8d4ecbf8173137c57bbbf7c
+|   Author: kyle
+|   Date: 2013-07-08 21:41:21 -0500
+|   Comment: Wrote the majority of the core_getopts replacement function.  Still needs fine details and then actual testing.  Need to research any other built-in things which happen to help with backward compatibility.  I'm also considering writing a reset of some sort so you can call getopts multiple times (e.g. function calls with getopts in them) without having to set a local OPTIND or whatever... not sure if this is a good idea or not.  Might be best to always reset with a local OPTIND=1 declaration.  When finished, need to write tests for it.
+| 
+|  
+* 756c77b3b5adc190efd830b8c0859b7dc28fac92
+|   Author: kyle
+|   Date: 2013-07-08 15:13:55 -0500
+|   Comment: Docker now supports mulitple options on the same line of a case statement, for use with implied tags.  Fixes #1.
+| 
+|  
+* f97a4d6281b54cdec1480cbddcc2ed824d951826
+|   Author: kyle
+|   Date: 2013-07-07 22:04:05 -0500
+|   Comment: Added a basic README file, nothing close to verbose enough.  Removed a superfluous log file.
+| 
+|  
+* b4d47cff2e98b2e0184b67c9e4daedbba1fbde6b
+|   Author: kyle
+|   Date: 2013-07-07 20:35:28 -0500
+|   Comment: Renamed the namespaces folder to sbt, since that's where the core will live.  Created a shell script to generate a changelog file from the git history.  Update docker to reflect a few changes, mostly cosmetic.  Updated the docker.sh test script to ensure it can successfully scan a complex function and generate the correct file.  Also added the LICENSE and NOTICE files, though I'm pretty sure I'm using NOTICE file incorrectly.
+| 
+|    
 *   056291d3acffac783cfa00ef7f4f6532ea13f2f0
 |\    Author: kyle
 | |   Date: 2013-07-06 20:21:51 -0500
