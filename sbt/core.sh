@@ -9,7 +9,7 @@
 #@Version   0.1-beta
 #@Namespace core
 
-#@Description  These functions serve as some of the primative tools and requirements for all of SBT.  This will likely become a large namespace.
+#@Description  These functions serve as some of the primative tools and requirements for all of SBT.  This will likely become a large namespace, but attempts should be made to keep it as small as possible.
 
 
 #
@@ -21,6 +21,31 @@ OPTIND=1                  #@$ Tracks the position of the argument we're reading.
 OPTARG=''                 #@$ Holds either the switch active in getopts, or the value sent to the switch if it's compulsory.  Bash internal.
 OPTERR=1                  #@$ Flag to determine if getopts should report invalid switches itself or rely in case statement in caller.  Bash internal.
 
+
+
+function core_Error {
+  #@Description  Mostly for internal use.  It allows SBT to present errors, warnings, and similar in a concise fashion.
+  #@Description  -
+  #@Description  Still under development, needs a lot of work.
+
+  #@Date    2013.07.09
+
+  local opt=''                #@$ Temporary variable to hold option for getopts parsing.
+  local switches=''           #@$ The switches to send to echo.
+  local OPTIND=1              #@$ Resetting OPTIND for this scope to handle getopts properly.
+  local __SBT_NONOPT_ARGS=()  #@$ Capture non-opt args for sending out with echo
+
+  while core_getopts ':en' opt '' "$@" ; do
+    case "${opt}" in
+      'e' ) switches+=" -${opt}" ;;
+      'n' ) switches+=" -${opt}" ;;
+      *   ) echo "Invalid option sent to core_Error: ${opt}" >&2 ; return 1 ;;
+    esac
+  done
+  shift $(( ${OPTIND} - 1 ))
+
+  echo ${switches} "${__SBT_NONOPT_ARGS[@]}" >&2
+}
 
 
 function core_getopts {
@@ -174,26 +199,3 @@ function core_getopts {
   return 1  # This should never be reached
 }
 
-function core_Error {
-  #@Description  Mostly for internal use.  It allows SBT to present errors, warnings, and similar in a concise fashion.
-  #@Description  -
-  #@Description  Still under development, needs a lot of work.
-
-  #@Date    2013.07.09
-
-  local opt=''                #@$ Temporary variable to hold option for getopts parsing.
-  local switches=''           #@$ The switches to send to echo.
-  local OPTIND=1              #@$ Resetting OPTIND for this scope to handle getopts properly.
-  local __SBT_NONOPT_ARGS=()  #@$ Capture non-opt args for sending out with echo
-
-  while core_getopts ':en' opt '' "$@" ; do
-    case "${opt}" in
-      'e' ) switches+=" -${opt}" ;;
-      'n' ) switches+=" -${opt}" ;;
-      *   ) echo "Invalid option sent to core_Error: ${opt}" >&2 ; return 1 ;;
-    esac
-  done
-  shift $(( ${OPTIND} - 1 ))
-
-  echo ${switches} "${__SBT_NONOPT_ARGS[@]}" >&2
-}
