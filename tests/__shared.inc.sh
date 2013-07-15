@@ -21,15 +21,13 @@ function fail {
 
 function new_test {
   let test_number++
-  printf '%-11s%6s%-s' "    * (Test " "${function_number}.${test_number})" "  $1"
+  printf '%-8s%3s%-s' "    * (Test " "${test_number})" "  $1"
   return 0
 }
 
-function new_function {
-  test_number=0
-  let function_number++
-  echo ''
-  echo "  --- $1"
+function here {
+  echo -n "$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+  return 0
 }
 
 E_GOOD=0
@@ -39,11 +37,11 @@ E_BAD_SYNTAX=20
 E_BAD_INPUT=30
 E_OH_SNAP=255
 
-HERE="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
-BIN_DIR="${HERE}/../bin"
+BIN_DIR="$(here)/../bin"
 TMP_FILE="/tmp/$(uuidgen)"
 test_number=0
-function_number=0
+iteration=100
+MAX_ITERATIONS=100
 
 echo
-echo "$0"
+echo "--- $(basename $0)"
