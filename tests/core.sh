@@ -134,65 +134,59 @@ function opts {
 ###########
 
 # Table of Contents
-#   1.  core_Error
+#   1.  core_LogError (same tests as core_LogVerbose)
 #   2.  core_getopts
 
 
-# +--------------------------#
-# |  Section 1.  core_Error  |
-# +--------------------------#
-new_function 'core_Error'
+# +-----------------------------+
+# |  Section 1.  core_LogError  |
+# +-----------------------------+
+new_function 'core_LogError'
 #
 # Can we send a message (redirected to dev null) without getting a non-zero code?
 #
-new_test "Sending a message to std err.  This should result in 1 line and a fixed MD5: "
-[ $( core_Error 'rawr' 2>&1 | md5sum | cut -d' ' -f 1 ) == '965cc7027c64265a2e4bd602dfcc85b1' ] || fail 1
-[ $( core_Error 'rawr' 2>&1 | wc -l ) -eq 1 ]                                                   || fail 2
+new_test "Sending a message to std err.  This should result in 1 line: "
+[ $( core_LogError 'rawr' 2>&1 | wc -l ) -eq 1 ]   || fail 1
 pass
 
 
 #
 # The -n switch should change the output
 #
-new_test "Sending the '-n' switch, preventing a newline.  This should result in 0 lines and a fixed MD5: "
-[ $( core_Error -n 'rawr' 2>&1 | md5sum | cut -d' ' -f 1 ) == '6f10ae4af2b1216275234f1b4f4040ef' ] || fail 1
-[ $( core_Error -n 'rawr' 2>&1 | wc -l ) -eq 0 ]                                                   || fail 2
+new_test "Sending the '-n' switch, preventing a newline.  This should result in 0 lines: "
+[ $( core_LogError -n 'rawr' 2>&1 | wc -l ) -eq 0 ]  || fail 1
 pass
 
 
 #
 # The -e switch will allow interpretation of escapes.  Going to put several lines in
 #
-new_test "Sending the '-e' switch, adding newlines.  This will result in 4 lines and a fixed MD5: "
-[ $( core_Error -e 'rawr\n\n\n' 2>&1 | md5sum | cut -d' ' -f 1 ) == '4d2d953bc7f9ab59064f030b6076fdd6' ] || fail 1
-[ $( core_Error -e 'rawr\n\n\n' 2>&1 | wc -l ) -eq 4 ]                                                   || fail 2
+new_test "Sending the '-e' switch, adding newlines.  This will result in 4 lines: "
+[ $( core_LogError -e 'rawr\n\n\n' 2>&1 | wc -l ) -eq 4 ]  || fail 1
 pass
 
 
 #
 # The -n and -e switches combined should work.  Going to put one line in to match MD5 from test 1
 #
-new_test "Sending the '-e' to send newline and '-n' to remove one.  Should match MD5 from test 1: "
-[ $( core_Error -n -e 'rawr\n' 2>&1 | md5sum | cut -d' ' -f 1 ) == '965cc7027c64265a2e4bd602dfcc85b1' ] || fail 1
-[ $( core_Error -n -e 'rawr\n' 2>&1 | wc -l ) -eq 1 ]                                                   || fail 2
+new_test "Sending the '-e' to send newline and '-n' to remove one.  Should mimic test 1: "
+[ $( core_LogError -n -e 'rawr\n' 2>&1 | wc -l ) -eq 1 ]  || fail 1
 pass
 
 
 #
-# The -n and -e switches combined should work.  Going to put 5 lines in this time to match MD5 from test 2
+# The -n and -e switches combined should work.  Going to put 5 lines in this time to match MD5 from test 3
 #
-new_test "Sending the '-e' to send 4 newlines and '-n' to remove auto-newline.  Should match MD5 from test 3: "
-[ $( core_Error -n -e 'rawr\n\n\n\n' 2>&1 | md5sum | cut -d' ' -f 1 ) == '4d2d953bc7f9ab59064f030b6076fdd6' ] || fail 1
-[ $( core_Error -n -e 'rawr\n\n\n\n' 2>&1 | wc -l ) -eq 4 ]                                                   || fail 2
+new_test "Sending the '-e' to send 4 newlines and '-n' to remove auto-newline.  Should match test 3: "
+[ $( core_LogError -n -e 'rawr\n\n\n\n' 2>&1 | wc -l ) -eq 4 ]  || fail 1
 pass
 
 
 #
 # Multiple strings to the function should work because of internally handled __SBT_NONOPT_ARGS
 #
-new_test "Sending 3 different arguments.  Should be combined by __SBT_NONOPT_ARGS and have a fixed MD5: "
-[ $( core_Error -n -e 'rawr\n\n\n\n' 'hello' 'whee' 2>&1 | md5sum | cut -d' ' -f 1 ) == 'd9a339485867ef600d036c31673e5f3c' ] || fail 1
-[ $( core_Error -n -e 'rawr\n\n\n\n' 'hello' 'whee' 2>&1 | wc -l ) -eq 4 ]                                                   || fail 2
+new_test "Sending 3 different arguments.  Should be combined into 4 lines: "
+[ $( core_LogError -n -e 'rawr\n\n\n\n' 'hello' 'whee' 2>&1 | wc -l ) -eq 4 ]  || fail 1
 pass
 
 

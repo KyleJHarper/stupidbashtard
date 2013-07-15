@@ -20,7 +20,7 @@ ITERATIONS=100
 TEST_FILE="${1}"
 RESULTS_FILE="performance_logs/$(basename ${TEST_FILE})_results.log"
 time (while [ ${i} -lt ${ITERATIONS} ] ; do
-        if ! ./${TEST_FILE} >/dev/null ; then
+        if ! ./${TEST_FILE} >/dev/null 2>/dev/null ; then
           echo "Test failed.  Fix test before trying to do a performance test." >&2
           exit 1
         fi

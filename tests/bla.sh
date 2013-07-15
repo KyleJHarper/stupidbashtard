@@ -8,4 +8,13 @@
 
 
 
-echo "$(basename ${1})"
+function get_opts {
+  logger "line ${LINENO}: (verbose) ${FUNCNAME}:"
+}
+
+function logger {
+  echo "$@"
+}
+
+
+get_opts
