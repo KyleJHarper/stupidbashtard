@@ -1,3 +1,27 @@
+* f88e6f14d54e622ae52c0cbd20dda5c265cef2c9
+|   Author: kyle
+|   Date: 2013-07-15 17:53:26 -0500
+|   Comment: Federated the tests into individual files per function.  Also made the performance tests are now built-in loops to prevent extra time from re-running the whole script.  Also built a namespace file to still be able to test all the items in a namespace at once.
+| 
+|  
+* e0a918eceb28e5a4a3a826aaa87ca6b8a202b907
+|   Author: kyle
+|   Date: 2013-07-15 00:07:28 -0500
+|   Comment: Changed the logging up a bit, all messages go to std err.  Updated tests to disuse MD5 sum since line numbers will change.  Did some performance testing with a DEBUG/verbose mode.  Also watched a lot a movies, so didn't actually get much done.  Meh.
+| 
+|  
+* b484c675eb2b46be0536c11687c56f8a7a46c71d
+|   Author: kyle
+|   Date: 2013-07-13 23:25:01 -0500
+|   Comment: Moved core_Error in an effort to keep functions in alphabetical order from now on.
+| 
+|  
+* b7d51fb8f1cdba73ff482a781011358ef37e7ae5
+|   Author: kyle
+|   Date: 2013-07-13 22:53:14 -0500
+|   Comment: Minor tweaks to most things.  No functional changes to speak of.  Added a gitignore file to disallow tracking of doc folder items.
+| 
+|  
 * 5c8c32669816582a48db3fe8586b10bc7198c25c
 |   Author: kyle
 |   Date: 2013-07-12 00:10:26 -0500
