@@ -44,7 +44,7 @@ function core_getopts {
   #@$4  The arguments sent to the caller and now passed to us.  It should always be passed quoted, like so:  "$@"  (NOT "$*").
   #@$4  You must use the 'at' symbol, not asterisk.  Otherwise the positionals will be merged into a single word.
 
-  #Invocation and preflight checks.
+  # Invocation and preflight checks.
   core_LogVerbose 'Entering function.'
   if [ -z "${4}" ] || [ -z "${2}" ] || [ -z "${1}" ] ; then
     core_LogError "Invalid invocation of core_getopts."
@@ -236,17 +236,73 @@ function core_LogVerbose {
 
 
 function core_ToolExists {
-  #@Description  Uses various means such as 'which', $PATH searching, and so forth to try to find an executable program with the names given.
-  local __SBT_NONOPT_ARGS=()   #@$ Capture a list of tools for use.  Localize array since we'll only use it here.
+  #@Description  Find an executable program with the names given.  Variables are stored in __SBT_TOOL_LIST hash.  Help ensure portability.
+  #@Description  -
+  #@Description  SBT functions should never use this for tools in the known-dependencies list.  This is primarily: coreutils, grep, and perl.
+  #@Description  You may specify multiple tools to check for, but if you pass version checking switches they must apply to all tools for this call.  If version numbers, version invocation, or other switches are different for the tools, perform multiple calls in your caller.
+  #@Date  2013.07.15
+
+  # Variables
+  local __SBT_NONOPT_ARGS=()                #@$ Capture a list of tools for use.  Localize array since we'll only use it here.
+  local -i MAJOR=0                          #@$ Major version number
+  local -i MEDIUM=0                         #@$ Medium version number
+  local -i MINOR=0                          #@$ Minor version number
+  local EXACT=false                         #@$ Compare the version numbers exactly, not in a greater-than fashion
+  local VERSION_SWITCH='--version'          #@$ The switch syntax to present the version information string
+  local REGEX_PATTERN='\d+\.\d+([.]\d+)?'   #@$ The PCRE (grep -P) regex pattern to use to finding the version string.  By default MAJOR.MEDIUM only.
+  local tool=''                             #@$ Temp variable to hold tool name, kept in local scope.
+  local found_version=''                    #@$ Misc temp variable, kept in local scope.
+
+  # Invocation
+  core_LogVerbose 'Entering function.'
 
   # Get a list of options and commands to check for
-  while getopts ':' opt '' "$@" ; do
+  core_LogVerbose 'Checking options and loading tools to check into array.'
+  while core_getopts ':1:2:3:ev:' opt ':exact-match,major:,medium:,minor:,version-syntax' "$@" ; do
     case "${opt}" in
-      * ) echo "Invalid option for the core_ToolExists function:  ${opt}  (continuing)" >&2 ;;
+      '1' | 'major'          )
+      '2' | 'medium'         )
+      '3' | 'minor'          )
+      'e' | 'exact-match'    )
+      'r' | 'regex-pattern'  )
+      'v' | 'version-switch' )
+      *                      ) core_LogError "Invalid option for the core_ToolExists function:  ${opt}  (continuing)" ;;
     esac
   done
 
-#FINISH ME
-  # If we reach this point, we couldn't find one or more of the programs.
-  return 1;
+  core_LogVerbose 'Doing pre-flight checks to make sure all necessary options were passed.'
+# version info passed
+
+  core_LogVerbose "Checking for programs/tools.  Exact: ${EXACT}.  Version: ${MAJOR}.${MEDIUM}.${MINOR}."
+  for tool in ${__SBT_NONOPT_ARGS[@]} ; do
+    core_LogVerbose "Scanning existing tool list for an previously found match of: ${tool}"
+    if [ "${__SBT_TOOL_LIST[${tool}]}" == "${MAJOR}.${MEDIUM}.${MINOR}" ] ; then
+      core_LogVerbose 'Found an exact match.'
+      continue
+    fi
+    core_LogVerbose 'Not found.  Seeing if tool exists on our PATH anywhere.'
+    if ! ${tool} ${VERSION_SWITCH} >/dev/null 2>/dev/null ; then
+      core_LogError 'Could not find tool.  If caller is an SBT function, this is a problem as SBT includes all dependencies.  Please check lib directory and SBT invocation.'
+      return 1
+    fi
+    core_LogVerbose 'Trying to grab the version string for comparison.'
+    found_version="$(${tool} ${VERSION_SWITCH} | grep -oP '${REGEX_PATTERN}')"
+    if [ -z "${found_version}" ] ; then
+      core_LogError "Could not find a version string.  If caller is an SBT function, this shouldn't have happened."
+      return 1
+    fi
+    core_LogVerbose "Found the version string: '${found_version}'.  Comparing it now."
+    if ${EXACT} && [ ! "${found_version}" == "${MAJOR}.${MEDIUM}.${MINOR}" ; then
+      core_LogError 'Exact version match requested, but the versions do not match.  Failing.'
+      return 1
+    fi
+    if [ "$(echo -e "${found_version}\n${MAJOR}.${MEDIUM}.${MINOR}" | sort -V | head -n 1)" == "${found_version}" ] ; then
+      core_LogError 'Tool found is a lower version number than required version.'
+      return 1
+    fi
+    core_LogVerbose 'Found tool and it meets requirements!  Storing in __SBT_TOOL_LIST hash for faster future lookups.'
+    __SBT_TOOL_LIST["${tool}"]="${MAJOR}.${MEDIUM}.${MINOR}"
+  done
+  # If we reach this point, we found all the programs.
+  return 0
 }
