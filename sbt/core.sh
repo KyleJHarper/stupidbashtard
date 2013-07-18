@@ -258,41 +258,40 @@ function core_ToolExists {
 
   # Get a list of options and commands to check for
   core_LogVerbose 'Checking options and loading tools to check into array.'
-  while core_getopts ':1:2:3:ev:' opt ':exact-match,major:,medium:,minor:,version-syntax' "$@" ; do
+  while core_getopts ':1:2:3:er:v:' opt ':exact,major:,medium:,minor:,regex-pattern:,version-switch:' "$@" ; do
     case "${opt}" in
-      '1' | 'major'          )
-      '2' | 'medium'         )
-      '3' | 'minor'          )
-      'e' | 'exact-match'    )
-      'r' | 'regex-pattern'  )
-      'v' | 'version-switch' )
+      '1' | 'major'          ) MAJOR="${OPTARG}"          ;;  #@opt_  Sets the major version number for comparison.
+      '2' | 'medium'         ) MEDIUM="${OPTARG}"         ;;  #@opt_  Sets the medium version number for comparison.
+      '3' | 'minor'          ) MINOR="${OPTARG}"          ;;  #@opt_  Sets the minor version number for comparison.
+      'e' | 'exact'          ) EXACT=true                 ;;  #@opt_  Make the version match exactly, rather than greater-than.
+      'r' | 'regex-pattern'  ) REGEX_PATTERN="${OPTARG}"  ;;  #@opt_  Specify a custom regex pattern for getting the version number from program output.
+      'v' | 'version-switch' ) VERSION_SWITCH="${OPTARG}" ;;  #@opt_  Specify a custom switch to use to get version information from the program output.
       *                      ) core_LogError "Invalid option for the core_ToolExists function:  ${opt}  (continuing)" ;;
     esac
   done
 
   core_LogVerbose 'Doing pre-flight checks to make sure all necessary options were passed.'
-# version info passed
+  # No checks
 
   core_LogVerbose "Checking for programs/tools.  Exact: ${EXACT}.  Version: ${MAJOR}.${MEDIUM}.${MINOR}."
   for tool in ${__SBT_NONOPT_ARGS[@]} ; do
     core_LogVerbose "Scanning existing tool list for an previously found match of: ${tool}"
-    if [ "${__SBT_TOOL_LIST[${tool}]}" == "${MAJOR}.${MEDIUM}.${MINOR}" ] ; then
-      core_LogVerbose 'Found an exact match.'
-      continue
-    fi
-    core_LogVerbose 'Not found.  Seeing if tool exists on our PATH anywhere.'
-    if ! ${tool} ${VERSION_SWITCH} >/dev/null 2>/dev/null ; then
-      core_LogError 'Could not find tool.  If caller is an SBT function, this is a problem as SBT includes all dependencies.  Please check lib directory and SBT invocation.'
-      return 1
-    fi
-    core_LogVerbose 'Trying to grab the version string for comparison.'
-    found_version="$(${tool} ${VERSION_SWITCH} | grep -oP '${REGEX_PATTERN}')"
+    found_version="${__SBT_TOOL_LIST[${tool}]}"
     if [ -z "${found_version}" ] ; then
-      core_LogError "Could not find a version string.  If caller is an SBT function, this shouldn't have happened."
-      return 1
+      core_LogVerbose 'Not found.  Seeing if tool exists on our PATH anywhere.'
+      if ! ${tool} ${VERSION_SWITCH} >/dev/null 2>/dev/null ; then
+        core_LogError 'Could not find tool.  If caller is an SBT function, this is a problem as SBT includes all dependencies.  Please check lib directory and SBT invocation.'
+        return 1
+      fi
+      core_LogVerbose "Trying to grab the version string for comparison using:  ${tool} ${VERSION_SWITCH} | grep -oP '${REGEX_PATTERN}'"
+      found_version="$(${tool} ${VERSION_SWITCH} 2>/dev/null | grep -oP "${REGEX_PATTERN}")"
+      if [ -z "${found_version}" ] ; then
+        core_LogError "Could not find a version string in program output.  If caller is an SBT function, this shouldn't have happened."
+        return 1
+      fi
     fi
     core_LogVerbose "Found the version string: '${found_version}'.  Comparing it now."
-    if ${EXACT} && [ ! "${found_version}" == "${MAJOR}.${MEDIUM}.${MINOR}" ; then
+    if ${EXACT} && [ ! "${found_version}" == "${MAJOR}.${MEDIUM}.${MINOR}" ] ; then
       core_LogError 'Exact version match requested, but the versions do not match.  Failing.'
       return 1
     fi
@@ -301,7 +300,7 @@ function core_ToolExists {
       return 1
     fi
     core_LogVerbose 'Found tool and it meets requirements!  Storing in __SBT_TOOL_LIST hash for faster future lookups.'
-    __SBT_TOOL_LIST["${tool}"]="${MAJOR}.${MEDIUM}.${MINOR}"
+    __SBT_TOOL_LIST["${tool}"]="${found_version}"
   done
   # If we reach this point, we found all the programs.
   return 0
