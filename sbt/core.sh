@@ -131,6 +131,7 @@ function core_getopts {
               return 1
             fi
           fi
+          core_LogVerbose "Successfully captured a long option. Leaving returning 0."
           return 0
         fi
       done
@@ -139,7 +140,8 @@ function core_getopts {
         core_LogError "Invalid argument: --${__OPT}"
         return 1
       fi
-      # If we're not handling errors internally, set the return value and let the user handle it.  Set OPTARG too because bash does... odd.
+      # If we're not handling errors internally. Return success and let the user handle it.  Set OPTARG too because bash does... odd.
+      core_LogVerbose "Found an option that isn't in the list but I was told to shut up about it:  --${__OPT}"
       eval $2="\"${__OPT}\""
       eval OPTARG="\"${__OPT}\""
       return 0
@@ -173,6 +175,7 @@ function core_getopts {
               return 1
             fi
           fi
+          core_LogVerbose "Successfully captured a short option. Leaving returning 0."
           return 0
         fi
         let i++
@@ -182,7 +185,8 @@ function core_getopts {
         core_LogError "Invalid argument: -${__OPT}"
         return 1
       fi
-      # If we're not handling errors internally, set the return value and let the user handle it.  Set OPTARG too because bash does... odd.
+      # If we're not handling errors internally. Return success and let the user handle it.  Set OPTARG too because bash does... odd.
+      core_LogVerbose "Found an option that isn't in the list but I was told to shut up about it:  -${__OPT}"
       eval $2="\"${__OPT}\""
       eval OPTARG="\"${__OPT}\""
       return 0
@@ -190,7 +194,7 @@ function core_getopts {
 
     # If we're here, then the positional item exists, is non-blank, and is not an option.
     # This means it's a non-option param (file, etc) and we need to keep processing.
-    core_LogVerbose 'Argument sent not actually an option, storing in __SBT_NONOPT_ARGS array.'
+    core_LogVerbose 'Argument sent not actually an option, storing in __SBT_NONOPT_ARGS array and moving to next positional argument.'
     __SBT_NONOPT_ARGS+=( "${__OPT}" )
   done
   return 1  # This should never be reached

@@ -12,8 +12,8 @@
 [ "${1}" == 'performance' ] && iteration=1
 while [ ${iteration} -le ${MAX_ITERATIONS} ] ; do
   # -- Simple invocation with 1 argument
-  new_test "Sending a single argument for upper casing: "
-  [ "$( string_ToUpper 'rawr' )" == 'RAWR' ]   || fail 1
+  new_test "Sending a single argument for lower casing: "
+  [ "$( string_ToLower 'RAWR' )" == 'rawr' ]   || fail 1
   pass
 
 

@@ -1,3 +1,27 @@
+* fc351f32c6b4362149023f5db792238039c55416
+|   Author: kyle
+|   Date: 2013-07-18 22:54:32 -0500
+|   Comment: Finished the upper case tests.  Wrote a wrapper to handle case modification since most of them are similar and whatnot.  Wheee.  Still need to update the string_FormatCase tests and duplicate the string_ToLower tests.
+| 
+|  
+* 9dab19cacabe9df6e8f68456b91095bb3425237c
+|   Author: kyle
+|   Date: 2013-07-17 22:33:39 -0500
+|   Comment: Finished core_ToolExists and wrote some basic tests for it.  Seems to work as intended.  Woot.
+| 
+|  
+* c6249974d1e8e6f4dd5093b88decf2142da26280
+|   Author: kyle
+|   Date: 2013-07-16 23:01:23 -0500
+|   Comment: The core_ToolExists function is ready for tests now.  Likely needs some debugging.  Need to add a list of requirements to SBT docs for coreutils and grep.  If perl isn't GNU licensed, should consider using ToolExists for all SBT functions using it.  I want to keep the external programs used in SBT as minimal as possible.
+| 
+|  
+* 3411762d6b2b69f0d1bc37b7e19dff18f21e6332
+|   Author: kyle
+|   Date: 2013-07-15 17:56:47 -0500
+|   Comment: Updated the changelog script to be more properly aware of its own location.
+| 
+|  
 * f88e6f14d54e622ae52c0cbd20dda5c265cef2c9
 |   Author: kyle
 |   Date: 2013-07-15 17:53:26 -0500

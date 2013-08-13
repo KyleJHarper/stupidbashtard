@@ -17,7 +17,7 @@ while [ ${iteration} -le ${MAX_ITERATIONS} ] ; do
   pass
 
   # -- Multiple arguments
-  new_test "Sending multiple arguments for upper casing: "
+  new_test "Sending multiple arguments: "
   [ "$( string_FormatCase -u 'rawr' 'baby' )" == 'RAWRBABY' ]   || fail 1
   pass
 
@@ -50,6 +50,21 @@ while [ ${iteration} -le ${MAX_ITERATIONS} ] ; do
   rv=''
   rv="$(string_FormatCase -u $'hello\nthere ' $'joe\tschmoe '  'rawr')"
   [ "${rv}" == $'HELLO\nTHERE JOE\tSCHMOE RAWR' ] || fail 1
+  pass
+
+  # -- Support lower casing items
+  new_test "Sending a single argument for lower casing: "
+  [ "$( string_FormatCase -l 'RAWR' )" == 'rawr' ]   || fail 1
+  pass
+
+  # -- Support Proper (Title) casing items
+  new_test "Sending multiple items for proper (title) casing (e.g.: I Am Some Text): "
+  [ "$( string_FormatCase -p $'heLlo\ntheRE ' $'Joe\tschmoe '  'RAWR'  )" == $'Hello\nThere Joe\tSchmoe Rawr' ]   || fail 1
+  pass
+
+  # -- Support case toggling items
+  new_test "Sending multiple items for toggling case (e.g.: I am FUn == i AM fuN): "
+  [ "$( string_FormatCase -t $'Hello\nthere ' $'Joe\tSchmoe '  'RAWR'  )" == $'hELLO\nTHERE jOE\tsCHMOE rawr' ]   || fail 1
   pass
 
 

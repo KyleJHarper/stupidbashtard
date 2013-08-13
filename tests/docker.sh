@@ -32,7 +32,7 @@ new_function 'core_Error'
 #
 cmd="${dt}"
 new_test "Invoking with no options: "
-$cmd >/dev/null 2>/dev/null || fail
+$cmd >/dev/null 2>/dev/null || fail 1
 pass
 
 
@@ -41,7 +41,7 @@ pass
 #
 cmd="${dt} -v"
 new_test "Enabling verbosity: "
-[ $($cmd | wc -l) -gt 2 ] || fail
+[ $($cmd | wc -l) -gt 2 ] || fail 1
 pass
 
 
@@ -50,7 +50,7 @@ pass
 #
 cmd="${dt} -q"
 new_test "Enabling the quiet switch: "
-[[ "$($cmd)" == "" ]] || fail
+[[ "$($cmd)" == "" ]] || fail 1
 pass
 
 
@@ -60,7 +60,7 @@ pass
 cmd="${dt} -q -v"
 new_test "Using conflicting switches -v and -q: "
 $cmd >/dev/null 2>/dev/null
-[ $? -eq ${E_BAD_SYNTAX} ] || fail
+[ $? -eq ${E_BAD_SYNTAX} ] || fail 1
 pass
 
 
@@ -70,7 +70,7 @@ pass
 cmd="${dt} Idonotexist"
 new_test "Running against a non-existent file: "
 $cmd >/dev/null 2>/dev/null
-[ $? -eq ${E_IO_FAILURE} ] || fail
+[ $? -eq ${E_IO_FAILURE} ] || fail 1
 pass
 
 
@@ -79,12 +79,12 @@ pass
 #
 cmd="${dt} ${TMP_FILE}"
 new_test "Running against a file I cannot read: "
-touch ${TMP_FILE}          || fail
-chmod 0000 ${TMP_FILE}     || fail
+touch ${TMP_FILE}          || fail 1
+chmod 0000 ${TMP_FILE}     || fail 2
 $cmd >/dev/null 2>/dev/null
-[ $? -eq ${E_IO_FAILURE} ] || fail
-chmod 0600 ${TMP_FILE}     || fail
-rm ${TMP_FILE}             || fail
+[ $? -eq ${E_IO_FAILURE} ] || fail 3
+chmod 0600 ${TMP_FILE}     || fail 4
+rm ${TMP_FILE}             || fail 5
 pass
 
 
@@ -94,7 +94,7 @@ pass
 cmd="${dt} /I/do/not/exist"
 new_test "Using a non-existent NAMESPACES_DIR: "
 $cmd >/dev/null 2>/dev/null
-[ $? -eq ${E_IO_FAILURE} ] || fail
+[ $? -eq ${E_IO_FAILURE} ] || fail 1
 pass
 
 
@@ -104,7 +104,7 @@ pass
 cmd="${dt} /I/do/not/exist"
 new_test "Using a  non-existent DOC_DIR: "
 $cmd >/dev/null 2>/dev/null
-[ $? -eq ${E_IO_FAILURE} ] || fail
+[ $? -eq ${E_IO_FAILURE} ] || fail 1
 pass
 
 
@@ -112,9 +112,9 @@ pass
 # Generate the test_function yaml file and make sure the MD5 matches.
 #
 cmd="${d} ../sbt/test_function.sh"
-KNOWN_SUM='d76063fc223de7f5aa549b14f672023e'
+KNOWN_SUM='189dea8b6ab17e7716828ccf9a547886'
 new_test "Analyzing a complete function and comparing known MD5 of YAML file.  Includes most features and edge cases: "
 $cmd >/dev/null 2>/dev/null
-[ $? -eq ${E_GOOD} ] || fail
-[[ "$( grep -P '^[^#]' ../doc/test_function.yaml | md5sum | cut -d' ' -f1 )" == "${KNOWN_SUM}" ]] || fail
+[ $? -eq ${E_GOOD} ] || fail 1
+[[ "$( grep -P '^[^#]' ../doc/test_function.yaml | md5sum | cut -d' ' -f1 )" == "${KNOWN_SUM}" ]] || fail 1
 pass

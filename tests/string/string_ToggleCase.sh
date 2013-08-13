@@ -11,9 +11,9 @@
 
 [ "${1}" == 'performance' ] && iteration=1
 while [ ${iteration} -le ${MAX_ITERATIONS} ] ; do
-  # -- Simple invocation with 1 argument
-  new_test "Sending a single argument for upper casing: "
-  [ "$( string_ToUpper 'rawr' )" == 'RAWR' ]   || fail 1
+  # -- Support case toggling items
+  new_test "Sending multiple items for toggling case (e.g.: I am FUn == i AM fuN): "
+  [ "$( string_ToggleCase $'Hello\nthere ' $'Joe\tSchmoe '  'RAWR'  )" == $'hELLO\nTHERE jOE\tsCHMOE rawr' ]   || fail 1
   pass
 
 

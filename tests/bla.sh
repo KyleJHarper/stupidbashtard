@@ -6,12 +6,16 @@
 #./docker.sh
 #./core.sh
 
+. ../sbt/core.sh
+. ../sbt/string.sh
+__SBT_VERBOSE=true
 
-temp='5.6.15'
-MAJOR="${temp%%.*}"   ; temp="${temp:${#MAJOR}+1}"
-MEDIUM="${temp%%.*}"  ; temp="${temp:${#MEDIUM}+1}"
-MINOR="${temp%%.*}"
+#echo "$(string_FormatCase -u 'hello world')"
+#string=$'a\tfew words'
+#string=($string)
+#string=${string[@]^}
+#echo $string
 
-echo "Major :  ${MAJOR}"
-echo "Medium:  ${MEDIUM}"
-echo "Minor :  ${MINOR}"
+bob=('whee' 'yay' 'i Am fUN')
+
+echo "${bob[@]~~}"

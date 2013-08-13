@@ -11,9 +11,9 @@
 
 [ "${1}" == 'performance' ] && iteration=1
 while [ ${iteration} -le ${MAX_ITERATIONS} ] ; do
-  # -- Simple invocation with 1 argument
-  new_test "Sending a single argument for upper casing: "
-  [ "$( string_ToUpper 'rawr' )" == 'RAWR' ]   || fail 1
+  # -- Support Proper (Title) casing items
+  new_test "Sending multiple items for proper (title) casing (e.g.: I Am Some Text): "
+  [ "$( string_ProperCase $'heLlo\ntheRE ' $'Joe\tschmoe '  'RAWR'  )" == $'Hello\nThere Joe\tSchmoe Rawr' ]   || fail 1
   pass
 
 
