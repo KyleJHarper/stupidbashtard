@@ -1,0 +1,6 @@
+Have docker scan for a signature tag to make understing of how to use functions easier.
+
+If param 4 is blank in core_getopts, there's nothing to process.  It's not necessarily a failure... might want to rework it.
+
+Build a core_ByRef function to push items into vars with eval to top scope.  No need to keep duplicating the eval logic in dozens of functions.
+
