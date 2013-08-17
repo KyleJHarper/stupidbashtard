@@ -15,6 +15,8 @@
 #
 # -- Initialize Globals for this Namespace
 #
+#TODO  This should probably be a function itself in case the user doesn't want to set certain things.  It will call itself by default, but user can reinitialize.  Disabling OPTERR, for example.
+
            __SBT_VERBOSE=false       #@$ Enable or disable verbose messages for debugging.
            __SBT_WARNING=true        #@$ Enable or disable warning messages.
 declare -i __SBT_SHORT_OPTIND=1      #@$ Tracks the position of the short option if they're side by side -abcd etc.  Unique to SBT.
@@ -230,11 +232,17 @@ function core_LogVerbose {
   # Check for __SBT_VERBOSE first.  Save a lot of time if verbosity isn't enabled.
   ${__SBT_VERBOSE} || return 1
 
+  # Setup variables
+  local switches=''                                #@$ Keep track of the switches to send to echo.  This function accepts them the same as echo builtin does.  Sorry printf
+  local -i spaces=$(( (${#FUNCNAME[@]} - 2) * 2))  #@$ Track the number of spaces to send
+
   while true ; do
     if [ "${1:0:1}" == '-' ] ; then switches+=" ${1}" ; shift ; continue ; fi
     break
   done
-  echo ${switches} "(${FUNCNAME[1]}: line ${BASH_LINENO[0]})  $@" >&2
+
+  printf "%${spaces}s" >&2
+  echo ${switches} "(${FUNCNAME[1]}: ${BASH_LINENO[0]})  $@" >&2
   return 0
 }
 
