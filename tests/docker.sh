@@ -26,7 +26,6 @@ dt="${d} -t"
 # +-------------------------#
 # |  Section 1.  docker.pl  |
 # +-------------------------#
-new_function 'core_Error'
 #
 # No switches should give basic test output
 #
