@@ -317,3 +317,29 @@ function core_ToolExists {
   # If we reach this point, we found all the programs.
   return 0
 }
+
+
+function core_IndirectAssignment {
+  #@Description  Saves a named variable in $1 to the contents in $@ after the first shift.  Due to its simplicity, this function will not use core_getopts.
+  #@Description  -
+  #@Description  This will save the variable in the callers scope, NOT local, NOT 'top' scope unless caller passed a non-local, of course.
+
+  # Invocation and Variables
+  core_LogVerbose 'Enterting function'
+  local append=false                #@$ Flag to determine if we should append or overwrite variable_name with $@ values.
+  if [ "${1}" == '-a' ] ; then core_LogVerbose 'First argument is the append switch, setting append_mode flag to true.' ; append=true ; shift ; fi
+  local -r variable_name="${1}"     #@$ Stores the name of the variable we want to assign a value to for caller.
+  shift
+
+  # Check that a variable name was passed and make the correct assignment.
+  if [ -z "${variable_name}" ] ; then core_LogError 'Required parameter ($1) is blank.  Aborting function.' ; return 1 ; fi
+  if ${append} ; then
+    core_LogVerbose "Appending remaining positionals to '${variable_name}'."
+    eval "${variable_name}+=\"$@\""
+  else
+    core_LogVerbose "Setting variable '${variable_name}' to the remaining positionals passed."
+    eval "${variable_name}=\"$@\""
+  fi
+
+  return 0
+}
