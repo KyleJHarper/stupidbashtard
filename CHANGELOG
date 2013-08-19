@@ -1,3 +1,45 @@
+* f6e4cf5f0ed243ba820ceadeb45e3d9b02de1e15
+|   Author: kyle
+|   Date: 2013-08-18 23:01:08 -0500
+|   Comment: Built a little structure for the IndexOf function but I'm still not sure how to process the lookups quickly.  I need internet access to research best methods and that's hard to do at 38,000 feet...
+| 
+|  
+* 36ebc0df2cb21ca8e3f5758a734ba41c1976ddbd
+|   Author: kyle
+|   Date: 2013-08-18 22:18:57 -0500
+|   Comment: After realizing the hassle of pushing things like the append flag up from the core_IndirectAssignment function, I decided to remove it.  The function itself did indeed limit the use of eval, but not in a way that was helping anything.  It wasn't, and couldn't provide much more validation and aid so meh.  I'm removing it.
+| 
+|  
+* 4f12d32be787060dbe7de1e3a979bc1f089b063e
+|   Author: kyle
+|   Date: 2013-08-18 22:04:08 -0500
+|   Comment: Added the function to do indirect references.  I added an append flag, but this is an internal thing which means all callers would need append flags too, and this would be annoying to keep up with.  For simplicity's sake, removing that after this commit.
+| 
+|  
+* 2f50251c03c41c595debf9ff6fab7e17ce942482
+|   Author: kyle
+|   Date: 2013-08-17 16:32:47 -0500
+|   Comment: Created a TODO list for when I don't have internet access.  I should probably gitignore it... but going to add it in case I get lazy with feature requests and stuff in github.
+| 
+|  
+* 7e41e92098ac4f1404eeb7063c6f512d453f4301
+|   Author: kyle
+|   Date: 2013-08-17 15:46:49 -0500
+|   Comment: Modified the docker test file to reflect a couple changes that affected the MD5 of the correct output of the sample file.  This might have actually been in a prior commit, oh well.  Removed the new_function call since that doesn't exist anymore in __shared.inc.
+| 
+|  
+* 93769e1c12f903c1a712e0940d84e8ee60c53723
+|   Author: kyle
+|   Date: 2013-08-17 15:45:08 -0500
+|   Comment: Added a little more info to README.  Changed core_LogVerbose to be more of a nested stack trace to aid in debugging.  Removed a placeholder now that we have data in the folder.  Might consider modifying core_LogError to do the same... hmm.
+| 
+|  
+* b2df1259561a77f992d8b864f974e932b0099a12
+|   Author: kyle
+|   Date: 2013-08-12 21:04:24 -0500
+|   Comment: Added the rest of the case modification functionality to string_FormatCase and created wrappers to go with it all.  Need to move on to IndexOf functionality.
+| 
+|  
 * fc351f32c6b4362149023f5db792238039c55416
 |   Author: kyle
 |   Date: 2013-07-18 22:54:32 -0500
