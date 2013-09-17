@@ -151,50 +151,49 @@ function string_FormatCase {
 
 
 function string_IndexOf {
-  #@Description  Find the Nth occurrence of a given index idx.  If idx isn't found, return non-zero in fixed error code.
+  #@Description  Find the Nth occurrence of a given substring inside a string.  If not found, return non-zero in fixed exit code.
   #@Description  -
-  #@Description  This is an alpha version and will likely be rebuilt in smaller functions or called from wrappers for special indexof cases.
+  #@Description  Index will be zero based.  This offloads the work to awk which is a 1-based index, but that's atypical, so I adjust it.
+  #@Description  -
+  #@Description  Cannot operate on files, yet.
+  #@Date  2013.09.16
 
-#TODO  Is it better to pass all of this to another tool?  Perl is heavy, maybe awk?  Maybe read builtin can perform... I doubt it :S
-#      Can we rely on awk to be a tool?  It could be awk, mawk, nawk, or gawk.  If I'm sticking to GNU it'll be gawk, but many don't have that by default.
   core_LogVerbose 'Entering function.'
   # Variables
-  local file=''               #@$ File to scan rather than processing nonopt positionals.
-  local -i index=0            #@$ Positional index to return, zero-based.
+  local -i index=-1           #@$ Positional index to return, zero-based.
   local -i occurrence=1       #@$ The Nth occurrence we want to find the index of.
-  local -a pattern=()         #@$ Holds the pattern to search for.  Should be a string as we'll do fixed-string searching
+  local -a patterns=()        #@$ Holds the patterns to search for.  Should be a string as we'll do fixed-string searching
   local opt=''                #@$ Temporary variable for core_getopts, brought to local scope.
   local REFERENCE=''          #@$ Will hold the name of the var to use for indirect referencing later, if -R used.
   local -a __SBT_NONOPT_ARGS  #@$ Local instance for the core_getopts processing below since this will never need exposed to parents.
-
+  local token                 #@$ Hold values for looping.
 
   # Use core_getopts to not only handle options elegantly, but to put nonopts in __SBT_NONOPT_ARGS
   core_LogVerbose 'Processing options.'
-  while core_getopts ':f:o:p:R:' opt '' "$@" ; do
+  while core_getopts ':o:p:R:' opt ':occurrence:,pattern:' "$@" ; do
     case "${opt}" in
-      'f' ) [ ! -z "${file}" ] && core_LogError "A file was already specified, overwriting file to search and continuing." ; file="${OPTARG}" ;;
-      'o' ) occurrence="${OPTARG}"    ;;
-      'p' ) pattern+=( "${OPTARG}" )  ;;
-      'R' ) REFERENCE="${OPTARG}"     ;;
-      *   ) core_LogError "Invalid option sent to me: ${opt}  (aborting)" ; return 1 ;;
+      'o' | 'occurrence' ) occurrence="${OPTARG}"     ;;
+      'p' | 'pattern'    ) patterns+=( "${OPTARG}" )  ;;
+      'R'                ) REFERENCE="${OPTARG}"      ;;
+      *                  ) core_LogError "Invalid option sent to me: ${opt}  (aborting)" ; return 1 ;;
     esac
   done
 
-  # Preflight checks
+  # Preflight checks and warnings
   core_LogVerbose 'Checking requirements before processing function.'
   if [ -z "${pattern[@]}" ] ; then core_LogError "No pattern was specified to find an index with.  (aborting)" ; return 1 ; fi
-  if [ ! -z "${file}" ; then
-    if [ ! -r "${file}" ] ; then core_LogError "File specified either does not exist or cannot be read:  ${file}  (aborting)" ; return 1 ; fi
-  fi
-  if [ -z "${file}" ] && [ ${#__SBT_NONOPT_ARGS[@]} -eq 0 ] ; then
-    core_LogError "You didn't specify any strings or files, so I have no idea what you want me to search.  (aborting)"
-    return 1
-  fi
   if [ ${#__SBT_NONOPT_ARGS[@]} -gt 1 ] ; then
     core_LogVerbose 'More than one item was passed.  Index returned will reflect that of items "mashed" together.'
   fi
+  if [ ${#__SBT_NONOPT_ARGS[@]} -eq 0 ] ; then
+    core_LogError "No strings specified, so I have no idea what you want me to search.  (aborting)"
+    return 1
+  fi
+  core_ToolExists 'gawk' || return 1
 
-#TODO  No idea what the best method is here.
-
-
+  # Call external tool and store results in temp var.
+  for token in ${patterns[@]} ; do
+    let "index += $(gawk -v haystack="${__SBT_NONOPT_ARGS[@]}" -v needle="${token}" -v occurrence="${occurrence}" -f "${__SBT_EXT_DIR}/")"
+#TODO  How do I get the ext dir set in a safe and consistent manner?  I'm relying on PATH for bin... unsure on the rest.
+  done
 }

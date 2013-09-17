@@ -15,13 +15,12 @@
 #
 # -- Initialize Globals for this Namespace
 #
-#TODO  This should probably be a function itself in case the user doesn't want to set certain things.  It will call itself by default, but user can reinitialize.  Disabling OPTERR, for example.
 
+declare -a __SBT_NONOPT_ARGS         #@$ Holds all arguments sent to getopts that are not part of the switch syntax.  Unique to SBT.  Similar to BASH_ARGV, only better.  Can store unlimited options, BASH_ARGV stores a max of 10, and in reverse order which is unintuitive when processing as-passed-in.
+declare -i __SBT_SHORT_OPTIND=1      #@$ Tracks the position of the short option if they're side by side -abcd etc.  Unique to SBT.
+declare -A __SBT_TOOL_LIST           #@$ List of all tools asked for by SBT.  Prevent expensive lookups with recurring calls.
            __SBT_VERBOSE=false       #@$ Enable or disable verbose messages for debugging.
            __SBT_WARNING=true        #@$ Enable or disable warning messages.
-declare -i __SBT_SHORT_OPTIND=1      #@$ Tracks the position of the short option if they're side by side -abcd etc.  Unique to SBT.
-declare -a __SBT_NONOPT_ARGS         #@$ Holds all arguments sent to getopts that are not part of the switch syntax.  Unique to SBT.  Similar to BASH_ARGV, only better.  Can store unlimited options, BASH_ARGV stores a max of 10, and in reverse order which is unintuitive when processing as-passed-in.
-declare -A __SBT_TOOL_LIST           #@$ List of all tools asked for by SBT.  Prevent expensive lookups with recurring calls.
 OPTIND=1                             #@$ Tracks the position of the argument we're reading.  Bash internal.
 OPTARG=''                            #@$ Holds either the switch active in getopts, or the value sent to the switch if it's compulsory.  Bash internal.
 OPTERR=1                             #@$ Flag to determine if getopts should report invalid switches itself or rely in case statement in caller.  Bash internal.
@@ -318,3 +317,19 @@ function core_ToolExists {
   return 0
 }
 
+
+function core_SetToolPath {
+  #@Description  Any tools that SBT relies on can be compiled and provided with the SBT bundles.  This function will prepend the path specified to $PATH, ensuring it is used before other versions found on the system.
+  #@Date  2013.09.16
+
+  # Preflight checks
+  core_LogVerbose 'Entering function and starting preflight checks.'
+  if [ -z "${1}" ]   ; then core_LogError 'No path sent, cannot prepend nothing to PATH variable.  (aborting)' ; return 1 ; fi
+  if [ ! -d "${1}" ] ; then core_LogError "Path specified doesn't exist or is not a directory.  (aborting)"    ; return 1 ; fi
+
+  # Set path with new info
+  core_LogVerbose "Adding directory to path, new path will be:  ${1}:${PATH}"
+  PATH="${1}:${PATH}"
+
+  return 0
+}

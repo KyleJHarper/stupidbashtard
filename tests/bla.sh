@@ -10,6 +10,17 @@
 . ../sbt/string.sh
 __SBT_VERBOSE=true
 
+
+
+
+case "one" in
+  'o' | 'one' ) echo 'woohoo' ;;
+esac
+exit
+
+
+
+
 var=''
 string_FormatCase -l 'HELlo there ' 'nom ' 'NoMMMMM' -R 'var'
 
