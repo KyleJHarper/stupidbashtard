@@ -183,7 +183,7 @@ function string_IndexOf {
   core_LogVerbose 'Checking requirements before processing function.'
   if [ -z "${pattern[@]}" ] ; then core_LogError "No pattern was specified to find an index with.  (aborting)" ; return 1 ; fi
   if [ ${#__SBT_NONOPT_ARGS[@]} -gt 1 ] ; then
-    core_LogVerbose 'More than one item was passed.  Index returned will reflect that of items "mashed" together.'
+    core_LogVerbose 'More than one haystack was passed.  Index returned will reflect that of haystacks "mashed" together.'
   fi
   if [ ${#__SBT_NONOPT_ARGS[@]} -eq 0 ] ; then
     core_LogError "No strings specified, so I have no idea what you want me to search.  (aborting)"
