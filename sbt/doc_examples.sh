@@ -189,7 +189,7 @@ function doc_examples_11-MixedVariables {
   #@Description  This function establishes both local variables and a few non-locals.
 
   local VERBOSE=false
-  ITEMS_FOUND
+  ITEMS_FOUND=13
   # Docker will notice the missing local keyword and flag ITEMS_FOUND as a by-ref variable (when synchronous of course).
 
   return 0
@@ -221,7 +221,7 @@ function doc_examples_13-NonThreadSafe {
 
 function doc_examples_14-TypedVariables {
   #@Description  This function will specify attributes about some variables by way of the keyword: declare.  It is also possible
-  #@Descrition  to use the typeset keyword.
+  #@Description  to use the typeset or local keywords.
 
   # Docker will note the special attributes for the following variables
   declare -r local my_uuid="$(uuidgen)"  # Read only
@@ -351,7 +351,7 @@ function doc_examples_52-LongOptsWithLineEndComments {
   local my_opt
   local AWESOME_MODE=false
   local BOOK_NAME='Plumbing Guide to Angling'
-  while getopts 'ab:' my_opt 'awesome,book; do
+  while getopts 'ab:' my_opt 'awesome,book:' ; do
     case "${my_opt}" in
       'a'       ) AWESOME_MODE=true     ;;  #@opt_ When specified, turns on AWESOME mode... yea.
       'b'       ) BOOK_NAME="${OPTARG}" ;;  #@opt_ Override the default book name to use.
