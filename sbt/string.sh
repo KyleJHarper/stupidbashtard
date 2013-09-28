@@ -160,7 +160,7 @@ function string_IndexOf {
 
   core_LogVerbose 'Entering function.'
   # Variables
-  local -i index=-1           #@$ Positional index to return, zero-based.
+  local -i index=-1           #@$ Positional index to return, zero-based.  Starting at -1 because awk is 1-based, not 0.
   local -i occurrence=1       #@$ The Nth occurrence we want to find the index of.
   local -a patterns=()        #@$ Holds the patterns to search for.  Should be a string as we'll do fixed-string searching
   local opt=''                #@$ Temporary variable for core_getopts, brought to local scope.
@@ -192,8 +192,14 @@ function string_IndexOf {
   core_ToolExists 'gawk' || return 1
 
   # Call external tool and store results in temp var.
+  core_LogVerbose 'Starting search for patterns specified'
   for token in ${patterns[@]} ; do
-    let "index += $(gawk -v haystack="${__SBT_NONOPT_ARGS[@]}" -v needle="${token}" -v occurrence="${occurrence}" -f "${__SBT_EXT_DIR}/")"
-#TODO  How do I get the ext dir set in a safe and consistent manner?  I'm relying on PATH for bin... unsure on the rest.
+    core_LogVerbose "Searching for: '${token}'"
+    let "index += $(gawk -v haystack="${__SBT_NONOPT_ARGS[@]}" -v needle="${token}" -v occurrence="${occurrence}" -f "${__SBT_EXT_DIR}/core_IndexOf.awk")"
+    [ ${index} -eq -1 ] || break
   done
+
+  [ ${index} -gt -1 ] && core_LogVerbose "Found a match at index ${index} to pattern: '${token}'"
+  echo ${index}
+  return 0
 }
