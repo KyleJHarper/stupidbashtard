@@ -162,19 +162,19 @@ function string_IndexOf {
   # Variables
   local -i index=-1           #@$ Positional index to return, zero-based.  Starting at -1 because awk is 1-based, not 0.
   local -i occurrence=1       #@$ The Nth occurrence we want to find the index of.
-  local -a patterns=()        #@$ Holds the patterns to search for.  Should be a string as we'll do fixed-string searching
+  local -a needles=()         #@$ Holds the patterns to search for.  Should be a string as we'll do fixed-string searching
   local opt=''                #@$ Temporary variable for core_getopts, brought to local scope.
   local REFERENCE=''          #@$ Will hold the name of the var to use for indirect referencing later, if -R used.
   local -a __SBT_NONOPT_ARGS  #@$ Local instance for the core_getopts processing below since this will never need exposed to parents.
-  local token                 #@$ Hold values for looping.
+  local needle=''             #@$ Hold values for looping.
 
   # Use core_getopts to not only handle options elegantly, but to put nonopts in __SBT_NONOPT_ARGS
   core_LogVerbose 'Processing options.'
-  while core_getopts ':o:p:R:' opt ':occurrence:,pattern:' "$@" ; do
+  while core_getopts ':n:o:R:' opt ':needle:,occurrence:' "$@" ; do
     case "${opt}" in
-      'o' | 'occurrence' ) occurrence="${OPTARG}"     ;;
-      'p' | 'pattern'    ) patterns+=( "${OPTARG}" )  ;;
-      'R'                ) REFERENCE="${OPTARG}"      ;;
+      'o' | 'occurrence' ) occurrence="${OPTARG}"    ;;
+      'n' | 'needle'     ) needles+=( "${OPTARG}" )  ;;
+      'R'                ) REFERENCE="${OPTARG}"     ;;
       *                  ) core_LogError "Invalid option sent to me: ${opt}  (aborting)" ; return 1 ;;
     esac
   done
@@ -193,13 +193,14 @@ function string_IndexOf {
 
   # Call external tool and store results in temp var.
   core_LogVerbose 'Starting search for patterns specified'
-  for token in ${patterns[@]} ; do
-    core_LogVerbose "Searching for: '${token}'"
-    let "index += $(gawk -v haystack="${__SBT_NONOPT_ARGS[@]}" -v needle="${token}" -v occurrence="${occurrence}" -f "${__SBT_EXT_DIR}/core_IndexOf.awk")"
+  for needle in ${needles[@]} ; do
+    core_LogVerbose "Searching for: '${needle}'"
+    let "index += $(gawk -v haystack="${__SBT_NONOPT_ARGS[@]}" -v needle="${needle}" -v occurrence="${occurrence}" -f "${__SBT_EXT_DIR}/core_IndexOf.awk")"
     [ ${index} -eq -1 ] || break
   done
 
-  [ ${index} -gt -1 ] && core_LogVerbose "Found a match at index ${index} to pattern: '${token}'"
-  echo ${index}
+  # Report findings
+  [ ${index} -gt -1 ] && core_LogVerbose "Found a match at index ${index} to pattern: '${needle}'"
+  core_StoreByRef "${REFERENCE}" "${index}" || echo "${index}"
   return 0
 }

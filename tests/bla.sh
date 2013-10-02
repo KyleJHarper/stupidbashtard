@@ -7,6 +7,20 @@
 #./core.sh
 
 
+
+
+
+function rawr {
+  echo "${1}"
+  echo "${2}"
+}
+
+rawr 'me' 'you'
+rawr '' 'just you'
+
+
+
+exit
 var="$(cd "$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")/.." ; pwd)"
 echo "${var}"
 . /tmp/source_me

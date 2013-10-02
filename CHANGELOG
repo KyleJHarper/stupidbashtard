@@ -1,3 +1,45 @@
+* bd2bc084baaaf0cf21dd849e8bd6bfefd192aa07
+|   Author: kyle
+|   Date: 2013-09-27 22:26:59 -0500
+|   Comment: Finished the string_IndexOf wrapper.  Need to write test cases and tune it.
+| 
+|  
+* bc39557a3a25171c731d9b242eee0d7fbefccbc6
+|   Author: kyle
+|   Date: 2013-09-27 20:43:23 -0500
+|   Comment: Found a few typos and bugs in the doc_example.sh namespace.  After looking some more, I realize I'm going to need to fully proof this namespace and probably compare actual docker output to ensure my help docs aren't wrong.  Which is a job for another day...
+| 
+|  
+* f9c2fdc947cc4ab1e6bf99489f0a197ac73dcb71
+|   Author: kyle
+|   Date: 2013-09-24 20:30:28 -0500
+|   Comment: Found a way to use coreutils to get directory of sourced core.sh file so I can derive the remaining values for SBT use.  Need to finish the test case for IndexOf and the SBT IndexOf function (including adding -1 to make it a zero base index).
+| 
+|  
+* 9fc50aafa5b1591872b392cf9916874e35d21fb1
+|   Author: kyle
+|   Date: 2013-09-16 22:03:21 -0500
+|   Comment: Wrote a function to modify the PATH for tool searching, avoids hard coding paths.  Finishing up the core_IndexOf function but I don't know how I want to safely reference the sbt/ext dir.  Once that's figured out, should be good to go and I can start adding lots more string manipulation functions.
+| 
+|  
+* 2d0874a7445c14da1647cc679b3c8d60f855a42f
+|   Author: kyle
+|   Date: 2013-09-15 21:08:00 -0500
+|   Comment: Wrote the first external script for SBT.  This is a simple awk script to get the Nth occurrence of a pattern within a string.  Seems to work but still need to write tests for it.  Might also want to consider letting it read a whole file, but then again how would that work with newlines?  I'd have to read in multiline mode and I don't know if that's even possible in awk.  Oh well, baby steps for now.
+| 
+|  
+* c467d39ae660c63099601c9ff0e408e163004962
+|   Author: kyle
+|   Date: 2013-09-09 20:48:42 -0500
+|   Comment: Updated the namespace tester to test multiple namespaces at once.
+| 
+|  
+* eb1b78acf083bc442cbc87b6ddbd53db86d3d0e3
+|   Author: kyle
+|   Date: 2013-08-18 23:01:58 -0500
+|   Comment: Updated changelog and since I plan to push when I get a chance.
+| 
+|  
 * f6e4cf5f0ed243ba820ceadeb45e3d9b02de1e15
 |   Author: kyle
 |   Date: 2013-08-18 23:01:08 -0500

@@ -16,6 +16,9 @@ while [ ${iteration} -le ${MAX_ITERATIONS} ] ; do
   [ "$( string_ToLower 'RAWR' )" == 'rawr' ]   || fail 1
   pass
 
+  # -- Pass all arguments as expected
+  new_test "Sending all arguments as required, to simulate a good test: "
+  string_IndexOf -p
 
   let iteration++
 done
