@@ -1,0 +1,35 @@
+#!/bin/bash
+
+# Copyright 2013 Kyle Harper
+# Licensed per the details in the LICENSE file in this package.
+
+# Source shared
+. "$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )/../__shared.inc.sh"
+. "$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )/../../sbt/core.sh"
+
+
+[ "${1}" == 'performance' ] && iteration=1
+while [ ${iteration} -le ${MAX_ITERATIONS} ] ; do
+  # -- Try a normal byref assignment
+  new_test "Storing the value 'whee' to the variable 'temp': "
+  REF='temp'
+  temp='nope'
+  core_StoreByRef "${REF}" "whee" || fail 1
+  [[ "${temp}" == "whee" ]] || fail 2
+  pass
+
+  # -- Send something to byref, but we aren't doing byref so it should go to stdout
+  new_test "Calling again, but not intending to store by-ref.  Should go to stdout: "
+  REF=''
+  temp='nope'
+  [[ $(core_StoreByRef "${REF}" "whee" || echo "whee") == "whee" ]] || fail 1
+  pass
+
+  # -- Calling it without any parameters should fail
+  new_test "Calling without any parameters.  This should fail:  "
+  core_StoreByRef 2>/dev/null && fail 1
+  [ $(core_StoreByRef 2>&1 | wc -l) -gt 0 ] || fail 2
+  pass
+
+  let iteration++
+done

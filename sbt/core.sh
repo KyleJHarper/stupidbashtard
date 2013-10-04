@@ -211,7 +211,7 @@ function core_Initialize {
 
 
 function core_LogError {
-  #@Description  Mostly for internal use.  Sends info to std err if warnings are enabled.  No calls to other SBT functions allowed.
+  #@Description  Mostly for internal use.  Sends info to std err if warnings are enabled.  No calls to other SBT functions allowed to prevent infinite loops.
   #@Date    2013.07.14
 
   # Check for __SBT_WARNING first.
@@ -227,7 +227,7 @@ function core_LogError {
 
 
 function core_LogVerbose {
-  #@Description  Mostly for internal use.  Sends info to std err if verbosity is enabled.  No calls to other SBT functions allowed.
+  #@Description  Mostly for internal use.  Sends info to std err if verbosity is enabled.  No calls to other SBT functions allowed to prevent infinite loops.
   #@Date    2013.07.14
 
   # Check for __SBT_VERBOSE first.  Save a lot of time if verbosity isn't enabled.
@@ -333,5 +333,25 @@ function core_SetToolPath {
   core_LogVerbose "Adding directory to path, new path will be:  ${1}:${PATH}"
   PATH="${1}:${PATH}"
 
+  return 0
+}
+
+
+function core_StoreByRef {
+  #@Description  This uses eval to do an indirect assignment to positional 1 with positionals 2+.
+  #@Description  -
+  #@Description  This needs to be quite simple, and extremely fast.
+  #@Date  2013.10.03
+
+  # Preflight checks
+  core_LogVerbose "Entering function, doing preflight checks now."
+  local -r REFERENCE="${1}"  #@$ Store positional number 1 so we can shift out and use $@.
+  if [ ${#@} -lt 2 ] ; then core_LogError   'You must specify at least 2 positionals.  1 = name.  2+ = values to assign.  (aborting)' ; return 1 ; fi
+  if [ -z "${1}" ]   ; then core_LogVerbose 'Positional number 1 is missing, no by-ref storage intended.  (aborting)'                 ; return 1 ; fi
+  shift
+
+  # Assign the values
+  core_LogVerbose "Assigning remaining positionals to variable: ${REFERENCE}"
+  eval "${REFERENCE}=\"$@\""
   return 0
 }
