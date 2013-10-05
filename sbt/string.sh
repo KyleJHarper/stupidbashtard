@@ -1,5 +1,3 @@
-#!/bin/bash
-
 # Copyright 2013 Kyle Harper
 # Licensed per the details in the LICENSE file in this package.
 
@@ -181,7 +179,7 @@ function string_IndexOf {
 
   # Preflight checks and warnings
   core_LogVerbose 'Checking requirements before processing function.'
-  if [ -z "${pattern[@]}" ] ; then core_LogError "No pattern was specified to find an index with.  (aborting)" ; return 1 ; fi
+  if [ -z "${needles[@]}" ] ; then core_LogError "No needles was specified to find an index with.  (aborting)" ; return 1 ; fi
   if [ ${#__SBT_NONOPT_ARGS[@]} -gt 1 ] ; then
     core_LogVerbose 'More than one haystack was passed.  Index returned will reflect that of haystacks "mashed" together.'
   fi
@@ -195,12 +193,12 @@ function string_IndexOf {
   core_LogVerbose 'Starting search for patterns specified'
   for needle in ${needles[@]} ; do
     core_LogVerbose "Searching for: '${needle}'"
-    let "index += $(gawk -v haystack="${__SBT_NONOPT_ARGS[@]}" -v needle="${needle}" -v occurrence="${occurrence}" -f "${__SBT_EXT_DIR}/core_IndexOf.awk")"
+    let "index += $(gawk -v haystack="${__SBT_NONOPT_ARGS[@]}" -v needle="${needle}" -v occurrence="${occurrence}" -f "${__SBT_EXT_DIR}/string_IndexOf.awk")"
     [ ${index} -eq -1 ] || break
   done
 
   # Report findings
   [ ${index} -gt -1 ] && core_LogVerbose "Found a match at index ${index} to pattern: '${needle}'"
-  core_StoreByRef "${REFERENCE}" "${index}" || echo "${index}"
+  core_StoreByRef "${REFERENCE}" "${index}" || echo -n "${index}"
   return 0
 }

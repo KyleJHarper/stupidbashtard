@@ -1,5 +1,3 @@
-#!/bin/bash
-
 # Copyright 2013 Kyle Harper
 # Licensed per the details in the LICENSE file in this package.
 
@@ -22,7 +20,7 @@ declare -A __SBT_TOOL_LIST           #@$ List of all tools asked for by SBT.  Pr
            __SBT_VERBOSE=false       #@$ Enable or disable verbose messages for debugging.
            __SBT_WARNING=true        #@$ Enable or disable warning messages.
 declare -r __SBT_ROOT_DIR="$(cd "$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")/.." ; pwd)"   #@$ Root directory for the SBT system when sourced properly
-declare -r __SBT_EXT_DIR="${SBT_ROOT_DIR}/sbt/ext"                                             #@$ Extension directory for non-bash functions
+declare -r __SBT_EXT_DIR="${__SBT_ROOT_DIR}/sbt/ext"                                           #@$ Extension directory for non-bash functions
 OPTIND=1                             #@$ Tracks the position of the argument we're reading.  Bash internal.
 OPTARG=''                            #@$ Holds either the switch active in getopts, or the value sent to the switch if it's compulsory.  Bash internal.
 OPTERR=1                             #@$ Flag to determine if getopts should report invalid switches itself or rely in case statement in caller.  Bash internal.
@@ -250,10 +248,11 @@ function core_LogVerbose {
 
 function core_ToolExists {
   #@Description  Find an executable program with the names given.  Variables are stored in __SBT_TOOL_LIST hash.  Help ensure portability.
-  #@Description  -
   #@Description  SBT functions should never use this for tools in the known-dependencies list.  This is primarily: coreutils, grep, and perl.
   #@Description  You may specify multiple tools to check for, but if you pass version checking switches they must apply to all tools for this call.  If version numbers, version invocation, or other switches are different for the tools, perform multiple calls in your caller.
-  #@Date  2013.07.15
+  #@Description  -
+  #@Description  You may also specify multiple tools and the -a or --any switch, which will return true if Any of the tools match.  For example, you might want gawk by default, but you can reasonably trust whatever version of awk is on a system.  So you send: 'gawk' and 'awk' IN ORDER OF PREFERENCE!  The found tool will be reported to stdout.
+  #@Date  2013.10.04
 
   # Variables
   local __SBT_NONOPT_ARGS=()                #@$ Capture a list of tools for use.  Localize array since we'll only use it here.
@@ -261,6 +260,7 @@ function core_ToolExists {
   local -i MEDIUM=0                         #@$ Medium version number
   local -i MINOR=0                          #@$ Minor version number
   local EXACT=false                         #@$ Compare the version numbers exactly, not in a greater-than fashion
+  local ANY=false                           #@$ Flag to determine if we should abort when any of the tools checked for are found.
   local VERSION_SWITCH='--version'          #@$ The switch syntax to present the version information string
   local REGEX_PATTERN='\d+\.\d+([.]\d+)?'   #@$ The PCRE (grep -P) regex pattern to use to finding the version string.  By default MAJOR.MEDIUM only.
   local tool=''                             #@$ Temp variable to hold tool name, kept in local scope.
@@ -276,6 +276,7 @@ function core_ToolExists {
       '1' | 'major'          ) MAJOR="${OPTARG}"          ;;  #@opt_  Sets the major version number for comparison.
       '2' | 'medium'         ) MEDIUM="${OPTARG}"         ;;  #@opt_  Sets the medium version number for comparison.
       '3' | 'minor'          ) MINOR="${OPTARG}"          ;;  #@opt_  Sets the minor version number for comparison.
+      'a' | 'any'            ) ANY=true                   ;;  #@opt_  Make the version match exactly, rather than greater-than.
       'e' | 'exact'          ) EXACT=true                 ;;  #@opt_  Make the version match exactly, rather than greater-than.
       'r' | 'regex-pattern'  ) REGEX_PATTERN="${OPTARG}"  ;;  #@opt_  Specify a custom regex pattern for getting the version number from program output.
       'v' | 'version-switch' ) VERSION_SWITCH="${OPTARG}" ;;  #@opt_  Specify a custom switch to use to get version information from the program output.
@@ -293,7 +294,7 @@ function core_ToolExists {
     if [ -z "${found_version}" ] ; then
       core_LogVerbose 'Not found.  Seeing if tool exists on our PATH anywhere.'
       if ! ${tool} ${VERSION_SWITCH} >/dev/null 2>/dev/null ; then
-        core_LogError 'Could not find tool.  If caller is an SBT function, this is a problem as SBT includes all dependencies.  Please check lib directory and SBT invocation.'
+        core_LogError "Could not find tool '${tool}'.  If caller is an SBT function, this is a problem as SBT includes all dependencies.  Please check lib dir and call core_SetToolPath if needed."
         return 1
       fi
       core_LogVerbose "Trying to grab the version string for comparison using:  ${tool} ${VERSION_SWITCH} | grep -oP '${REGEX_PATTERN}'"
@@ -314,6 +315,9 @@ function core_ToolExists {
     fi
     core_LogVerbose 'Found tool and it meets requirements!  Storing in __SBT_TOOL_LIST hash for faster future lookups.'
     __SBT_TOOL_LIST["${tool}"]="${found_version}"
+
+    # If we hit this point, we found a tool and are about to loop again.  But if we'll take any match, report it and break out.
+    if ${ANY} ; then core_LogVerbose "Found a tool (${tool}) and the ANY flag is set; reporting to stdout and leaving." ; echo "${tool}" ; break ; fi
   done
   # If we reach this point, we found all the programs.
   return 0

@@ -9,31 +9,13 @@
 
 
 
-
-function rawr {
-  echo "${1}"
-  echo "${2}"
-}
-
-rawr 'me' 'you'
-rawr '' 'just you'
-
-
-
-exit
-var="$(cd "$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")/.." ; pwd)"
-echo "${var}"
-. /tmp/source_me
-. /tmp/source_me_2
-
-. /tmp/stupidbashtard/sbt/bla.sh
-exit
 . ../sbt/core.sh
-. ../sbt/string.sh
-__SBT_VERBOSE=true
+#. ../sbt/string.sh
+gawk -V
+core_SetToolPath "/home/kyle/stupidbashtard/lib/tools"
+gawk -V
 
-
-
+exit
 
 case "one" in
   'o' | 'one' ) echo 'woohoo' ;;
