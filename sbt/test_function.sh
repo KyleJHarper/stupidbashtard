@@ -4,8 +4,9 @@
 # Licensed per the details in the LICENSE file in this package.
 
 function test_function {
-  #@Author Hank BoFrank
-  #@Date   2013.03.04
+  #@Author  Hank BoFrank
+  #@Date    2013.03.04
+  #@Usage   test_function [-D 'search for string' [-D ...]] [-h --help] [-v --verbose]
 
   #@Description   A complex function attempting to show most (or all) of the things/ways you can document stuff.
   #@Description   We will attempt to read a file and list the line number and first occurence of a Zelda keyword.

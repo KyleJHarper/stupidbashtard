@@ -425,7 +425,6 @@ sub add_tag {
       $tag_name .= $8 ;
     }
   }
-#  if ( $tag_name eq '$' ) { if ( /^[\s]*((declare|typeset)[\s]+(-[a-zA-Z][\s]+)+)?local[\s]+(${FIRST_VAR_CC}${VAR_CC}*)/ ) { $tag_name .= $4 ; } }
   if ( $tag_name eq '$' ) { &print_se($func->name() . " - Implied variable tag '" . '#@$' . "' found, but no variable found at the front of the line on line $line_num.\n") ; return 0 ; }
   if ( $tag_name =~ /\$E_${VAR_CC}+/ )              { $func->tags('exit',     substr($tag_name, 1), $tag_text . "\n"); return 1; }
   if ( $tag_name =~ /\$${FIRST_VAR_CC}${VAR_CC}*/ ) { $func->tags('variable', substr($tag_name, 1), $tag_text . "\n"); return 1; }
