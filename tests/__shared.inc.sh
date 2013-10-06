@@ -43,5 +43,7 @@ test_number=0
 iteration=100
 MAX_ITERATIONS=100
 
+PATH="$(here)/../lib/tools:${PATH}"
+
 echo
 echo "--- $(basename $0)"

@@ -11,7 +11,7 @@
 
 [ "${1}" == 'performance' ] && iteration=1
 while [ ${iteration} -le ${MAX_ITERATIONS} ] ; do
-  # -- Support Proper (Title) casing items
+  # -- 1 -- Support Proper (Title) casing items
   new_test "Sending multiple items for proper (title) casing (e.g.: I Am Some Text): "
   [ "$( string_ProperCase $'heLlo\ntheRE ' $'Joe\tschmoe '  'RAWR'  )" == $'Hello\nThere Joe\tSchmoe Rawr' ]   || fail 1
   pass

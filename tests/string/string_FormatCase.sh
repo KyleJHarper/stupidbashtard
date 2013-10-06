@@ -11,58 +11,67 @@
 
 [ "${1}" == 'performance' ] && iteration=1
 while [ ${iteration} -le ${MAX_ITERATIONS} ] ; do
-  # -- Simple invocation with 1 argument
+  # -- 1 -- Simple invocation with 1 argument
   new_test "Sending a single argument for upper casing: "
   [ "$( string_FormatCase -u 'rawr' )" == 'RAWR' ]   || fail 1
   pass
 
-  # -- Multiple arguments
+
+  # -- 2 -- Multiple arguments
   new_test "Sending multiple arguments: "
   [ "$( string_FormatCase -u 'rawr' 'baby' )" == 'RAWRBABY' ]   || fail 1
   pass
 
-  # -- Argument with newline characters
+
+  # -- 3 -- Argument with newline characters
   new_test "Arguments with newlines should preserve newlines: "
   [ "$( string_FormatCase -u $'hello\nthere' )" == $'HELLO\nTHERE' ]   || fail 1
   pass
 
-  # -- Put info in named var instead
+
+  # -- 4 -- Put info in named var instead
   new_test "Putting return value in a named variable rather than std out: "
   rv=''
   string_FormatCase -u $'hello\nthere' -R rv
   [ "${rv}" == $'HELLO\nTHERE' ] || fail 1
   pass
 
-  # -- Argument with newline characters
+
+  # -- 5 -- Argument with newline characters
   new_test "Arguments with tabs should preserve tabs: "
   [ "$( string_FormatCase -u $'hello\tthere' )" == $'HELLO\tTHERE' ]   || fail 1
   pass
 
-  # -- Pass a lot of arguments and combine in rv
+
+  # -- 6 -- Pass a lot of arguments and combine in rv
   new_test "Using several arguments to join together.  Storing in rv.  Includes newlines and tabs: "
   rv=''
   string_FormatCase -u $'hello\nthere ' $'joe\tschmoe ' -R rv 'rawr'
   [ "${rv}" == $'HELLO\nTHERE JOE\tSCHMOE RAWR' ] || fail 1
   pass
 
-  # -- Should be able to swallow output and get the same result as test above.
+
+  # -- 7 -- Should be able to swallow output and get the same result as test above.
   new_test "Same complex test as above, swallowing output with subshell into rv rather than using -R (by-ref): "
   rv=''
   rv="$(string_FormatCase -u $'hello\nthere ' $'joe\tschmoe '  'rawr')"
   [ "${rv}" == $'HELLO\nTHERE JOE\tSCHMOE RAWR' ] || fail 1
   pass
 
-  # -- Support lower casing items
+
+  # -- 8 -- Support lower casing items
   new_test "Sending a single argument for lower casing: "
   [ "$( string_FormatCase -l 'RAWR' )" == 'rawr' ]   || fail 1
   pass
 
-  # -- Support Proper (Title) casing items
+
+  # -- 9 -- Support Proper (Title) casing items
   new_test "Sending multiple items for proper (title) casing (e.g.: I Am Some Text): "
   [ "$( string_FormatCase -p $'heLlo\ntheRE ' $'Joe\tschmoe '  'RAWR'  )" == $'Hello\nThere Joe\tSchmoe Rawr' ]   || fail 1
   pass
 
-  # -- Support case toggling items
+
+  # -- 10 -- Support case toggling items
   new_test "Sending multiple items for toggling case (e.g.: I am FUn == i AM fuN): "
   [ "$( string_FormatCase -t $'Hello\nthere ' $'Joe\tSchmoe '  'RAWR'  )" == $'hELLO\nTHERE jOE\tsCHMOE rawr' ]   || fail 1
   pass

@@ -63,9 +63,8 @@ function core_getopts {
   # If we're on the first index, turn off OPTERR if our prescribed opts start with a colon.
   core_LogVerbose 'Checking to see if OPTIND is 1 so we can reset items.'
   if [ ${OPTIND} -eq 1 ] ; then
-    core_LogVerbose 'OPTIND is 1.  Resetting OPTERR and __SBT_SHORT_OPTIND.'
+    core_LogVerbose 'OPTIND is 1.  Resetting OPTERR.'
     OPTERR=1
-    __SBT_SHORT_OPTIND=1
     if [ "${1:0:1}" == ':' ] || [ "${3:0:1}" == ':' ] ; then
       core_LogVerbose 'Error handling overriden, to be handled by caller.  OPTERR disabled.'
       OPTERR=0
@@ -89,22 +88,25 @@ function core_getopts {
 
     # If the __OPT has an equal sign, we need to place the right-hand contents in value and trim __OPT.
     if [[ "${__OPT}" =~ ^--[a-zA-Z0-9][a-zA-Z0-9-]*= ]] || [[ "${__OPT}" =~ ^-[a-zA-Z0-9][a-zA-Z0-9-]*= ]] ; then
-      core_LogVerbose 'Option specified has a value via assignment operator (=).  Settint OPTARG and re-setting __OPT.'
+      core_LogVerbose 'Option specified has a value via assignment operator (=).  Setting OPTARG and re-setting __OPT.'
       OPTARG="${__OPT##*=}"
       __OPT="${__OPT%%=*}"
     fi
 
     # If __OPT is a short opt with muliple switches at once, read/modify the __SBT_SHORT_OPTIND and __OPT.
-    # Also need to decrement OPTIND, it can't have an optarg unless it's the last one.
+    # Also need to decrement OPTIND if we're on the last item in the compact list.
     if [[ "${__OPT}" =~ ^-[a-zA-Z0-9][a-zA-Z0-9]+ ]] ; then
       core_LogVerbose "Option is short and compacted (-abc...).  Getting new __OPT with short index of ${__SBT_SHORT_OPTIND}"
       if [ -z "${__OPT:${__SBT_SHORT_OPTIND}:1}" ] ; then
+        core_LogVerbose "Current SHORT_OPTIND makes empty string, no more compact options in this OPTIND.  Setting SHORT_OPTIND to 1 and returning 0 for next OPTIND."
         __SBT_SHORT_OPTIND=1
-        break
+        return 0
       fi
+      core_LogVerbose "Assigning '-${__OPT:${__SBT_SHORT_OPTIND}:1}' to __OPT and incrementing SHORT_OPTIND for next run."
       __OPT="-${__OPT:${__SBT_SHORT_OPTIND}:1}"
       let __SBT_SHORT_OPTIND++
-      [ ! -z "${__OPT:${__SBT_SHORT_OPTIND}:1}" ] && let OPTIND--
+      core_LogVerbose "Substring based on SHORT_OPTIND was not blank, decrementing OPTIND for next run."
+      let OPTIND--
     fi
 
     ###############################################
@@ -119,6 +121,7 @@ function core_getopts {
       fi
       core_LogVerbose "Searching available options for option specified: ${__OPT}"
       for temp_opt in ${3//,/ } ; do
+        [ "${temp_opt:0:1}" = ':' ] && temp_opt="${temp_opt:1}"
         if [ "${temp_opt%:}" = "${__OPT}" ] ; then
           core_LogVerbose "Found a matching option.  Assigning to: $2"
           eval $2="\"${temp_opt%:}\""
