@@ -14,6 +14,7 @@ function string_ToUpper {
   #@Description  Takes all positional arguments and returns them in upper case format.
   #@Description  -
   #@Description  Sends all heavy lifting to string_FormatCase.  This is a wrapper.
+  #@Usage  string_ToUpper <'Value to upper case' [...]>
 
   # Enter the function
   core_LogVerbose 'Entering function.'
@@ -30,6 +31,7 @@ function string_ToLower {
   #@Description  Takes all positional arguments and returns them in lower case format.
   #@Description  -
   #@Description  Sends all heavy lifting to string_FormatCase.  This is a wrapper.
+  #@Usage  string_ToLower <'value to lower case' [...]>
 
   # Enter the function
   core_LogVerbose 'Entering function.'
@@ -46,6 +48,7 @@ function string_ProperCase {
   #@Description  Takes all positional arguments and returns them in proper (title) case format.
   #@Description  -
   #@Description  Sends all heavy lifting to string_FormatCase.  This is a wrapper.
+  #@Usage  string_ProperCase <'Value to proper case' [...]>
 
   # Enter the function
   core_LogVerbose 'Entering function.'
@@ -62,6 +65,7 @@ function string_ToggleCase {
   #@Description  Takes all positional arguments and returns them in toggled case.
   #@Description  -
   #@Description  Sends all heavy lifting to string_FormatCase.  This is a wrapper.
+  #@Usage  string_ToggleCase <'Value to toggle case on' [...]>
 
   # Enter the function
   core_LogVerbose 'Entering function.'
@@ -75,9 +79,10 @@ function string_ToggleCase {
 
 
 function string_FormatCase {
-  #@Description  Takes all positional arguments and returns them in the case format prescribed.  Usually referred by ToUpper, ToLower, etc.
+  #@Description  Takes all positional arguments and returns them in the case format prescribed.  Usually referred by ToUpper, ToLower, etc. so we don't program long options.
   #@Description  -
   #@Description  Supports the -R switch for passing a variable name for indirect referencing.  If found, it places output in the named variable, rather than sending to stdout.
+  #@Usage  string_FormatCase [-l] [-L] [-p] [-R 'ref_var_name'] [-t] [-u] [-U] <'Values to manipulate' [...]>
 
   local opt                   #@$ Localizing opt for use in getopts below.
   local -i i=0                #@$ Localized temporary variable used in loops.
@@ -93,8 +98,8 @@ function string_FormatCase {
     case "${opt}" in
       l )  [ ! -z "${CASE}" ] && core_LogError "Case already set to ${CASE}, overriding with lower (continuing)."     ; CASE='lower'     ;;
       L )  [ ! -z "${CASE}" ] && core_LogError "Case already set to ${CASE}, overriding with onelower (continuing)."  ; CASE='onelower'  ;;
-      R )  REFERENCE="${OPTARG}"                                                                                                         ;;
       p )  [ ! -z "${CASE}" ] && core_LogError "Case already set to ${CASE}, overriding with proper (continuing)."    ; CASE='proper'    ;;
+      R )  REFERENCE="${OPTARG}"                                                                                                         ;;
       t )  [ ! -z "${CASE}" ] && core_LogError "Case already set to ${CASE}, overriding with toggle (continuing)."    ; CASE='toggle'    ;;
       u )  [ ! -z "${CASE}" ] && core_LogError "Case already set to ${CASE}, overriding with upper (continuing)."     ; CASE='upper'     ;;
       U )  [ ! -z "${CASE}" ] && core_LogError "Case already set to ${CASE}, overriding with oneupper (continuing)."  ; CASE='oneupper'  ;;
@@ -154,7 +159,8 @@ function string_IndexOf {
   #@Description  Index will be zero based.  This offloads the work to awk which is a 1-based index, but that's atypical, so I adjust it.
   #@Description  -
   #@Description  Cannot operate on files, yet.
-  #@Date  2013.09.16
+  #@Usage  string_IndexOf [-o --occurrence '#'] <-n --needle 'needle' [...]> [-R 'ref_var_name'] <'haystack' [...]>
+  #@Date   2013.09.16
 
   core_LogVerbose 'Entering function.'
   # Variables

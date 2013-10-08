@@ -111,9 +111,9 @@ pass
 # Generate the test_function yaml file and make sure the MD5 matches.
 #
 cmd="${d} ../sbt/test_function.sh"
-KNOWN_SUM='189dea8b6ab17e7716828ccf9a547886'
+KNOWN_SUM='bd34d83ef1f1ef55aa6aa4d3b789b5ea'
 new_test "Analyzing a complete function and comparing known MD5 of YAML file.  Includes most features and edge cases: "
 $cmd >/dev/null 2>/dev/null
 [ $? -eq ${E_GOOD} ] || fail 1
-[[ "$( grep -P '^[^#]' ../doc/test_function.yaml | md5sum | cut -d' ' -f1 )" == "${KNOWN_SUM}" ]] || fail 1
+[[ "$( grep -P '^[^#]' ../doc/test_function.yaml | md5sum | cut -d' ' -f1 )" == "${KNOWN_SUM}" ]] || fail 2
 pass

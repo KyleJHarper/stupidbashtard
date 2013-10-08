@@ -305,6 +305,7 @@ function doc_examples_43-ParameterVariableTags {
 # --
 function doc_examples_50-GetOptsTags {
   #@Description  This function will show a few ways to provide comments for the getopts loop.
+  #@Usage        doc_examples_50-GetOptsTags <-b 'Book Name'> [-a]
 
   local my_opt
   local AWESOME_MODE=false
@@ -327,6 +328,7 @@ function doc_examples_50-GetOptsTags {
 
 function doc_examples_51-LineEndGetOptsTags {
   #@Description  This function will show a few ways to provide comments for the getopts loop.
+  #@Usage        doc_examples_51-LineEndGetOptsTags <-b 'Book Name'> [-a]
 
   local my_opt
   local AWESOME_MODE=false
@@ -347,6 +349,7 @@ function doc_examples_51-LineEndGetOptsTags {
 
 function doc_examples_52-LongOptsWithLineEndComments {
   #@Description  Long options and some line-end comments.
+  #@Usage        doc_examples_52-LongOptsWithLineEndComments <-b --book 'Book Name'> [-a --awesome]
 
   local my_opt
   local AWESOME_MODE=false
@@ -358,8 +361,8 @@ function doc_examples_52-LongOptsWithLineEndComments {
       'awesome' ) AWESOME_MODE=true     ;;  #@opt_ When specified, turns on AWESOME mode... yea.
       'book'    ) BOOK_NAME="${OPTARG}" ;;  #@opt_ Override the default book name to use.
       *         ) echo "Invalid option -${OPTARG}" >&2
-            return 1
-            ;;
+                  return 1
+                  ;;
     esac
   done
 
@@ -369,6 +372,7 @@ function doc_examples_52-LongOptsWithLineEndComments {
 
 function doc_examples_53-FederatedGetOptsTags {
   #@Description  This function will show a few ways to provide comments for the getopts loop.
+  #@Usage        doc_examples_53-FederatedGetOptsTags <-b 'Book Name'> [-a]
   #@opt_a When specified, turns on AWESOME mode... yea.
   #@opt_b Override the default book name to use.
 
@@ -400,6 +404,7 @@ function doc_examples_98-ComplexZelda {
   #@Description   We will attempt to read a file and list the line number and first occurence of a Zelda keyword.
   #@Description   -
   #@Description   This is a SILLY script that is untested; for demonstration purposes only.
+  #@Usage         doc_examples_98-ComplexZelda [-D 'dun dun dun'] [-h] [-v]
 
   # Variables
   #@$1 The first option (after shifting from getopts) will be a file name to operate on.
@@ -459,6 +464,7 @@ function doc_examples_99-ComplexZeldaLongOpts {
   #@Description   We will attempt to read a file and list the line number and first occurence of a Zelda keyword.
   #@Description   -
   #@Description   This is a SILLY script that is untested; for demonstration purposes only.
+  #@Usage         doc_examples_99-ComplexZeldaLongOpts [-D 'dun dun dun'] [-h --help] [-v --verbose]
 
   # Variables
   #@$1 The first option (after shifting from getopts) will be a file name to operate on.

@@ -38,6 +38,7 @@ function core_getopts {
   #@Description  SBT's getopts will set OPTIND back to default when we're done.  The normal getopts doesn't do this niceness.  I deviate here because the only time it'll conflict is if a getopts case statement in a caller hits a function which does its own getopts. BUT!!!  For this to work in normal bash getopts, you need:  local OPTIND=1 anyway.  So we fix add one niceness without affecting anticipated logic.
 
   #@Date  2013.07.13
+  #@Usage core_getopts <'short options'> <'return_variable_name'> <'long options'> <"$@">
 
   #@$1  The list short options, same format as bash built-in getopts.
   #@$2  Textual name of the variable to send back to the caller, same as built-in getopts.
@@ -213,7 +214,8 @@ function core_Initialize {
 
 function core_LogError {
   #@Description  Mostly for internal use.  Sends info to std err if warnings are enabled.  No calls to other SBT functions allowed to prevent infinite loops.
-  #@Date    2013.07.14
+  #@Date   2013.07.14
+  #@Usage  core_LogError [-e] [-n]  <<'text to send'> ...>
 
   # Check for __SBT_WARNING first.
   ${__SBT_WARNING} || return 1
@@ -229,7 +231,8 @@ function core_LogError {
 
 function core_LogVerbose {
   #@Description  Mostly for internal use.  Sends info to std err if verbosity is enabled.  No calls to other SBT functions allowed to prevent infinite loops.
-  #@Date    2013.07.14
+  #@Date   2013.07.14
+  #@Usage  core_LogVerbose [-e] [-n] <<'text to send'> ...>
 
   # Check for __SBT_VERBOSE first.  Save a lot of time if verbosity isn't enabled.
   ${__SBT_VERBOSE} || return 1
@@ -256,6 +259,7 @@ function core_ToolExists {
   #@Description  -
   #@Description  You may also specify multiple tools and the -a or --any switch, which will return true if Any of the tools match.  For example, you might want gawk by default, but you can reasonably trust whatever version of awk is on a system.  So you send: 'gawk' and 'awk' IN ORDER OF PREFERENCE!  The found tool will be reported to stdout.
   #@Date  2013.10.04
+  #@Usage core_ToolExists [-1 --major '#'] [-2 --medium '#'] [-3 --minor '#'] [-a --any] [-e --exact] [-v --version-switch '-V'] [-r --regex-pattern 'pattern'] <<'tool'> ...>
 
   # Variables
   local __SBT_NONOPT_ARGS=()                #@$ Capture a list of tools for use.  Localize array since we'll only use it here.
@@ -279,7 +283,7 @@ function core_ToolExists {
       '1' | 'major'          ) MAJOR="${OPTARG}"          ;;  #@opt_  Sets the major version number for comparison.
       '2' | 'medium'         ) MEDIUM="${OPTARG}"         ;;  #@opt_  Sets the medium version number for comparison.
       '3' | 'minor'          ) MINOR="${OPTARG}"          ;;  #@opt_  Sets the minor version number for comparison.
-      'a' | 'any'            ) ANY=true                   ;;  #@opt_  Make the version match exactly, rather than greater-than.
+      'a' | 'any'            ) ANY=true                   ;;  #@opt_  Return successful after matching any tool, if multiple provided, rather than all.
       'e' | 'exact'          ) EXACT=true                 ;;  #@opt_  Make the version match exactly, rather than greater-than.
       'r' | 'regex-pattern'  ) REGEX_PATTERN="${OPTARG}"  ;;  #@opt_  Specify a custom regex pattern for getting the version number from program output.
       'v' | 'version-switch' ) VERSION_SWITCH="${OPTARG}" ;;  #@opt_  Specify a custom switch to use to get version information from the program output.
@@ -287,9 +291,13 @@ function core_ToolExists {
     esac
   done
 
+  # Preflight checks
   core_LogVerbose 'Doing pre-flight checks to make sure all necessary options were passed.'
-  # No checks
+  if [ -z "${REGEX_PATTERN}" ]          ; then core_LogError 'Regex pattern cannot be blank.  (aborting)'  ; return 1 ; fi
+  if [ -z "${VERSION_SWITCH}" ]         ; then core_LogError 'Version switch cannot be blank.  (aborting)' ; return 1 ; fi
+  if [ ${#__SBT_NONOPT_ARGS[@]} -eq 0 ] ; then core_LogError 'No tools sent to check for.  (aborting).'    ; return 1 ; fi
 
+  # Search for tools
   core_LogVerbose "Checking for programs/tools.  Exact: ${EXACT}.  Version: ${MAJOR}.${MEDIUM}.${MINOR}."
   for tool in ${__SBT_NONOPT_ARGS[@]} ; do
     core_LogVerbose "Scanning existing tool list for an previously found match of: ${tool}"
@@ -329,7 +337,8 @@ function core_ToolExists {
 
 function core_SetToolPath {
   #@Description  Any tools that SBT relies on can be compiled and provided with the SBT bundles.  This function will prepend the path specified to $PATH, ensuring it is used before other versions found on the system.
-  #@Date  2013.09.16
+  #@Date   2013.09.16
+  #@Usage  core_SetToolPath <'/path/to/prepend'>
 
   # Preflight checks
   core_LogVerbose 'Entering function and starting preflight checks.'
@@ -345,10 +354,11 @@ function core_SetToolPath {
 
 
 function core_StoreByRef {
-  #@Description  This uses eval to do an indirect assignment to positional 1 with positionals 2+.
+  #@Description  This uses eval to do an indirect assignment to positional 1 with positionals 2+.  If $1 is blank, the caller doesn't intend/support saving to a variable; therefore output goes to stdout.
   #@Description  -
   #@Description  This needs to be quite simple, and extremely fast.
-  #@Date  2013.10.03
+  #@Date   2013.10.03
+  #@Usage  core_StoreByRef <'variable_to_assign_to'> <<'Value to store'> ...>
 
   # Preflight checks
   core_LogVerbose "Entering function, doing preflight checks now."
