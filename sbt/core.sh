@@ -48,10 +48,8 @@ function core_getopts {
 
   # Invocation and preflight checks.
   core_LogVerbose 'Entering function.'
-  if [ -z "${4}" ] || [ -z "${2}" ] || [ -z "${1}" ] ; then
-    core_LogError "Invalid invocation of core_getopts."
-    return 1
-  fi
+  if [ -z "${2}" ] || [ -z "${1}" ] ; then core_LogError "Invalid invocation of core_getopts."                           ; return 1 ; fi
+  if [ -z "${4}" ]                  ; then core_LogVerbose "No positionals were sent, odd.  Not an error, but aborting." ; return 1 ; fi
 
   # Clean out OPTARG and setup variables
   core_LogVerbose 'Setting up variables.'
@@ -171,7 +169,8 @@ function core_getopts {
           eval $2="\"${temp_opt}\""
           let i++
           if [ "${1:${i}:1}" == ':' ] && [ -z "${OPTARG}" ] ; then
-            core_LogVerbose "Option sent (${__OPT}) requires an argument; gathering now."
+            core_LogVerbose "Option sent (${__OPT}) requires an argument; gathering now. Also resetting SHORT OPTIND, as it must be the end."
+            __SBT_SHORT_OPTIND=1
             let OPTIND++
             let MY_OPTIND++
             eval  OPTARG="\"\${${MY_OPTIND}}\""

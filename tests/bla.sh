@@ -6,9 +6,39 @@
 #./docker.sh
 #./core.sh
 
+T=0
+ITERATIONS=100000
+i=0
+time (for x in $(seq 1 1 ${ITERATIONS}) ; do
+  if true ; then let i++ ; fi
+done)
+echo ${i}
 
+i=0
+time (for x in $(seq 1 1 ${ITERATIONS}) ; do
+  if ! false ; then let i++ ; fi
+done)
+echo ${i}
 
+i=0
+time (for x in $(seq 1 1 ${ITERATIONS}) ; do
+  if [ ${T} -eq 0 ] ; then let i++ ; fi
+done)
+echo ${i}
 
+i=0
+time (for x in $(seq 1 1 ${ITERATIONS}) ; do
+  if [ ${T} ] ; then let i++ ; fi
+done)
+echo ${i}
+
+i=0
+time (for x in $(seq 1 1 ${ITERATIONS}) ; do
+  if [ 1 ] ; then let i++ ; fi
+done)
+echo ${i}
+
+exit
 . ../sbt/core.sh
 #. ../sbt/string.sh
 gawk -V

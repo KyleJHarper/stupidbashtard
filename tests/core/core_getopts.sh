@@ -246,7 +246,6 @@ while [ ${iteration} -le ${MAX_ITERATIONS} ] ; do
   [ "${__SBT_NONOPT_ARGS[1]}" == 'nonopt 2' ]                                                                            || fail 5
   pass
 
-
   # -- 15 -- Shortopts side-by-side should work:  like so:  -abc == -a -b -c
   new_test "Using short options in succession in the same argument: ./script -ac -b someArg: "
   opts_sbt ":${SHORT_OPTS}" '' -ac -b "${B_TEXT}" -d "${D_TEXT}" || fail 1
@@ -301,4 +300,3 @@ while [ ${iteration} -le ${MAX_ITERATIONS} ] ; do
 
   let iteration++
 done
-
