@@ -92,5 +92,12 @@ while [ ${iteration} -le ${MAX_ITERATIONS} ] ; do
   [ ${distance} -eq 25 ] || fail 4
   pass
 
+
+  # -- 12 -- Try to find the last occurrence of a string
+  new_test "Finding the last occurrence of a needle by sending -o 'last': "
+  [ $(string_IndexOf --occurrence 'last' --needle 'Yum' $'Yum, I ate an\n apple ' $'and an\n orange yesterday. Yum Yum Yum!') -eq 55 ] || fail 1
+  pass
+
+
   let iteration++
 done

@@ -178,7 +178,7 @@ function string_IndexOf {
   core_LogVerbose 'Processing options.'
   while core_getopts ':n:o:R:' opt ':needle:,occurrence:' "$@" ; do
     case "${opt}" in
-      'o' | 'occurrence' ) occurrence="${OPTARG}"    ;;
+      'o' | 'occurrence' ) if [[ "${OPTARG}" == 'last' ]] ; then occurrence=9999 ; else occurrence="${OPTARG}" ; fi ;;
       'n' | 'needle'     ) needles+=( "${OPTARG}" )  ;;
       'R'                ) REFERENCE="${OPTARG}"     ;;
       *                  ) core_LogError "Invalid option sent to me: ${opt}  (aborting)" ; return 1 ;;
@@ -195,11 +195,11 @@ function string_IndexOf {
   if [ ${#__SBT_NONOPT_ARGS[@]} -gt 1 ] ; then
     core_LogVerbose 'More than one haystack was passed.  Index returned will reflect that of haystacks "mashed" together.'
   fi
-  for temp in "${__SBT_NONOPT_ARGS[@]}" ; do haystack+="${temp}" ; done
   core_ToolExists 'gawk' || return 1
 
   # Call external tool and store results in temp var.
   core_LogVerbose 'Starting search for needles specified'
+  for temp in "${__SBT_NONOPT_ARGS[@]}" ; do haystack+="${temp}" ; done
   for needle in "${needles[@]}" ; do
     core_LogVerbose "Searching for: '${needle}'"
     let "index += $(gawk -v haystack="${haystack}" -v needle="${needle}" -v occurrence="${occurrence}" -f "${__SBT_EXT_DIR}/string_IndexOf.awk")"
