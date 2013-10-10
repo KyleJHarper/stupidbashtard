@@ -1,3 +1,1 @@
-If param 4 is blank in core_getopts, there's nothing to process.  It's not necessarily a failure... might want to rework it.
-
 Ability to store core_LogVerbose into a file and/or std out
