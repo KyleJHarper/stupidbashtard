@@ -197,7 +197,7 @@ function string_IndexOf {
   fi
   core_ToolExists 'gawk' || return 1
 
-  # Call external tool and store results in temp var.
+  # Call external tool and store results in temp var.  We can += the index because awk will give a 1-based index, 0 == failed.
   core_LogVerbose 'Starting search for needles specified'
   for temp in "${__SBT_NONOPT_ARGS[@]}" ; do haystack+="${temp}" ; done
   for needle in "${needles[@]}" ; do
@@ -209,5 +209,54 @@ function string_IndexOf {
   # Report findings
   [ ${index} -gt -1 ] && core_LogVerbose "Found a match at index ${index} to needle: '${needle}'"
   core_StoreByRef "${REFERENCE}" "${index}" || echo -n "${index}"
+  return 0
+}
+
+
+function string_Substring {
+  #@Description  Returns the portion of a string starting at index X, up to length Y.
+  #@Usage  string_Substring [-i --index '#'] [-l --length '#'] [-R 'ref_var_name'] <'haystack' [...]>
+  #@Date   2013.10.19
+
+  core_LogVerbose 'Entering function.'
+  # Variables
+  local -i index=0            #@$ Zero-based index to start the substring at.  Supports negative values to wrap back from end of string.
+  local -i length=0           #@$ Number of characters to return.  Negative value will return remainder minus $length characters.  Zero means return all.
+  local opt=''                #@$ Temporary variable for core_getopts, brought to local scope.
+  local REFERENCE=''          #@$ Will hold the name of the var to use for indirect referencing later, if -R used.
+  local -a __SBT_NONOPT_ARGS  #@$ Local instance for the core_getopts processing below since this will never need exposed to parents.
+  local haystack=''           #@$ Stores the values we're going to search within.
+  local temp=''               #@$ Garbage variable for looping.
+
+  # Use core_getopts to not only handle options elegantly, but to put nonopts in __SBT_NONOPT_ARGS
+  core_LogVerbose 'Processing options.'
+  while core_getopts ':i:l:R:' opt ':index:,length:' "$@" ; do
+    case "${opt}" in
+      'i' | 'index'   ) index="${OPTARG}"      ;;
+      'l' | 'length'  ) length="${OPTARG}"     ;;
+      'R'             ) REFERENCE="${OPTARG}"  ;;
+      *               ) core_LogError "Invalid option sent to me: ${opt}  (aborting)" ; return 1 ;;
+    esac
+  done
+
+  # Preflight checks
+  core_LogVerbose 'Checking requirements before processing function.'
+  for temp in "${__SBT_NONOPT_ARGS[@]}" ; do haystack+="${temp}" ; done
+  if [ ${index} -ge ${#haystack} ] ; then
+    core_LogError "Index specified (${index}) is higher than haystack size (${#haystack}).  (aborting)"
+    return 1
+  fi
+  if [ ${#__SBT_NONOPT_ARGS[@]} -gt 1 ] ; then
+    core_LogVerbose 'More than one haystack was passed.  Substring returned will reflect that of haystacks "mashed" together.'
+  fi
+
+  # Main logic
+  core_LogVerbose "Grabbing the substring with index '${index}' and length '${length}'."
+  if [ ${length} -eq 0 ] ; then
+    temp="${haystack: ${index}}"
+  else
+    temp="${haystack: ${index}: ${length}}"
+  fi
+  core_StoreByRef "${REFERENCE}" "${temp}" || echo -n "${temp}"
   return 0
 }

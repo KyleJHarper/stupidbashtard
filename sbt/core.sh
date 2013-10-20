@@ -214,7 +214,7 @@ function core_Initialize {
 function core_LogError {
   #@Description  Mostly for internal use.  Sends info to std err if warnings are enabled.  No calls to other SBT functions allowed to prevent infinite loops.
   #@Date   2013.07.14
-  #@Usage  core_LogError [-e] [-n]  <<'text to send'> ...>
+  #@Usage  core_LogError [-e] [-n]  <'text to send' [...]>
 
   # Check for __SBT_WARNING first.
   ${__SBT_WARNING} || return 1
@@ -231,7 +231,7 @@ function core_LogError {
 function core_LogVerbose {
   #@Description  Mostly for internal use.  Sends info to std err if verbosity is enabled.  No calls to other SBT functions allowed to prevent infinite loops.
   #@Date   2013.07.14
-  #@Usage  core_LogVerbose [-e] [-n] <<'text to send'> ...>
+  #@Usage  core_LogVerbose [-e] [-n] <'text to send' [...]>
 
   # Check for __SBT_VERBOSE first.  Save a lot of time if verbosity isn't enabled.
   ${__SBT_VERBOSE} || return 1
@@ -258,7 +258,7 @@ function core_ToolExists {
   #@Description  -
   #@Description  You may also specify multiple tools and the -a or --any switch, which will return true if Any of the tools match.  For example, you might want gawk by default, but you can reasonably trust whatever version of awk is on a system.  So you send: 'gawk' and 'awk' IN ORDER OF PREFERENCE!  The found tool will be reported to stdout.
   #@Date  2013.10.04
-  #@Usage core_ToolExists [-1 --major '#'] [-2 --medium '#'] [-3 --minor '#'] [-a --any] [-e --exact] [-v --version-switch '-V'] [-r --regex-pattern 'pattern'] <<'tool'> ...>
+  #@Usage core_ToolExists [-1 --major '#'] [-2 --medium '#'] [-3 --minor '#'] [-a --any] [-e --exact] [-v --version-switch '-V'] [-r --regex-pattern 'pattern'] <'tool' [...]>
 
   # Variables
   local __SBT_NONOPT_ARGS=()                #@$ Capture a list of tools for use.  Localize array since we'll only use it here.
@@ -357,7 +357,7 @@ function core_StoreByRef {
   #@Description  -
   #@Description  This needs to be quite simple, and extremely fast.
   #@Date   2013.10.03
-  #@Usage  core_StoreByRef <'variable_to_assign_to'> <<'Value to store'> ...>
+  #@Usage  core_StoreByRef <'variable_to_assign_to'> <'Value to store' [...]>
 
   # Preflight checks
   core_LogVerbose "Entering function, doing preflight checks now."

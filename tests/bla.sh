@@ -6,6 +6,15 @@
 #./docker.sh
 #./core.sh
 
+i=3
+j=-2
+haystack="I am a big string."
+echo ${#haystack}
+echo ${haystack:${i}}
+echo ${haystack: ${i}}
+echo ${haystack: 0: ${j}}
+
+exit
 T=0
 ITERATIONS=100000
 i=0
