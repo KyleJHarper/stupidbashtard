@@ -40,10 +40,9 @@ E_OH_SNAP=255
 BIN_DIR="$(here)/../bin"
 TMP_FILE="/tmp/$(uuidgen)"
 test_number=0
-iteration=100
-MAX_ITERATIONS=100
+MAX_ITERATIONS=25
+iteration=${MAX_ITERATIONS}
 
 PATH="$(here)/../lib/tools:${PATH}"
 
-echo
-echo "--- $(basename $0)"
+echo -n "--> $(basename $0):"

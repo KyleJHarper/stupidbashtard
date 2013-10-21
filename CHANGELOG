@@ -1,3 +1,63 @@
+* 6ccedf7b08a41db8ab178d52cc366da2f35d8c09
+|   Author: kyle
+|   Date: 2013-10-19 22:55:13 -0500
+|   Comment: Touched up IndexOf and wrote the initial version of Substring.  Need to write test cases for it.
+| 
+|  
+* e2c5e8e1a9f5e7cd412ed44ccf0b00aad5aec5a4
+|   Author: kyle
+|   Date: 2013-10-09 22:28:52 -0500
+|   Comment: Added the 'last' option for occurrence in IndexOf.
+| 
+|  
+* 05f2cd22125aab5fa22c9a870ac44e34d4ee684f
+|   Author: kyle
+|   Date: 2013-10-09 20:23:24 -0500
+|   Comment: Removed some old stuff in the bin folder.  Added a new special test.
+| 
+|  
+* 3efadb516ada0541be84aa2d08fa0cd3905e1890
+|   Author: kyle
+|   Date: 2013-10-08 22:11:04 -0500
+|   Comment: Added a special test folder for proofs of decisions made: echo vs printf, true/false vs 0/1, etc.  Fixed a bug in the core_getopts function: when the last item in compact short options (-abc) requires an argument (-abc 'value for c') it moves OPTIND and doesn't reset __SBT_SHORT_OPTIND to 1.  I think I fixed something else too, but it was minor.  Either way, all tests are passing and I'm clear to move on to the next item.
+| 
+|  
+* cb95ce628ca73e5778f80690ce995af31e338b18
+|   Author: kyle
+|   Date: 2013-10-07 22:45:18 -0500
+|   Comment: Added usage tags to each function.  Yay.
+| 
+|  
+* afdb1891a8ca146b2b6d0f54fee6c16657b48729
+|   Author: kyle
+|   Date: 2013-10-06 18:37:48 -0500
+|   Comment: Added a usage tag.  Docker will pick this up as a 'basic' tag.  This can be handled by the end-use system later on.
+| 
+|  
+* 5a18778e06ac352ca148f4d8e68a510eb8e4a713
+|   Author: kyle
+|   Date: 2013-10-05 23:39:48 -0500
+|   Comment: Ok, so... found a few problems in the test scripts for core_getopts and had to fix those.  Testing functions weren't reporting correctly so things were passing that shouldn't.  The actual core_getopts function had a couple problems that needed fixed: compacted short option handling, and a break where a return 0 should have been.  Finished the string_IndexOf tests.  In the process, discovered a real-world case (added to tests for core_getopts):  if the error suppression is signaled (with a leading colon) in long opts, and the first long opt requires a parameter (has a colon at the end), then the tokenization and string comparison messes up.  Finally, updated all the test scripts to set the first path entry to the tool directory for SBT, ensuring all test cases happen again the compiled tools.  When I start doing regression testing against various version of libs/tools this will come in handy.
+| 
+|  
+* 701051696f6c8eeb6deceb75cb1aab2dbc4f04ae
+|   Author: kyle
+|   Date: 2013-10-04 22:41:17 -0500
+|   Comment: Added some tests for indexof, need more.  Need to add tests for the new -a / --any switch on core_ToolExists.  In hindsight, I won't use it for what I thought, but I could see how it might be useful in other situations and the performance hit should be almost zero.  Need to check out the TODO list and probably focus on building a usage tag next.
+| 
+|  
+* 79084b88ce915becc96aeb9d71a530d95ef8790f
+|   Author: kyle
+|   Date: 2013-10-03 21:53:59 -0500
+|   Comment: Added a by-ref function after all.  Should prove useful.  Made test cases for it.  Might need more.
+| 
+|  
+* 2d862077efd55d6c85dbacb8263f973aff05796e
+|   Author: kyle
+|   Date: 2013-10-01 22:29:52 -0500
+|   Comment: Started writing tests for IndexOf, but I now see a good reason for core_StoreByRef so that'll be added first.
+| 
+|  
 * bd2bc084baaaf0cf21dd849e8bd6bfefd192aa07
 |   Author: kyle
 |   Date: 2013-09-27 22:26:59 -0500

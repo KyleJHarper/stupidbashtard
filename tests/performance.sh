@@ -3,15 +3,13 @@
 # Copyright 2013 Kyle Harper
 # Licensed per the details in the LICENSE file in this package.
 
-# Run an entire namespace's worth of tests
-ns="${1}"
-if [ -z "${ns}" ] ; then echo "You have to specify a namespace to test." >&2 ; exit 1 ; fi
-if [ ! -d ${ns} ] ; then echo "Namespace specified doesn't exist."       >&2 ; exit 1 ; fi
-shift
-
 # Run each test.  Pass flag to do a performance test.
-for file in ${ns}/* ; do
+for ns in "$@" ; do
+  if [ ! -d ${ns} ] ; then echo "Namespace specified doesn't exist: '${ns}'" >&2 ; exit 1 ; fi
   echo
-  echo "--- $(basename ${file})"
-  time ./${file} 'performance' >/dev/null
+  echo "Namespace '${ns}'"
+  for file in ${ns}/* ; do
+    echo -n "--> $(basename ${file})"
+    ./${file} 'performance' >/dev/null
+  done
 done

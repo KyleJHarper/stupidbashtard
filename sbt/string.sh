@@ -246,8 +246,16 @@ function string_Substring {
     core_LogError "Index specified (${index}) is higher than haystack size (${#haystack}).  (aborting)"
     return 1
   fi
+  temp="${haystack: ${index}}"
+  if [ ${length} -lt 0 ] && [ ${length} -lt -${#temp} ] ; then
+    core_LogError "A negative length was sent (${length}) that extends behind the substring made with index '${index}'.  This will cause a bash error.  (aborting)"
+    return 1
+  fi
   if [ ${#__SBT_NONOPT_ARGS[@]} -gt 1 ] ; then
     core_LogVerbose 'More than one haystack was passed.  Substring returned will reflect that of haystacks "mashed" together.'
+  fi
+  if [ ${index} -eq 0 ] && [ ${length} -eq 0 ] ; then
+    core_LogVerbose 'Both index and length are zero.  The substring will exactly match the strings sent, just fyi.'
   fi
 
   # Main logic
