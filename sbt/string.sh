@@ -187,7 +187,10 @@ function string_IndexOf {
 
   # Preflight checks and warnings
   core_LogVerbose 'Checking requirements before processing function.'
-  if [ "${#needles[@]}" -eq 0 ] ; then core_LogError "No needles were specified to find an index with.  (aborting)" ; return 1 ; fi
+  if [ "${#needles[@]}" -eq 0 ] ; then
+    core_LogError "No needles were specified to find an index with.  (aborting)"
+    return 1
+  fi
   if [ ${#__SBT_NONOPT_ARGS[@]} -eq 0 ] ; then
     core_LogError "No strings specified, so I have no idea what you want me to search.  (aborting)"
     return 1
@@ -266,5 +269,51 @@ function string_Substring {
     temp="${haystack: ${index}: ${length}}"
   fi
   core_StoreByRef "${REFERENCE}" "${temp}" || echo -n "${temp}"
+  return 0
+}
+
+
+function string_CountOf {
+  #@Description  Returns a count of the times characters/strings are found in the passed values.
+  #@Description  -
+  #@Description  If count is zero, exit value will still be 0 for success.
+  #@Usage  string_CountOf [-a --all] <-n --needle 'find me' [...]> [-R 'ref_var_name'] <'haystack' [...]>
+  #@Date   2013.10.21
+
+  core_LogVerbose 'Entering function.'
+  # Variables
+  local all=false             #@$ Flag to see if we just want a count of all characters.  Like ${#var}
+  local -a needles=()         #@$ Holds the patterns to search for.  Should be a string as we'll do fixed-string searching.
+  local haystack=''           #@$ Holds all items to search within, mostly to help with the -a/--all items.
+  local opt=''                #@$ Temporary variable for core_getopts, brought to local scope.
+  local REFERENCE=''          #@$ Will hold the name of the var to use for indirect referencing later, if -R used.
+  local -a __SBT_NONOPT_ARGS  #@$ Local instance for the core_getopts processing below since this will never need exposed to parents.
+  local temp=''               #@$ Garbage variable for looping.
+
+  # Use core_getopts to not only handle options elegantly, but to put nonopts in __SBT_NONOPT_ARGS
+  core_LogVerbose 'Processing options.'
+  while core_getopts ':an:R:' opt ':all,needle:' "$@" ; do
+    case "${opt}" in
+      'a' | 'all'     ) all=true               ;;
+      'n' | 'needle'  ) needles+=("${OPTARG}") ;;
+      'R'             ) REFERENCE="${OPTARG}"  ;;
+      *               ) core_LogError "Invalid option sent to me: ${opt}  (aborting)" ; return 1 ;;
+    esac
+  done
+
+  # Preflight checks
+  for temp in "${__SBT_NONOPT_ARGS[@]}" ; do haystack+="${temp}" ; done
+  if [ "${#needles[@]}" -eq 0 ] && ! ${all} ; then
+    core_LogError "No strings were specified to find and we weren't told to find 'all'.  (aborting)"
+    return 1
+  fi
+  if [ -z "${haystack}" ] ; then
+    core_LogError "No strings specified to search within, so I have no idea what you want me to search.  (aborting)"
+    return 1
+  fi
+
+  # Time to count some things
+  if
+
   return 0
 }

@@ -6,6 +6,13 @@
 #./docker.sh
 #./core.sh
 
+
+var=false
+if true && ! ${var} ; then
+  echo 'hi'
+fi
+
+exit
 i=3
 j=-2
 haystack="I am a big string."
