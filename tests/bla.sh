@@ -7,6 +7,13 @@
 #./core.sh
 
 
+all=false
+
+${all}   && echo "I am true"
+! ${all} && echo "I am false"
+
+
+exit
 var=false
 if true && ! ${var} ; then
   echo 'hi'
