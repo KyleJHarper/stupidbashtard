@@ -7,6 +7,26 @@
 #./core.sh
 
 
+declare -a files
+files+=("/some/file")
+files+=("/some/file2")
+files+=("/some/file3")
+echo "${files[@]}"
+echo ${#files[@]}
+echo ${files[0]}
+echo ${files[1]}
+echo ${files[2]}
+echo ${files[3]}
+for temp in $(seq 0 1 $((${#files[@]} - 1)) ) ; do files[${temp}]="\"${files[${temp}]}\"" ; done
+
+echo "${files[@]}"
+echo ${#files[@]}
+echo ${files[0]}
+echo ${files[1]}
+echo ${files[2]}
+echo ${files[3]}
+
+exit
 all=false
 
 ${all}   && echo "I am true"

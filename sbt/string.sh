@@ -279,48 +279,58 @@ function string_CountOf {
   #@Description  Returns a count of the times characters/strings are found in the passed values.
   #@Description  -
   #@Description  If count is zero, exit value will still be 0 for success.
-  #@Usage  string_CountOf [-a --all] <-p --pattern 'find me' > [-R 'ref_var_name'] <'haystack' [...]>
+  #@Usage  string_CountOf [-a --all] <-p --pattern 'PCRE regex' > [-R 'ref_var_name'] [-f --file '/file/to/search' [...]]  <'haystack' [...]>
   #@Date   2013.10.21
 
   core_LogVerbose 'Entering function.'
   # Variables
-  local all=false             #@$ Flag to see if we just want a count of all characters.  Like ${#var}
-  local pattern=''            #@$ Holds the pattern to search for.  PCRE insomuch as grep is PCRE.
+  local pattern=''            #@$ Holds the pattern to search for.  PCRE (as in, real perl, not grep -P).
   local haystack=''           #@$ Holds all items to search within, mostly to help with the -a/--all items.
   local opt=''                #@$ Temporary variable for core_getopts, brought to local scope.
   local REFERENCE=''          #@$ Will hold the name of the var to use for indirect referencing later, if -R used.
+  local -a files              #@$ List of files to count occurrence in.
   local -a __SBT_NONOPT_ARGS  #@$ Local instance for the core_getopts processing below since this will never need exposed to parents.
   local temp=''               #@$ Garbage variable for looping.
-  local -i rv=0               #@$ Return value.
 
   # Use core_getopts to not only handle options elegantly, but to put nonopts in __SBT_NONOPT_ARGS
   core_LogVerbose 'Processing options.'
-  while core_getopts ':an:R:' opt ':all,needle:' "$@" ; do
+  while core_getopts ':af:p:R:' opt ':all,file:,pattern:' "$@" ; do
     case "${opt}" in
-      'a' | 'all'     ) all=true               ;;
-      'p' | 'pattern' ) pattern="${OPTARG}"    ;;
-      'R'             ) REFERENCE="${OPTARG}"  ;;
+      'a' | 'all'     ) pattern='[\s\S]'      ;;
+      'f' | 'file'    ) files+=("${OPTARG}")  ;;
+      'p' | 'pattern' ) pattern="${OPTARG}"   ;;
+      'R'             ) REFERENCE="${OPTARG}" ;;
       *               ) core_LogError "Invalid option sent to me: ${opt}  (aborting)" ; return 1 ;;
     esac
   done
 
   # Preflight checks
+  core_LogVerbose "Checking a few requirements before proceeding."
+  core_ToolExists 'perl' || return 1
   for temp in "${__SBT_NONOPT_ARGS[@]}" ; do haystack+="${temp}" ; done
-  if [ -z "${pattern}" ] && ! ${all} ; then
+  if [ -z "${pattern}" ] ; then
     core_LogError "No pattern was specified to find and we weren't told to find 'all'.  (aborting)"
     return 1
   fi
-  if [ -z "${haystack}" ] ; then
-    core_LogError "No strings specified to search within, so I have no idea what you want me to search.  (aborting)"
+  if [ -z "${haystack}" ] && [ ${#files[@]} -eq 0 ] ; then
+    core_LogError "No strings or files specified to search within, so I have no idea what you want me to search.  (aborting)"
     return 1
   fi
-  core_ToolExists 'perl' || return 1
+  for temp in "${files[@]}" ; do
+    if [ ! -f "${temp}" ] || [ ! -r "${temp}" ] ; then
+      core_LogError "The following file either doesn't exist or is not readable by the current user: ${temp}  (aborting)"
+      return 1
+    fi
+  done
 
   # Time to count some things
-REWORK THIS TO USE THE PERL EXT SCRIPT, MUCH BETTER
-  ${all}   && rv=${#temp}
-  ! ${all} && rv=$(grep -oP "${pattern}" <<< "${haystack}" | wc -l)
-  core_StoreByRef "${REFERENCE}" "${rv}" || echo -n "${rv}"
+  core_LogVerbose "Attempting to count occurrences."
+  temp="$(perl "${__SBT_EXT_DIR}/string_CountOf.pl" -p "${pattern}" ${files[@]} <<<"${haystack}")"
+  if [ $? -ne 0 ] ; then
+    core_LogError "Perl returned an error code, counting failed.  (aborting)."
+    return 1
+  fi
+  core_StoreByRef "${REFERENCE}" "${temp}" || echo -n "${temp}"
 
   return 0
 }
