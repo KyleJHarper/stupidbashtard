@@ -54,6 +54,14 @@ while [ ${iteration} -le ${MAX_ITERATIONS} ] ; do
   pass
 
 
+  # -- 6 -- Make sure searching for a different regex pattern will work.
+  new_test "Searching for a different regex pattern instead of all chars: "
+  myvar=1
+  string_CountOf --pattern '[0-9]{3}' --file "${myuuid}" --file "${myuuid2}" '123456' -R 'myvar'
+  [ ${myvar} -eq 8 ] || fail 1
+  pass
+
+
   let iteration++
 done
 

@@ -1,1 +1,4 @@
 Ability to store core_LogVerbose into a file and/or std out
+
+Docker isn't stripping the colon after a long-opt in the options list
+
