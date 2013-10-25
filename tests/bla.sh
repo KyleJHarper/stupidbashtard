@@ -6,7 +6,38 @@
 #./docker.sh
 #./core.sh
 
+function core_ReadSTDIN {
+  #read -t 0 && while IFS= read -r ; do STDIN+="${REPLY}" ; done
+  while IFS= read -r -t .1 ; do STDIN+="${REPLY}" ; done
+}
 
+function log {
+  echo -e "$@"
+}
+function one {
+#  log 'Entering one'
+  #local STDIN=''
+  two "$@"
+}
+function two {
+  log 'Entering two'
+  local STDIN=''
+  local haystack="$@"
+  core_ReadSTDIN
+  haystack+="${STDIN}"
+  echo -e "${haystack}"
+  return 0
+}
+function three {
+  local STDIN=''
+  core_ReadSTDIN
+  echo -e "${STDIN}"
+}
+
+echo "from stdin" | one 'from params' | three
+echo "${PIPESTATUS[@]}"
+
+exit
 declare -a files
 files+=("/some/file")
 files+=("/some/file2")

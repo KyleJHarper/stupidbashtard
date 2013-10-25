@@ -13,7 +13,7 @@
 function string_ToUpper {
   #@Description  Takes all positional arguments and returns them in upper case format.
   #@Description  -
-  #@Description  Sends all heavy lifting to string_FormatCase.  This is a wrapper.
+  #@Description  Sends all heavy lifting to string_FormatCase.  This is a wrapper for convenience; not as powerful as string_FormatCase.
   #@Usage  string_ToUpper <'Value to upper case' [...]>
 
   # Enter the function
@@ -30,7 +30,7 @@ function string_ToUpper {
 function string_ToLower {
   #@Description  Takes all positional arguments and returns them in lower case format.
   #@Description  -
-  #@Description  Sends all heavy lifting to string_FormatCase.  This is a wrapper.
+  #@Description  Sends all heavy lifting to string_FormatCase.  This is a wrapper for convenience; not as powerful as string_FormatCase.
   #@Usage  string_ToLower <'value to lower case' [...]>
 
   # Enter the function
@@ -47,7 +47,7 @@ function string_ToLower {
 function string_ProperCase {
   #@Description  Takes all positional arguments and returns them in proper (title) case format.
   #@Description  -
-  #@Description  Sends all heavy lifting to string_FormatCase.  This is a wrapper.
+  #@Description  Sends all heavy lifting to string_FormatCase.  This is a wrapper for convenience; not as powerful as string_FormatCase.
   #@Usage  string_ProperCase <'Value to proper case' [...]>
 
   # Enter the function
@@ -64,7 +64,7 @@ function string_ProperCase {
 function string_ToggleCase {
   #@Description  Takes all positional arguments and returns them in toggled case.
   #@Description  -
-  #@Description  Sends all heavy lifting to string_FormatCase.  This is a wrapper.
+  #@Description  Sends all heavy lifting to string_FormatCase.  This is a wrapper for convenience; not as powerful as string_FormatCase.
   #@Usage  string_ToggleCase <'Value to toggle case on' [...]>
 
   # Enter the function
@@ -89,6 +89,7 @@ function string_FormatCase {
   local REFERENCE=''          #@$ Name to use for setting output rather than sending to std out.
   local CASE=''               #@$ The type of formatting to do.
   local -a __SBT_NONOPT_ARGS  #@$ Local instance for the core_getopts processing below since this will never need exposed to parents.
+  local STDIN=''              #@$ Stores values sent via stdin, if any.
 
   # Enter the function
   core_LogVerbose 'Entering function.'
