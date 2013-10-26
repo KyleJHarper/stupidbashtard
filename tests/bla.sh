@@ -6,18 +6,28 @@
 #./docker.sh
 #./core.sh
 
+
+function rawr {
+  while read -r ; do echo -e "${REPLY}" ; done
+}
+
+rawr < bla.sh
+
+exit
 function core_ReadSTDIN {
   #read -t 0 && while IFS= read -r ; do STDIN+="${REPLY}" ; done
-  while IFS= read -r -t .1 ; do STDIN+="${REPLY}" ; done
+  while IFS= read -r ; do STDIN+="${REPLY}\n" ; done
+  STDIN="${STDIN: 0: -2}"
 }
 
 function log {
   echo -e "$@"
 }
 function one {
-#  log 'Entering one'
+  log 'Entering one'
   #local STDIN=''
   two "$@"
+  return 0
 }
 function two {
   log 'Entering two'
@@ -29,12 +39,14 @@ function two {
   return 0
 }
 function three {
+  log 'Entering three'
   local STDIN=''
   core_ReadSTDIN
   echo -e "${STDIN}"
+  return 0
 }
 
-echo "from stdin" | one 'from params' | three
+one <<<'from stdin' | three | one | three | one | three | one | three | one | three | one | three | one | three
 echo "${PIPESTATUS[@]}"
 
 exit

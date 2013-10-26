@@ -4,7 +4,7 @@
 
 #@Author    Kyle Harper
 #@Date      2013.08.12
-#@Version   0.1-beta
+#@Version   0.0.1-beta
 #@Namespace string
 
 #@Description Bash has some built-in string handling functionality, but it's far from complete.  This helps extend that.  In many cases, it simply provides a nice name to do things that the bash syntax for is convoluted.  Like lowercase: ${var,,}
@@ -14,7 +14,7 @@ function string_ToUpper {
   #@Description  Takes all positional arguments and returns them in upper case format.
   #@Description  -
   #@Description  Sends all heavy lifting to string_FormatCase.  This is a wrapper for convenience; not as powerful as string_FormatCase.
-  #@Usage  string_ToUpper <'Value to upper case' [...]>
+  #@Usage  string_ToUpper <'Value to upper case' [...] or STDIN>
 
   # Enter the function
   core_LogVerbose 'Entering function.'
@@ -31,7 +31,7 @@ function string_ToLower {
   #@Description  Takes all positional arguments and returns them in lower case format.
   #@Description  -
   #@Description  Sends all heavy lifting to string_FormatCase.  This is a wrapper for convenience; not as powerful as string_FormatCase.
-  #@Usage  string_ToLower <'value to lower case' [...]>
+  #@Usage  string_ToLower <'value to lower case' [...] or STDIN>
 
   # Enter the function
   core_LogVerbose 'Entering function.'
@@ -48,7 +48,7 @@ function string_ProperCase {
   #@Description  Takes all positional arguments and returns them in proper (title) case format.
   #@Description  -
   #@Description  Sends all heavy lifting to string_FormatCase.  This is a wrapper for convenience; not as powerful as string_FormatCase.
-  #@Usage  string_ProperCase <'Value to proper case' [...]>
+  #@Usage  string_ProperCase <'Value to proper case' [...] or STDIN>
 
   # Enter the function
   core_LogVerbose 'Entering function.'
@@ -65,7 +65,7 @@ function string_ToggleCase {
   #@Description  Takes all positional arguments and returns them in toggled case.
   #@Description  -
   #@Description  Sends all heavy lifting to string_FormatCase.  This is a wrapper for convenience; not as powerful as string_FormatCase.
-  #@Usage  string_ToggleCase <'Value to toggle case on' [...]>
+  #@Usage  string_ToggleCase <'Value to toggle case on' [...] or STDIN>
 
   # Enter the function
   core_LogVerbose 'Entering function.'
@@ -82,14 +82,15 @@ function string_FormatCase {
   #@Description  Takes all positional arguments and returns them in the case format prescribed.  Usually referred by ToUpper, ToLower, etc. so we don't program long options.
   #@Description  -
   #@Description  Supports the -R switch for passing a variable name for indirect referencing.  If found, it places output in the named variable, rather than sending to stdout.
-  #@Usage  string_FormatCase [-l] [-L] [-p] [-R 'ref_var_name'] [-t] [-u] [-U] <'Values to manipulate' [...]>
+  #@Usage  string_FormatCase [-l] [-L] [-p] [-R 'ref_var_name'] [-t] [-u] [-U] <'Values to manipulate' [...] or STDIN>
 
   local opt                   #@$ Localizing opt for use in getopts below.
-  local -i i=0                #@$ Localized temporary variable used in loops.
   local REFERENCE=''          #@$ Name to use for setting output rather than sending to std out.
   local CASE=''               #@$ The type of formatting to do.
   local -a __SBT_NONOPT_ARGS  #@$ Local instance for the core_getopts processing below since this will never need exposed to parents.
   local STDIN=''              #@$ Stores values sent via stdin, if any.
+  local temp=''               #@$ Temporary junk while working, mostly with loops.
+  local data=''               #@$ Storage for values from positionals or STDIN, whichever is used.
 
   # Enter the function
   core_LogVerbose 'Entering function.'
@@ -109,47 +110,28 @@ function string_FormatCase {
   done
 
   # Preflights checks
-  if [ ${#__SBT_NONOPT_ARGS[@]} -eq 0 ] ; then
-    core_LogVerbose 'Found no positional arguments to work with.  This will return an empty string.'
+  [ ${#__SBT_NONOPT_ARGS[@]} -gt 1 ] && core_LogVerbose "More than one value sent to act upon, they will be joined and treated as a single item."
+  for temp in "${__SBT_NONOPT_ARGS[@]}" ; do data+="${temp}" ; done
+  if [ -z "${data}" ] ; then
+    core_LogVerbose 'No values sent as positional arguments to work with, searching STDIN for data.'
+    core_ReadSTDIN || core_LogVerbose "Couldn't read STDIN either.  This is going to result in an empty data set to work with."
+    data+="${STDIN}"
   fi
 
-  # Set BYREF if it was sent
+  # Main logic
   core_LogVerbose "Converting all arguments to case '${CASE}' and joining together."
-  if [ ! -z "${REFERENCE}" ] ; then
-    core_LogVerbose "Reference was sent.  Redirecting output to variable named ${REFERENCE}"
-    while [ ${i} -lt ${#__SBT_NONOPT_ARGS[@]} ] ; do
-      case "${CASE}" in
-        'lower'     ) eval "${REFERENCE}+=\"${__SBT_NONOPT_ARGS[${i}],,}\""  ;;
-        'onelower'  ) eval "${REFERENCE}+=\"${__SBT_NONOPT_ARGS[${i}],}\""   ;;
-        'proper'    ) __SBT_NONOPT_ARGS[${i}]="${__SBT_NONOPT_ARGS[${i}],,}"
-                      eval "${REFERENCE}+=\"${__SBT_NONOPT_ARGS[${i}]~}\""   ;;
-        'toggle'    ) eval "${REFERENCE}+=\"${__SBT_NONOPT_ARGS[${i}]~~}\""  ;;
-        'upper'     ) eval "${REFERENCE}+=\"${__SBT_NONOPT_ARGS[${i}]^^}\""  ;;
-        'oneupper'  ) eval "${REFERENCE}+=\"${__SBT_NONOPT_ARGS[${i}]^}\""   ;;
-        *           ) core_LogError "Invalid case format attempted: ${CASE}  (failing)" ; return 1 ;;
-      esac
-      let i++
-    done
-    return 0
-  fi
+  case "${CASE}" in
+    'lower'     ) data="${data,,}"  ;;
+    'onelower'  ) data="${data,}"   ;;
+    'proper'    ) data="${data,,}"
+                  data="${data~}"   ;;
+    'toggle'    ) data="${data~~}"  ;;
+    'upper'     ) data="${data^^}"  ;;
+    'oneupper'  ) data="${data^}"   ;;
+    *           ) core_LogError "Invalid case format attempted: ${CASE}  (failing)" ; return 1 ;;
+  esac
 
-  # Send data to stdout
-  core_LogVerbose 'Sending output to std out.'
-  while [ ${i} -lt ${#__SBT_NONOPT_ARGS[@]} ] ; do
-    case "${CASE}" in
-      'lower'     ) echo -ne "${__SBT_NONOPT_ARGS[${i}],,}" ;;
-      'onelower'  ) echo -ne "${__SBT_NONOPT_ARGS[${i}],}" ;;
-      'proper'    ) __SBT_NONOPT_ARGS[${i}]="${__SBT_NONOPT_ARGS[${i}],,}"
-                    echo -ne "${__SBT_NONOPT_ARGS[${i}]~}" ;;
-      'toggle'    ) echo -ne "${__SBT_NONOPT_ARGS[${i}]~~}" ;;
-      'upper'     ) echo -ne "${__SBT_NONOPT_ARGS[${i}]^^}" ;;
-      'oneupper'  ) echo -ne "${__SBT_NONOPT_ARGS[${i}]^}" ;;
-      *           ) core_LogError "Invalid case format attempted: ${CASE}  (failing)" ; return 1 ;;
-    esac
-    let i++
-  done
-
-  # All done
+  core_StoreByRef "${REFERENCE}" "${data}" || echo -e "${data}"
   return 0
 }
 
