@@ -17,3 +17,5 @@ A static analysis tool is used to read functions and put information about them 
 MORE INFO
 More details about SBT and Docker are available in the SBT namespace 'doc_examples.sh'.
 
+There is also a FAQ sheet which can answer a lot of questions.
+

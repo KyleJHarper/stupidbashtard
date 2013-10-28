@@ -1,3 +1,9 @@
+* 6aa681ffc5671deb49e3a99b9806d0062aa168e0
+|   Author: kyle
+|   Date: 2013-10-27 23:47:54 -0500
+|   Comment: Huge changes to the way data is read in.  Added a FAQ to help document some of these standards.  This should help tremendously with future functions.  Wrote (or rewrote) tests to ensure it all works as expected.  Ultimately, this will allow me to simply send DATA as a herestring to any function or external program... the program merely needs to support consumption of STDIN.
+| 
+|  
 * fece308360bd1d26fdf071de543d57f78a9ae82c
 |   Author: kyle
 |   Date: 2013-10-25 22:30:54 -0500
