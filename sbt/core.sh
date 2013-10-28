@@ -4,7 +4,7 @@
 
 #@Author    Kyle Harper
 #@Date      2013.07.07
-#@Version   0.1-beta
+#@Version   0.0.1-beta
 #@Namespace core
 
 #@Description  These functions serve as some of the primative tools and requirements for all of SBT.  This will likely become a large namespace, but attempts should be made to keep it as small as possible.  ALL modules require this namespace.  No other namespace should be a wide-spread requirement like this.
@@ -257,8 +257,8 @@ function core_ToolExists {
   #@Description  You may specify multiple tools to check for, but if you pass version checking switches they must apply to all tools for this call.  If version numbers, version invocation, or other switches are different for the tools, perform multiple calls in your caller.
   #@Description  -
   #@Description  You may also specify multiple tools and the -a or --any switch, which will return true if Any of the tools match.  For example, you might want gawk by default, but you can reasonably trust whatever version of awk is on a system.  So you send: 'gawk' and 'awk' IN ORDER OF PREFERENCE!  The found tool will be reported to stdout.
-  #@Date  2013.10.04
-  #@Usage core_ToolExists [-1 --major '#'] [-2 --medium '#'] [-3 --minor '#'] [-a --any] [-e --exact] [-v --version-switch '-V'] [-r --regex-pattern 'pattern'] <'tool' [...]>
+  #@Date   2013.10.04
+  #@Usage  core_ToolExists [-1 --major '#'] [-2 --medium '#'] [-3 --minor '#'] [-a --any] [-e --exact] [-v --version-switch '-V'] [-r --regex-pattern 'pattern'] <'tool' [...]>
 
   # Variables
   local __SBT_NONOPT_ARGS=()                #@$ Capture a list of tools for use.  Localize array since we'll only use it here.
@@ -369,5 +369,69 @@ function core_StoreByRef {
   # Assign the values
   core_LogVerbose "Assigning remaining positionals to variable: ${REFERENCE}"
   eval "${REFERENCE}=\"$@\""
+  return 0
+}
+
+
+function core_SlurpSTDIN {
+  #@Description  Attempts to read from Standard Input and store data in a variable named: DATA.  The DATA variable must be provided by the caller to keep things safe.
+  #@Description  -
+  #@Description  This function lacks most frills in an effort to be as efficient as possible.  Work offloaded to 'cat' program for speed.
+  #@Description  IMPORTANT!!!  You MUST ensure there is a pipe waiting on STDIN or this will hang forever, like any program waiting on STDIN.
+  #@Date   2013.10.26
+  #@Usage  core_SlurpSTDIN
+
+  core_LogVerbose 'Entering function.'
+  DATA="$(cat -)"
+  return $?
+}
+
+
+function core_SlurpFiles {
+  #@Description  Attempts to read from files specified and store data in a variable named: DATA.  The DATA variable must be provided by the caller to keep things safe.
+  #@Description  -
+  #@Description  This function lacks most frills in an effort to be as efficient as possible.  Work offloaded to 'cat' program for speed.
+  #@Description  IMPORTANT!!!  This function will test existence and read permissions of files specified, but that's it.
+  #@Date   2013.10.27
+  #@Usage  core_SlurpFiles
+
+  core_LogVerbose 'Entering function.'
+  local -i E_BAD_IO=10   #@$ Exit status when a file is missing or not readable for some reason.
+  local -a files=("$@")  #@$ List of files to slurp
+  local    temp=''       #@$ Miscellaneous crap goes into here, mostly for loops.
+
+  # Check for existence and read acces to files
+  if [ ${#files[@]} -lt 1 ] ; then core_LogVerbose "No files sent to me, leaving." ; return 0 ; fi
+  for temp in "${files[@]}" ; do
+    if [ ! -f "${temp}" ] ; then core_LogError "File specified not found: '${temp}'  (aborting)"    ; return ${E_BAD_IO} ; fi
+    if [ ! -r "${temp}" ] ; then core_LogError "No read permission for file: '${temp}'  (aborting)" ; return ${E_BAD_IO} ; fi
+  done
+
+  DATA="$(cat "${files[@]}")"
+  return $?
+}
+
+
+function core_ReadDATA {
+  #@Description  Employs the basic 1-2-3 of data entry for SBT functions: positional data, slurp files from ${files[@]}, and slurp from STDIN.
+  #@Description  Helps deduplicate code efforts.
+  #@Description  -
+  #@Description  IMPORTANT!!!  The caller MUST provide a variable named:  DATA.  Used by core_SlurpFiles and core_SlurpSTDIN.
+  #@Date   2013.10.27
+  #@Usage  core_ReadDATA ['/path/to/file/for/core_SlurpFiles' [...]]
+
+  core_LogVerbose 'Entering function.'
+  # If positionals already loaded in DATA, leave.
+  if [ ! -z "${DATA}" ] ; then core_LogVerbose "DATA wasn't blank, must have received values from positionals.  Leaving." ; return 0 ; fi
+
+  # Try to slurp any files sent into DATA.  Leave on success.
+  core_SlurpFiles "$@" || return $?
+  if [ ! -z "${DATA}" ] ; then core_LogVerbose "DATA is no longer blank, must have found files to read.  Leaving." ; return 0 ; fi
+
+  # Last chance to find some data to work with... otherwise we're gonna be hung here.
+  core_SlurpSTDIN || return $?
+
+  # If data is still empty (not sure how...) send a warning but keep going.
+  [ -z "${DATA}" ] && core_LogVerbose "Reached the end and DATA is still empty, not sure how though.  Continuing."
   return 0
 }

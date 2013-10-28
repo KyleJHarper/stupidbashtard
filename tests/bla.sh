@@ -7,6 +7,39 @@
 #./core.sh
 
 
+function one {
+  local bob=''
+  two
+  echo "${bob}"
+}
+function two {
+  bob='i am not global from 1'
+}
+
+bob='i am global'
+echo "${bob}"
+one
+echo "${bob}"
+
+exit
+function rawr {
+  local -a ary=("$@")
+  asdf="$(cat "${ary[@]}")"
+  echo "$?"
+}
+
+declare -a bob
+bob+=('one')
+bob+=('two has a space')
+bob+=('three_does_not')
+bob+=('four also has a space, woohoo')
+
+rawr "${bob[@]}"
+#for item in "${bob[@]}" ; do
+#  echo "${item}"
+#done
+
+exit
 function rawr {
   while read -r ; do echo -e "${REPLY}" ; done
 }

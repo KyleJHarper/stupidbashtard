@@ -10,13 +10,6 @@ $opt_p || exit 1;
 
 # Search logic
 my $count=0;
-while (<>) {
-  chomp if eof; #Count will be off by one for newline patterns if we don't do this.  Might cause other edge cases.
-  while ($_ =~ m/($opt_p)/g) {
-    $count++
-  }
-}
-
 while (<STDIN>) {
   chomp if eof; #Count will be off by one for newline patterns if we don't do this.  Might cause other edge cases.
   while ($_ =~ m/($opt_p)/g) {

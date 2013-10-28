@@ -1,0 +1,27 @@
+:::::::::::::::::::::::::
+::  Table of Contents  ::
+:::::::::::::::::::::::::
+  1.  How do I send data to functions for input?
+  2.  How are globals/consts defined so I don't conflict with them?
+  3.  Are there any universal options in SBT functions?
+xxx.
+
+
+
+
+:::::::::::::::::::
+::  FAQ Answers  ::
+:::::::::::::::::::
+  1.  How do I send data to functions for input?
+      The standard is for SBT functions to accept data via positional arguments, files, and STDIN; in that order.
+      - Positional arguments always get read first, if they exist, they go into a DATA variable and no further processing happens.
+      - Files, if passed via -f '/some/file' or --file '/some/file', will be slurped into a DATA variable if no positionals are found, and no further processing happens.
+      - STDIN will be slurped into a DATA variable if no positionals or files are sent.  A function expecting data will hang if nothing is found by this point (just like any program waiting forever on a non-existent STDIN pipe).
+
+  2.  How are globals/consts defined so I don't conflict with them?
+      All SBT-specific variables start with __SBT_ prefix to avoid conflict.
+
+  3.  Are there any universal options in SBT functions?
+      Yes, they are:
+      -R 'variable_name'      This is used by functions that return a value.  You can assign the output to variabled named whatever you specify.
+      -f --file '/some/file'  When a function accepts input, this is how you specify file(s) to read.

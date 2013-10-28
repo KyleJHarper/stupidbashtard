@@ -32,33 +32,33 @@ while [ ${iteration} -le ${MAX_ITERATIONS} ] ; do
   myuuid2="/tmp/$(uuidgen)"
   echo -n '123456789' > "${myuuid}"
   echo -n '123456789' > "${myuuid2}"
-  new_test "Reading a file (or files, or files + STDIN) should work: "
-  [ "$(string_CountOf -a -f "${myuuid}")" -eq 9 ]                               || fail 1
-  [ "$(string_CountOf -a -f "${myuuid}" -f "${myuuid2}")" -eq 18 ]              || fail 2
-  [ "$(string_CountOf -a -f "${myuuid}" '123456789')" -eq 18 ]                  || fail 3
-  [ "$(string_CountOf -a -f "${myuuid}" -f "${myuuid2}" '1234567890')" -eq 28 ] || fail 4
+  new_test "Reading a file (or files) should work: "
+  [ "$(string_CountOf -a -f "${myuuid}")" -eq 9 ]                  || fail 1
+  [ "$(string_CountOf -a -f "${myuuid}" -f "${myuuid2}")" -eq 18 ] || fail 2
+  [ "$(string_CountOf -a -f "${myuuid}")" -eq 9 ]                  || fail 3
+  [ "$(string_CountOf -a -f "${myuuid}" -f "${myuuid2}")" -eq 18 ] || fail 4
   pass
 
   # -- 4 -- Long options should work
   new_test "Long options should work: "
-  [ "$(string_CountOf --all '123456789')" -eq 9 ]                                          || fail 1
-  [ "$(string_CountOf --pattern '[\s\S]' '123456789')" -eq 9 ]                             || fail 2
-  [ "$(string_CountOf --all --file "${myuuid}" --file "${myuuid2}" '1234567890')" -eq 28 ] || fail 3
+  [ "$(string_CountOf --all '123456789')" -eq 9 ]                             || fail 1
+  [ "$(string_CountOf --pattern '[\s\S]' '123456789')" -eq 9 ]                || fail 2
+  [ "$(string_CountOf --all --file "${myuuid}" --file "${myuuid2}")" -eq 18 ] || fail 3
   pass
 
   # -- 5 -- ByRef storage
   new_test "Storing byref should work (-R): "
   myvar=1
-  string_CountOf --all --file "${myuuid}" --file "${myuuid2}" '1234567890' -R 'myvar'
-  [ ${myvar} -eq 28 ] || fail 1
+  string_CountOf --all --file "${myuuid}" --file "${myuuid2}" -R 'myvar'
+  [ ${myvar} -eq 18 ] || fail 1
   pass
 
 
   # -- 6 -- Make sure searching for a different regex pattern will work.
   new_test "Searching for a different regex pattern instead of all chars: "
   myvar=1
-  string_CountOf --pattern '[0-9]{3}' --file "${myuuid}" --file "${myuuid2}" '123456' -R 'myvar'
-  [ ${myvar} -eq 8 ] || fail 1
+  string_CountOf --pattern '[0-9]{3}' --file "${myuuid}" --file "${myuuid2}" -R 'myvar'
+  [ ${myvar} -eq 6 ] || fail 1
   pass
 
 

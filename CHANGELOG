@@ -1,3 +1,45 @@
+* fece308360bd1d26fdf071de543d57f78a9ae82c
+|   Author: kyle
+|   Date: 2013-10-25 22:30:54 -0500
+|   Comment: Implementing the changes required to read from STDIN more easily.  Needs more work, but going to bed and I want to save this progress.
+| 
+|  
+* eea94768ed5b115500d37f42c185d102774fc0ff
+|   Author: kyle
+|   Date: 2013-10-24 22:08:07 -0500
+|   Comment: Started researching how to read STDIN in functions for piping.  It's quite possible and whatnot but it has a couple repercussions.  First there's a race condition causing SIGPIPEs when testing with read -t 0.  Second, any output not echo'd with a new line will not be read properly (last line will hang).  I'd like SBT functions to auto-detect STDIN but I don't think it's possible.  So I either need a switch for it as a standard; or I need the rule to be: if no args are sent, try to read from stdin, then error out if still no data to work with.
+| 
+|  
+* ab7c873703086af354b1398e1b12a7ad0fff1f0b
+|   Author: kyle
+|   Date: 2013-10-23 21:42:42 -0500
+|   Comment: Added another test for kicks.
+| 
+|  
+* 2f4fcddb2c0a7f82e02320030c9800890731899c
+|   Author: kyle
+|   Date: 2013-10-23 21:17:41 -0500
+|   Comment: Finished the CountOf function.  It's not as fast as I'd like, but I'm not sure how to improve the performance but still remain as flexible.
+| 
+|  
+* e3a3f5e5a33470f9c6003859f856425edb0c8188
+|   Author: kyle
+|   Date: 2013-10-22 22:43:14 -0500
+|   Comment: Wrote a perl script to do the CountOf logic.  It works fine, except when dealing with hidden characters like newlines.  Perl can count them but Bash seems to ignore one.  For example, in a sample document with 7 or 8 lines I got #var to return 79, but perl returned 80 matches for all chars ([\s\S]).  Need to find out why this is happening and decide which is actually correct... my guess is perl.
+| 
+|  
+* f35e2f32ed30cff5128fb3f0e5c47698d45bedfb
+|   Author: kyle
+|   Date: 2013-10-21 22:26:54 -0500
+|   Comment: Started writing the string_CountOf.  It's not hard, just got distracted.  Need to finish it and write tests.
+| 
+|  
+* 68509b07644c25b44df2b6864707896c11eb16e7
+|   Author: kyle
+|   Date: 2013-10-20 20:38:45 -0500
+|   Comment: Wrote tests for Substring.  Updated the change log.  Fixed an issue in string.sh.  Updated the test suite to make performance tests prettier.
+| 
+|  
 * 6ccedf7b08a41db8ab178d52cc366da2f35d8c09
 |   Author: kyle
 |   Date: 2013-10-19 22:55:13 -0500
