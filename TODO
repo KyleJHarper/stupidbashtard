@@ -2,9 +2,4 @@ Ability to store core_LogVerbose into a file and/or std out
 
 Docker isn't stripping the colon after a long-opt in the options list
 
-Find a way to support a local verbose switch by default, to enable verbosity for a single function
-  I'm not entirely sure this is useful, because if you need verbose output for debugging, you could just surround it with __SBT_VERBOSE=true/false
-  I guess it might make debugging easier since you only have to add -V or whatever... sounds kinda thin
-
-Support reading STDIN for all functions that support handling input (which is probably most of them for now).
-
+ToUpper and other wrappers should still respect -R

@@ -262,9 +262,11 @@ function core_ToolExists {
 
   # Variables
   local __SBT_NONOPT_ARGS=()                #@$ Capture a list of tools for use.  Localize array since we'll only use it here.
+  local -i E_CMD_NOT_FOUND=10               #@$ Help differentiate between a generic failure and a failure due to a tool not found.
   local -i MAJOR=0                          #@$ Major version number
   local -i MEDIUM=0                         #@$ Medium version number
   local -i MINOR=0                          #@$ Minor version number
+  local FOUND_ONE=false                     #@$ Flag to determine if at least one item was found, useful when --any is used.
   local EXACT=false                         #@$ Compare the version numbers exactly, not in a greater-than fashion
   local ANY=false                           #@$ Flag to determine if we should abort when any of the tools checked for are found.
   local VERSION_SWITCH='--version'          #@$ The switch syntax to present the version information string
@@ -304,33 +306,40 @@ function core_ToolExists {
     if [ -z "${found_version}" ] ; then
       core_LogVerbose 'Not found.  Seeing if tool exists on our PATH anywhere.'
       if ! ${tool} ${VERSION_SWITCH} >/dev/null 2>/dev/null ; then
-        core_LogError "Could not find tool '${tool}'.  If caller is an SBT function, this is a problem as SBT includes all dependencies.  Please check lib dir and call core_SetToolPath if needed."
-        return 1
+        ${ANY} && continue
+        core_LogError "Could not find tool '${tool}'.  Check path and add paths using core_SetToolPath if needed."
+        return ${E_CMD_NOT_FOUND}
       fi
       core_LogVerbose "Trying to grab the version string for comparison using:  ${tool} ${VERSION_SWITCH} | grep -oP '${REGEX_PATTERN}'"
       found_version="$(${tool} ${VERSION_SWITCH} 2>/dev/null | grep -oP "${REGEX_PATTERN}")"
       if [ -z "${found_version}" ] ; then
+        ${ANY} && continue
         core_LogError "Could not find a version string in program output.  If caller is an SBT function, this shouldn't have happened."
-        return 1
+        return ${E_CMD_NOT_FOUND}
       fi
     fi
     core_LogVerbose "Found the version string: '${found_version}'.  Comparing it now."
     if ${EXACT} && [ ! "${found_version}" == "${MAJOR}.${MEDIUM}.${MINOR}" ] ; then
+      ${ANY} && continue
       core_LogError 'Exact version match requested, but the versions do not match.  Failing.'
-      return 1
+      return ${E_CMD_NOT_FOUND}
     fi
     if [ "$(echo -e "${found_version}\n${MAJOR}.${MEDIUM}.${MINOR}" | sort -V | head -n 1)" == "${found_version}" ] ; then
+      ${ANY} && continue
       core_LogError 'Tool found is a lower version number than required version.'
-      return 1
+      return ${E_CMD_NOT_FOUND}
     fi
     core_LogVerbose 'Found tool and it meets requirements!  Storing in __SBT_TOOL_LIST hash for faster future lookups.'
     __SBT_TOOL_LIST["${tool}"]="${found_version}"
+    FOUND_ONE=true
 
-    # If we hit this point, we found a tool and are about to loop again.  But if we'll take any match, report it and break out.
+    # If we hit this point, we found a tool and are about to loop again.  But if we'll take any match, report it and leave.
     if ${ANY} ; then core_LogVerbose "Found a tool (${tool}) and the ANY flag is set; reporting to stdout and leaving." ; echo "${tool}" ; break ; fi
   done
-  # If we reach this point, we found all the programs.
-  return 0
+
+  # If we're here, make sure we found what we were looking for.
+  ${FOUND_ONE} && return 0
+  return ${E_CMD_NOT_FOUND}
 }
 
 

@@ -63,6 +63,38 @@ while [ ${iteration} -le ${MAX_ITERATIONS} ] ; do
   [ ${#__SBT_TOOL_LIST[@]} -eq 3 ]                      || fail 6
   pass
 
+  # -- 8 -- Multiple programs and we need them all.
+  new_test "Requiring multiple tools at once: "
+  unset __SBT_TOOL_LIST ; declare -A __SBT_TOOL_LIST
+  core_ToolExists 'bash' 'cut'           || fail 1
+  [ ! -z "${__SBT_TOOL_LIST['bash']}" ]  || fail 2
+  [ ! -z "${__SBT_TOOL_LIST['cut']}" ]   || fail 3
+  [ ${#__SBT_TOOL_LIST[@]} -eq 2 ]       || fail 4
+  pass
+
+  # -- 9 -- Multiple programs but only need one
+  new_test "Requiring one tool but checking multiple options: "
+  unset __SBT_TOOL_LIST ; declare -A __SBT_TOOL_LIST
+  core_ToolExists --any 'ruroh' 'cut'  1>/dev/null   || fail 1
+  [ ! -z "${__SBT_TOOL_LIST['cut']}" ]               || fail 2
+  [ ${#__SBT_TOOL_LIST[@]} -eq 1 ]                   || fail 3
+  pass
+
+  # -- 10 -- Multiple programs and none will be found.
+  new_test "Checking for multiple tools, with --any, knowing it won't be found: "
+  unset __SBT_TOOL_LIST ; declare -A __SBT_TOOL_LIST
+  core_ToolExists --any 'ruroh' 'raggy'  1>/dev/null && fail 1
+  [ $? -eq 10 ] || fail 2
+  pass
+
+  # -- 11 -- Unable to find tool should report E_CMD_NOT_FOUND (code 10)
+  new_test "Testing a tool known to be missing, code should be 10: "
+  unset __SBT_TOOL_LIST ; declare -A __SBT_TOOL_LIST
+  core_ToolExists 'ruroh' 'raggy' 1>/dev/null 2>/dev/null
+  [ $? -eq 10 ] || fail 1
+  pass
+
+
   let iteration++
 done
 
