@@ -20,6 +20,13 @@ while [ ${iteration} -le ${MAX_ITERATIONS} ] ; do
   [ "$( string_ToggleCase $'Hello\nthere ' $'Joe\tSchmoe '  'RAWR'  )" == $'hELLO\nTHERE jOE\tsCHMOE rawr' ]   || fail 1
   pass
 
+  # -- 2 -- Options sent to this should go to string_FormatCase
+  new_test "Sending options supported by the back-end function string_FormatCase (like -R): "
+  rv=''
+  string_ToggleCase -R rv 'RAwr' || fail 1
+  [ "${rv}" == "raWR" ]          || fail 2
+  pass
+
   let iteration++
 done
 
