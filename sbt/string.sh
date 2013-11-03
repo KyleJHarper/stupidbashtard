@@ -293,3 +293,98 @@ function string_CountOf {
 
   return 0
 }
+
+
+function string_Pad {
+  #@Description  Return the string specified with a padded version.  Padding can be left, right, or both; default of right.  Pad can be any string to repeat.  If remaining length is odd and padding is both, extra padding goes to the right.
+  #@Usage  string_Pad [-d --direction 'right|left|both'] <-l --length '#'> [-p --pad 'string'] [-R 'ref_var_name'] <'values' or -f --file 'FILE' or STDIN>
+  #@Date   2013.11.03
+
+  core_LogVerbose 'Entering function.'
+  # Variables
+  local -a __SBT_NONOPT_ARGS  #@$ Local instance for the core_getopts processing below since this will never need exposed to parents.
+  local -a _files             #@$ List of files to count occurrence in.
+  local    _opt=''            #@$ Temporary variable for core_getopts, brought to local scope.
+  local    _REFERENCE=''      #@$ Will hold the name of the var to use for indirect referencing later, if -R used.
+  local    _DATA=''           #@$ Holds all items to search within, mostly to help with the -a/--all items.
+  local    _pad=' '           #@$ String to repeat over and over.
+  local -i _length=0          #@$ Length of the final string we want to send back.
+  local -i _extra_length=0    #@$ Stores the extra length we want to use for padding characters.
+  local    _direction='right' #@$ The direction to pad.
+  local    _temp=''           #@$ Garbage variable for looping.
+
+  # Use core_getopts to not only handle options elegantly, but to put nonopts in __SBT_NONOPT_ARGS
+  core_LogVerbose 'Processing options.'
+  while core_getopts ':d:f:l:p:R:' _opt ':direction:,file:,length:,pad:' "$@" ; do
+    case "${_opt}" in
+      'd' | 'direction'  ) _direction="${OPTARG}"  ;;
+      'f' | 'file'       ) _files+=("${OPTARG}")   ;;
+      'l' | 'length'     ) _length="${OPTARG}"     ;;
+      'p' | 'pad'        ) _pad="${OPTARG}"        ;;
+      'R'                ) _REFERENCE="${OPTARG}"  ;;
+      *                  ) core_LogError "Invalid option sent to me: ${_opt}  (aborting)" ; return 1 ;;
+    esac
+  done
+
+  # Preflight checks
+  core_LogVerbose "Checking a few requirements before proceeding."
+  for _temp in "${__SBT_NONOPT_ARGS[@]}" ; do _DATA+="${_temp}" ; done
+  core_ReadDATA "${_files[@]}" || return 1
+  _extra_length=$(( ${_length} - ${#_DATA} ))
+  if [ ${_length} -le 0 ]       ; then core_LogError "Length is less than 1: '${_length}'  (aborting)"            ; return 1 ; fi
+  if [ -z "${_pad}" ]           ; then core_LogError "Pad string is empty.  (aborting)"                           ; return 1 ; fi
+  if [ ${_extra_length} -le 0 ] ; then core_LogVerbose "_DATA length <= length requested.  No change to be made.."            ; fi
+
+  # Main logic
+  core_LogVerbose "Expanding pad string until it at least matches length desired."
+  while [ ${#_pad} -lt ${_extra_length} ] ; do _pad+="${_pad}" ; done
+  core_LogVerbose "Applying padding to the ${_direction} of the string."
+  case "${_direction}" in
+    'both'   ) core_LogVerbose "Attempting to split up the _extra_length to pad left then right sides."
+               printf -v _temp '%*.*s%s'            0 $(( ${_extra_length} / 2 )) "${_pad}" "${_DATA}"
+               if [ $(( ${_extra_length} % 2 )) -eq 1 ] ; then
+                 core_LogVerbose "The _extra_length is odd (${_extra_length}); the right-padding will get the extra position."
+                 let _extra_length++
+               fi
+               printf -v _temp '%s%*.*s' "${_temp}" 0 $(( ${_extra_length} / 2 )) "${_pad}"
+               ;;
+    'left'   ) printf -v _temp '%*.*s%s'            0 ${_extra_length} "${_pad}" "${_DATA}"              ;;
+    'right'  ) printf -v _temp '%s%*.*s' "${_DATA}" 0 ${_extra_length} "${_pad}"                         ;;
+    *        ) core_LogError "Direction specified ('${_direction}') isn't valid.  (aborting)" ; return 1 ;;
+  esac
+  core_StoreByRef "${_REFERENCE}" "${_temp}" || echo -e "${_temp}"
+  return 0
+}
+
+
+function string_PadRight {
+  #@Description  Wrapper for string_Pad for padding characters to the right-hand side of a string.
+  #@Usage  string_PadRight <-l --length '#'> [-p --pad 'string'] [-R 'ref_var_name'] <'values' or -f --file 'FILE' or STDIN>
+  #@Date   2013.11.03
+
+  core_LogVerbose 'Entering function.  Handing off work to string_Pad'
+  string_Pad -d 'right' "$@"
+  return $?
+}
+
+
+function string_PadLeft {
+  #@Description  Wrapper for string_Pad for padding characters to the left-hand side of a string.
+  #@Usage  string_PadLeft <-l --length '#'> [-p --pad 'string'] [-R 'ref_var_name'] <'values' or -f --file 'FILE' or STDIN>
+  #@Date   2013.11.03
+
+  core_LogVerbose 'Entering function.  Handing off work to string_Pad'
+  string_Pad -d 'left' "$@"
+  return $?
+}
+
+
+function string_PadBoth {
+  #@Description  Wrapper for string_Pad for padding characters to both sides of a string.
+  #@Usage  string_PadBoth <-l --length '#'> [-p --pad 'string'] [-R 'ref_var_name'] <'values' or -f --file 'FILE' or STDIN>
+  #@Date   2013.11.03
+
+  core_LogVerbose 'Entering function.  Handing off work to string_Pad'
+  string_Pad -d 'both' "$@"
+  return $?
+}

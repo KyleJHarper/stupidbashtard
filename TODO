@@ -1,7 +1,3 @@
 Ability to store core_LogVerbose into a file and/or std out
 
 Docker isn't stripping the colon after a long-opt in the options list
-
-ToUpper and other wrappers should still respect -R
-
-Change all SBT function variables to have underscore prefix, to avoid conflicts: _temp

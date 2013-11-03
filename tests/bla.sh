@@ -7,6 +7,13 @@
 #./core.sh
 
 
+function bla {
+  echo '  <here>   '
+}
+
+bob="$(bla)"
+echo "${bob}was here"
+exit
 function one {
   local bob=''
   two
