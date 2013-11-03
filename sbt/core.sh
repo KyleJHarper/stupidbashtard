@@ -21,9 +21,9 @@ declare -A __SBT_TOOL_LIST           #@$ List of all tools asked for by SBT.  Pr
            __SBT_WARNING=true        #@$ Enable or disable warning messages.
 declare -r __SBT_ROOT_DIR="$(cd "$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")/.." ; pwd)"   #@$ Root directory for the SBT system when sourced properly
 declare -r __SBT_EXT_DIR="${__SBT_ROOT_DIR}/sbt/ext"                                           #@$ Extension directory for non-bash functions
-OPTIND=1                             #@$ Tracks the position of the argument we're reading.  Bash internal.
-OPTARG=''                            #@$ Holds either the switch active in getopts, or the value sent to the switch if it's compulsory.  Bash internal.
-OPTERR=1                             #@$ Flag to determine if getopts should report invalid switches itself or rely in case statement in caller.  Bash internal.
+           OPTIND=1                  #@$ Tracks the position of the argument we're reading.  Bash internal.
+           OPTARG=''                 #@$ Holds either the switch active in getopts, or the value sent to the switch if it's compulsory.  Bash internal.
+           OPTERR=1                  #@$ Flag to determine if getopts should report invalid switches itself or rely in case statement in caller.  Bash internal.
 
 
 

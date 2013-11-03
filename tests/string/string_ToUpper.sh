@@ -20,6 +20,13 @@ while [ ${iteration} -le ${MAX_ITERATIONS} ] ; do
   [ "$( string_ToUpper 'rawr' )" == 'RAWR' ]   || fail 1
   pass
 
+  # -- 2 -- Options sent to this should go to string_FormatCase
+  new_test "Sending options supported by the back-end function string_FormatCase (like -R): "
+  rv=''
+  string_ToUpper -R rv 'rawr' || fail 1
+  [ "${rv}" == "RAWR" ]       || fail 2
+  pass
+
   let iteration++
 done
 

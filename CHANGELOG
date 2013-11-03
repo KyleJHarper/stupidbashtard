@@ -1,3 +1,15 @@
+* 5ea63b71e55af7fe5d05f6d995b4d6350142fb4a
+|   Author: kyle
+|   Date: 2013-10-30 20:37:31 -0500
+|   Comment: Modified core_ToolExists to fix an edge case, wrote regression tests to ensure behavior.
+| 
+|  
+* 2f7c73c00d7a8308a341ea286e887944eddec574
+|   Author: kyle
+|   Date: 2013-10-28 00:06:36 -0500
+|   Comment: Updated the README a bit.  Might need more work later.
+| 
+|  
 * 6aa681ffc5671deb49e3a99b9806d0062aa168e0
 |   Author: kyle
 |   Date: 2013-10-27 23:47:54 -0500
