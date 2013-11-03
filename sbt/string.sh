@@ -81,48 +81,48 @@ function string_FormatCase {
   #@Usage  string_FormatCase [-l] [-L] [-p] [-R 'ref_var_name'] [-t] [-u] [-U] <'values' or -f --file 'FILE' or STDIN>
 
   core_LogVerbose 'Entering function.'
-  local opt                   #@$ Localizing opt for use in getopts below.
-  local REFERENCE=''          #@$ Name to use for setting output rather than sending to std out.
-  local CASE=''               #@$ The type of formatting to do.
   local -a __SBT_NONOPT_ARGS  #@$ Local instance for the core_getopts processing below since this will never need exposed to parents.
-  local -a FILES              #@$ Files to read if no positionals passed.
-  local temp=''               #@$ Temporary junk while working, mostly with loops.
-  local DATA=''               #@$ Storage for values from positionals, files, or STDIN, whichever is used.
+  local    _opt               #@$ Localizing opt for use in getopts below.
+  local    _REFERENCE=''      #@$ Name to use for setting output rather than sending to std out.
+  local    _CASE=''           #@$ The type of formatting to do.
+  local -a _files             #@$ Files to read if no positionals passed.
+  local    _temp=''           #@$ Temporary junk while working, mostly with loops.
+  local    _DATA=''           #@$ Storage for values from positionals, files, or STDIN, whichever is used.
 
   # Grab options
-  while core_getopts ':f:lLpR:tuU' opt ':file:' "$@" ; do
-    case "${opt}" in
-      'f' | 'file' )  files+=("${OPTARG}")                                                                                                          ;;
-      'l'          )  [ ! -z "${CASE}" ] && core_LogError "Case already set to ${CASE}, overriding with lower (continuing)."     ; CASE='lower'     ;;
-      'L'          )  [ ! -z "${CASE}" ] && core_LogError "Case already set to ${CASE}, overriding with onelower (continuing)."  ; CASE='onelower'  ;;
-      'p'          )  [ ! -z "${CASE}" ] && core_LogError "Case already set to ${CASE}, overriding with proper (continuing)."    ; CASE='proper'    ;;
-      'R'          )  REFERENCE="${OPTARG}"                                                                                                         ;;
-      't'          )  [ ! -z "${CASE}" ] && core_LogError "Case already set to ${CASE}, overriding with toggle (continuing)."    ; CASE='toggle'    ;;
-      'u'          )  [ ! -z "${CASE}" ] && core_LogError "Case already set to ${CASE}, overriding with upper (continuing)."     ; CASE='upper'     ;;
-      'U'          )  [ ! -z "${CASE}" ] && core_LogError "Case already set to ${CASE}, overriding with oneupper (continuing)."  ; CASE='oneupper'  ;;
-      *            )  core_LogError "Invalid option:  -${opt}  (failing)" ; return 1 ;;
+  while core_getopts ':f:lLpR:tuU' _opt ':file:' "$@" ; do
+    case "${_opt}" in
+      'f' | 'file' )  _files+=("${OPTARG}")                                                                                                            ;;
+      'l'          )  [ ! -z "${_CASE}" ] && core_LogError "Case already set to ${_CASE}, overriding with lower (continuing)."     ; _CASE='lower'     ;;
+      'L'          )  [ ! -z "${_CASE}" ] && core_LogError "Case already set to ${_CASE}, overriding with onelower (continuing)."  ; _CASE='onelower'  ;;
+      'p'          )  [ ! -z "${_CASE}" ] && core_LogError "Case already set to ${_CASE}, overriding with proper (continuing)."    ; _CASE='proper'    ;;
+      'R'          )  _REFERENCE="${OPTARG}"                                                                                                           ;;
+      't'          )  [ ! -z "${_CASE}" ] && core_LogError "Case already set to ${_CASE}, overriding with toggle (continuing)."    ; _CASE='toggle'    ;;
+      'u'          )  [ ! -z "${_CASE}" ] && core_LogError "Case already set to ${_CASE}, overriding with upper (continuing)."     ; _CASE='upper'     ;;
+      'U'          )  [ ! -z "${_CASE}" ] && core_LogError "Case already set to ${_CASE}, overriding with oneupper (continuing)."  ; _CASE='oneupper'  ;;
+      *            )  core_LogError "Invalid option:  -${_opt}  (failing)" ; return 1 ;;
     esac
   done
 
   # Preflights checks
   [ ${#__SBT_NONOPT_ARGS[@]} -gt 1 ] && core_LogVerbose "More than one value sent to act upon, they will be joined and treated as a single item."
-  for temp in "${__SBT_NONOPT_ARGS[@]}" ; do DATA+="${temp}" ; done
-  core_ReadDATA "${files[@]}" || return 1
+  for _temp in "${__SBT_NONOPT_ARGS[@]}" ; do _DATA+="${_temp}" ; done
+  core_ReadDATA "${_files[@]}" || return 1
 
   # Main logic
-  core_LogVerbose "Converting to case '${CASE}' and sending results back."
-  case "${CASE}" in
-    'lower'     ) DATA="${DATA,,}"  ;;
-    'onelower'  ) DATA="${DATA,}"   ;;
-    'proper'    ) DATA="${DATA,,}"
-                  DATA="${DATA~}"   ;;
-    'toggle'    ) DATA="${DATA~~}"  ;;
-    'upper'     ) DATA="${DATA^^}"  ;;
-    'oneupper'  ) DATA="${DATA^}"   ;;
-    *           ) core_LogError "Invalid case format attempted: ${CASE}  (failing)" ; return 1 ;;
+  core_LogVerbose "Converting to case '${_CASE}' and sending results back."
+  case "${_CASE}" in
+    'lower'     ) _DATA="${_DATA,,}"  ;;
+    'onelower'  ) _DATA="${_DATA,}"   ;;
+    'proper'    ) _DATA="${_DATA,,}"
+                  _DATA="${_DATA~}"   ;;
+    'toggle'    ) _DATA="${_DATA~~}"  ;;
+    'upper'     ) _DATA="${_DATA^^}"  ;;
+    'oneupper'  ) _DATA="${_DATA^}"   ;;
+    *           ) core_LogError "Invalid case format attempted: ${_CASE}  (failing)" ; return 1 ;;
   esac
 
-  core_StoreByRef "${REFERENCE}" "${DATA}" || echo -e "${DATA}"
+  core_StoreByRef "${_REFERENCE}" "${_DATA}" || echo -e "${_DATA}"
   return 0
 }
 
@@ -136,50 +136,50 @@ function string_IndexOf {
 
   core_LogVerbose 'Entering function.'
   # Variables
-  local -i index=-1           #@$ Positional index to return, zero-based.  Starting at -1 because awk is 1-based, not 0.
-  local -i occurrence=1       #@$ The Nth occurrence we want to find the index of.
-  local -a needles=()         #@$ Holds the patterns to search for.  Should be a string as we'll do fixed-string searching
-  local opt=''                #@$ Temporary variable for core_getopts, brought to local scope.
-  local REFERENCE=''          #@$ Will hold the name of the var to use for indirect referencing later, if -R used.
   local -a __SBT_NONOPT_ARGS  #@$ Local instance for the core_getopts processing below since this will never need exposed to parents.
-  local -a files              #@$ Files to read if no positionals passed.
-  local needle=''             #@$ Hold values for looping.
-  local DATA=''               #@$ Stores the values we're going to search within.
-  local temp=''               #@$ Garbage variable for looping.
+  local -a _files             #@$ Files to read if no positionals passed.
+  local -i _index=-1          #@$ Positional index to return, zero-based.  Starting at -1 because awk is 1-based, not 0.
+  local -i _occurrence=1      #@$ The Nth occurrence we want to find the index of.
+  local -a _needles=()        #@$ Holds the patterns to search for.  Should be a string as we'll do fixed-string searching
+  local    _opt=''            #@$ Temporary variable for core_getopts, brought to local scope.
+  local    _REFERENCE=''      #@$ Will hold the name of the var to use for indirect referencing later, if -R used.
+  local    _needle=''         #@$ Hold values for looping.
+  local    _DATA=''           #@$ Stores the values we're going to search within.
+  local    _temp=''           #@$ Garbage variable for looping.
 
   # Use core_getopts to not only handle options elegantly, but to put nonopts in __SBT_NONOPT_ARGS
   core_LogVerbose 'Processing options.'
-  while core_getopts ':f:n:o:R:' opt ':file:,needle:,occurrence:' "$@" ; do
-    case "${opt}" in
-      'f' | 'file'       ) files+=("${OPTARG}") ;;
-      'o' | 'occurrence' ) if [[ "${OPTARG}" == 'last' ]] ; then occurrence=9999 ; else occurrence="${OPTARG}" ; fi ;;
-      'n' | 'needle'     ) needles+=( "${OPTARG}" )  ;;
-      'R'                ) REFERENCE="${OPTARG}"     ;;
-      *                  ) core_LogError "Invalid option sent to me: ${opt}  (aborting)" ; return 1 ;;
+  while core_getopts ':f:n:o:R:' _opt ':file:,needle:,occurrence:' "$@" ; do
+    case "${_opt}" in
+      'f' | 'file'       ) _files+=("${OPTARG}") ;;
+      'o' | 'occurrence' ) if [[ "${OPTARG}" == 'last' ]] ; then _occurrence=9999 ; else _occurrence="${OPTARG}" ; fi ;;
+      'n' | 'needle'     ) _needles+=( "${OPTARG}" )  ;;
+      'R'                ) _REFERENCE="${OPTARG}"     ;;
+      *                  ) core_LogError "Invalid option sent to me: ${_opt}  (aborting)" ; return 1 ;;
     esac
   done
 
   # Preflight checks and warnings
   core_LogVerbose 'Checking requirements before processing function.'
-  if [ ${#needles[@]} -eq 0 ] ; then
+  if [ ${#_needles[@]} -eq 0 ] ; then
     core_LogError "No needles were specified to find an index with.  (aborting)"
     return 1
   fi
-  for temp in "${__SBT_NONOPT_ARGS[@]}" ; do DATA+="${temp}" ; done
-  core_ReadDATA "${files[@]}" || return 1
+  for _temp in "${__SBT_NONOPT_ARGS[@]}" ; do _DATA+="${_temp}" ; done
+  core_ReadDATA "${_files[@]}" || return 1
   core_ToolExists 'gawk' || return 1
 
   # Call external tool and store results in temp var.  We can += the index because awk will give a 1-based index, 0 == failed.
   core_LogVerbose 'Starting search for needles specified.'
-  for needle in "${needles[@]}" ; do
-    core_LogVerbose "Searching for: '${needle}'"
-    let "index += $(gawk -v haystack="${DATA}" -v needle="${needle}" -v occurrence="${occurrence}" -f "${__SBT_EXT_DIR}/string_IndexOf.awk")"
-    [ ${index} -eq -1 ] || break
+  for _needle in "${_needles[@]}" ; do
+    core_LogVerbose "Searching for: '${_needle}'"
+    let "_index += $(gawk -v haystack="${_DATA}" -v needle="${_needle}" -v occurrence="${_occurrence}" -f "${__SBT_EXT_DIR}/string_IndexOf.awk")"
+    [ ${_index} -eq -1 ] || break
   done
 
   # Report findings
-  [ ${index} -gt -1 ] && core_LogVerbose "Found a match at index ${index} to needle: '${needle}'"
-  core_StoreByRef "${REFERENCE}" "${index}" || echo -e "${index}"
+  [ ${_index} -gt -1 ] && core_LogVerbose "Found a match at index ${_index} to needle: '${_needle}'"
+  core_StoreByRef "${_REFERENCE}" "${_index}" || echo -e "${_index}"
   return 0
 }
 
@@ -191,54 +191,54 @@ function string_Substring {
 
   core_LogVerbose 'Entering function.'
   # Variables
-  local -i index=0            #@$ Zero-based index to start the substring at.  Supports negative values to wrap back from end of string.
-  local -i length=0           #@$ Number of characters to return.  Negative value will return remainder minus $length characters.  Zero means return all.
-  local opt=''                #@$ Temporary variable for core_getopts, brought to local scope.
-  local REFERENCE=''          #@$ Will hold the name of the var to use for indirect referencing later, if -R used.
   local -a __SBT_NONOPT_ARGS  #@$ Local instance for the core_getopts processing below since this will never need exposed to parents.
-  local -a files              #@$ Files to read if no positionals passed.
-  local DATA=''               #@$ Stores the values we're going to search within.
-  local temp=''               #@$ Garbage variable for looping.
+  local -a _files             #@$ Files to read if no positionals passed.
+  local -i _index=0           #@$ Zero-based index to start the substring at.  Supports negative values to wrap back from end of string.
+  local -i _length=0          #@$ Number of characters to return.  Negative value will return remainder minus $length characters.  Zero means return all.
+  local    _opt=''            #@$ Temporary variable for core_getopts, brought to local scope.
+  local    _REFERENCE=''      #@$ Will hold the name of the var to use for indirect referencing later, if -R used.
+  local    _DATA=''           #@$ Stores the values we're going to search within.
+  local    _temp=''           #@$ Garbage variable for looping.
 
   # Use core_getopts to not only handle options elegantly, but to put nonopts in __SBT_NONOPT_ARGS
   core_LogVerbose 'Processing options.'
-  while core_getopts ':f:i:l:R:' opt ':file:,index:,length:' "$@" ; do
-    case "${opt}" in
-      'f' | 'file'    ) files+=("${OPTARG}")   ;;
-      'i' | 'index'   ) index="${OPTARG}"      ;;
-      'l' | 'length'  ) length="${OPTARG}"     ;;
-      'R'             ) REFERENCE="${OPTARG}"  ;;
-      *               ) core_LogError "Invalid option sent to me: ${opt}  (aborting)" ; return 1 ;;
+  while core_getopts ':f:i:l:R:' _opt ':file:,index:,length:' "$@" ; do
+    case "${_opt}" in
+      'f' | 'file'    ) _files+=("${OPTARG}")   ;;
+      'i' | 'index'   ) _index="${OPTARG}"      ;;
+      'l' | 'length'  ) _length="${OPTARG}"     ;;
+      'R'             ) _REFERENCE="${OPTARG}"  ;;
+      *               ) core_LogError "Invalid option sent to me: ${_opt}  (aborting)" ; return 1 ;;
     esac
   done
 
   # Preflight checks
   core_LogVerbose 'Checking requirements before processing function.'
-  for temp in "${__SBT_NONOPT_ARGS[@]}" ; do DATA+="${temp}" ; done
-  core_ReadDATA "${files[@]}" || return 1
-  if [ ${index} -ge ${#DATA} ] ; then
-    core_LogError "Index specified (${index}) is higher than data size (${#DATA}).  (aborting)"
+  for _temp in "${__SBT_NONOPT_ARGS[@]}" ; do _DATA+="${_temp}" ; done
+  core_ReadDATA "${_files[@]}" || return 1
+  if [ ${_index} -ge ${#_DATA} ] ; then
+    core_LogError "Index specified (${_index}) is higher than data size (${#_DATA}).  (aborting)"
     return 1
   fi
-  temp="${DATA: ${index}}"
-  if [ ${length} -lt 0 ] && [ ${length} -lt -${#temp} ] ; then
-    core_LogError "A negative length was sent (${length}) that extends behind the substring made with index '${index}'.  This will cause a bash error.  (aborting)"
+  _temp="${_DATA: ${_index}}"
+  if [ ${_length} -lt 0 ] && [ ${_length} -lt -${#_temp} ] ; then
+    core_LogError "A negative length was sent (${_length}) that extends behind the substring made with index '${_index}'.  This will cause a bash error.  (aborting)"
     return 1
   fi
-  if [ ${index} -eq 0 ] && [ ${length} -eq 0 ] ; then
+  if [ ${_index} -eq 0 ] && [ ${_length} -eq 0 ] ; then
     core_LogVerbose 'Both index and length are zero.  The substring will exactly match the strings sent, just fyi.'
   fi
 
   # Main logic
-  core_LogVerbose "Grabbing the substring with index '${index}' and length '${length}'."
-  if [ ${length} -eq 0 ] ; then
-    temp="${DATA: ${index}}"
+  core_LogVerbose "Grabbing the substring with index '${_index}' and length '${_length}'."
+  if [ ${_length} -eq 0 ] ; then
+    _temp="${_DATA: ${_index}}"
   else
-    temp="${DATA: ${index}: ${length}}"
+    _temp="${_DATA: ${_index}: ${_length}}"
   fi
 
   # Report back
-  core_StoreByRef "${REFERENCE}" "${temp}" || echo -e "${temp}"
+  core_StoreByRef "${_REFERENCE}" "${_temp}" || echo -e "${_temp}"
   return 0
 }
 
@@ -252,44 +252,44 @@ function string_CountOf {
 
   core_LogVerbose 'Entering function.'
   # Variables
-  local pattern=''            #@$ Holds the pattern to search for.  PCRE (as in, real perl, not grep -P).
-  local opt=''                #@$ Temporary variable for core_getopts, brought to local scope.
-  local REFERENCE=''          #@$ Will hold the name of the var to use for indirect referencing later, if -R used.
-  local -a files              #@$ List of files to count occurrence in.
   local -a __SBT_NONOPT_ARGS  #@$ Local instance for the core_getopts processing below since this will never need exposed to parents.
-  local DATA=''               #@$ Holds all items to search within, mostly to help with the -a/--all items.
-  local temp=''               #@$ Garbage variable for looping.
+  local -a _files             #@$ List of files to count occurrence in.
+  local    _pattern=''        #@$ Holds the pattern to search for.  PCRE (as in, real perl, not grep -P).
+  local    _opt=''            #@$ Temporary variable for core_getopts, brought to local scope.
+  local    _REFERENCE=''      #@$ Will hold the name of the var to use for indirect referencing later, if -R used.
+  local    _DATA=''           #@$ Holds all items to search within, mostly to help with the -a/--all items.
+  local    _temp=''           #@$ Garbage variable for looping.
 
   # Use core_getopts to not only handle options elegantly, but to put nonopts in __SBT_NONOPT_ARGS
   core_LogVerbose 'Processing options.'
-  while core_getopts ':af:p:R:' opt ':all,file:,pattern:' "$@" ; do
-    case "${opt}" in
-      'a' | 'all'     ) pattern='[\s\S]'      ;;
-      'f' | 'file'    ) files+=("${OPTARG}")  ;;
-      'p' | 'pattern' ) pattern="${OPTARG}"   ;;
-      'R'             ) REFERENCE="${OPTARG}" ;;
-      *               ) core_LogError "Invalid option sent to me: ${opt}  (aborting)" ; return 1 ;;
+  while core_getopts ':af:p:R:' _opt ':all,file:,pattern:' "$@" ; do
+    case "${_opt}" in
+      'a' | 'all'     ) _pattern='[\s\S]'      ;;
+      'f' | 'file'    ) _files+=("${OPTARG}")  ;;
+      'p' | 'pattern' ) _pattern="${OPTARG}"   ;;
+      'R'             ) _REFERENCE="${OPTARG}" ;;
+      *               ) core_LogError "Invalid option sent to me: ${_opt}  (aborting)" ; return 1 ;;
     esac
   done
 
   # Preflight checks
   core_LogVerbose "Checking a few requirements before proceeding."
   core_ToolExists 'perl' || return 1
-  for temp in "${__SBT_NONOPT_ARGS[@]}" ; do DATA+="${temp}" ; done
-  core_ReadDATA "${files[@]}" || return 1
-  if [ -z "${pattern}" ] ; then
+  for _temp in "${__SBT_NONOPT_ARGS[@]}" ; do _DATA+="${_temp}" ; done
+  core_ReadDATA "${_files[@]}" || return 1
+  if [ -z "${_pattern}" ] ; then
     core_LogError "No pattern was specified to find and we weren't told to find 'all'.  (aborting)"
     return 1
   fi
 
   # Time to count some things
   core_LogVerbose "Attempting to count occurrences."
-  temp="$(perl "${__SBT_EXT_DIR}/string_CountOf.pl" -p "${pattern}" <<<"${DATA}")"
+  _temp="$(perl "${__SBT_EXT_DIR}/string_CountOf.pl" -p "${_pattern}" <<<"${_DATA}")"
   if [ $? -ne 0 ] ; then
     core_LogError "Perl returned an error code, counting failed.  (aborting)."
     return 1
   fi
-  core_StoreByRef "${REFERENCE}" "${temp}" || echo -e "${temp}"
+  core_StoreByRef "${_REFERENCE}" "${_temp}" || echo -e "${_temp}"
 
   return 0
 }
