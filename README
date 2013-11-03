@@ -13,6 +13,9 @@ Bash, like all tools, has pros and cons.  All functions in SBT are Bash function
 -- Docker
 A static analysis tool is used to read functions and put information about them into YAML files.  Ultimately, these could be useful as description pop-ups in an IDE.
 
+-- Support
+I am not God's gift to scripting.  I fully expect, and hope, others will provide support and feedback to make SBT as optimized as possible.  Ultimately leading to the most effective, performant, and portable Bash library around, all based on open-source tools.
+
 
 MORE INFO
 More details about SBT and Docker are available in the SBT namespace 'doc_examples.sh'.
