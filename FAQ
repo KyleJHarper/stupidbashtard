@@ -4,6 +4,7 @@
   1.  How do I send data to functions for input?
   2.  How are globals/consts defined so I don't conflict with them?
   3.  Are there any universal options in SBT functions?
+  4.  What keywords are reserved by SBT?
 xxx.
 
 
@@ -25,3 +26,12 @@ xxx.
       Yes, they are:
       -R 'variable_name'      This is used by functions that return a value.  You can assign the output to variabled named whatever you specify.
       -f --file '/some/file'  When a function accepts input, this is how you specify file(s) to read.
+
+  4.  What keywords are reserved by SBT?
+      Functions and variable names are generally distinguished by unique prefixes.  They are as follows:
+      Functions are grouped into namespaces such as 'core', 'string', 'io'.  They will always be preceeded with their namespace: core_SomeFunction, string_IndexOf, io_MakeRAMDrive.  As long as you don't write functions matching an imported 'namespace_' you will never conflict with SBT functions.
+      Variables come in three groups:
+        Bash Internals      SBT will never unset or mutilate Bash internal variables.  It does have to use them at times, such as reading $BASH_SOURCE or similar.  The biggest use of internals is core_getopts which uses/modifies OPTIND/OPTERR/OPTARG to AVOID conflict rather than create it.
+        Globals             While Bash is (basically) dynamically scoped, SBT needs to ensure certain variables exist when a given namespace is included.  A namespace will include an initialization block near each top, to set these values.  All globals have '__SBT_' prefixed to the name, e.g.:  __SBT_VERBOSE
+        Function Lexicals   SBT functions use locally-scoped variable almost exclusively, which combined with Bash's natural scoping rules allows SBT to be essentially lexically scoped.  All function variables will be prefixed with a single underscore, e.g.:  _some_var
+      So in short, try to avoid naming any thing prefixed by '__SBT_' or a single underscore like '_bla'.
