@@ -7,6 +7,10 @@
 #./core.sh
 
 
+bla="$(false)"
+echo $?
+
+exit
 function bla {
   echo '  <here>   '
 }

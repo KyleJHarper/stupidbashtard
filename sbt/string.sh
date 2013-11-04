@@ -388,3 +388,43 @@ function string_PadBoth {
   string_Pad -d 'both' "$@"
   return $?
 }
+
+
+function string_Reverse {
+  #@Description  Read each line of input and output them in reverse.  Simple enough.
+  #@Description  -
+  #@Description  If multiple lines are sent they'll be stored in a single string.  Enumerate them in a loop by setting IFS to newline: IFS=$'\n'  Remember you can NOT send this to a loop after a pipe, pipes create subshells.  Use command substitution instead.  See FAQ #5 for more info.
+  #@Usage  string_Reverse [-R 'ref_var_name'] <'values' or -f --file 'FILE' or STDIN>
+  #@Date   2013.11.03
+
+  core_LogVerbose 'Entering function.'
+  # Variables
+  local -a __SBT_NONOPT_ARGS  #@$ Local instance for the core_getopts processing below since this will never need exposed to parents.
+  local -a _files             #@$ List of files to count occurrence in.
+  local    _opt=''            #@$ Temporary variable for core_getopts, brought to local scope.
+  local    _REFERENCE=''      #@$ Will hold the name of the var to use for indirect referencing later, if -R used.
+  local    _DATA=''           #@$ Holds all items to search within, mostly to help with the -a/--all items.
+  local    _temp=''           #@$ Garbage variable for looping.
+
+  # Use core_getopts to not only handle options elegantly, but to put nonopts in __SBT_NONOPT_ARGS
+  core_LogVerbose 'Processing options.'
+  while core_getopts ':f:R:' _opt ':file:' "$@" ; do
+    case "${_opt}" in
+      'f' | 'file'  ) _files+=("${OPTARG}")   ;;
+      'R'           ) _REFERENCE="${OPTARG}"  ;;
+      *             ) core_LogError "Invalid option sent to me: ${_opt}  (aborting)" ; return 1 ;;
+    esac
+  done
+
+  # Preflight checks
+  for _temp in "${__SBT_NONOPT_ARGS[@]}" ; do _DATA+="${_temp}" ; done
+  core_ReadDATA "${_files[@]}" || return 1
+  core_ToolExists 'gawk' || return 1
+
+  # Main
+  core_LogVerbose "Reversing strings and storing in _temp before reporting."
+  _temp="$(gawk -f "${__SBT_EXT_DIR}/string_Reverse.awk" <<<"${_DATA}")"
+  if [ $? -ne 0 ] ; then core_LogError "Error trying to reverse the information sent.  (aborting)" ; return 1 ; fi
+  core_StoreByRef "${_REFERENCE}" "${_temp}" || echo -e "${_temp}"
+  return 0
+}

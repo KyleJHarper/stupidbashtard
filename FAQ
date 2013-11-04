@@ -5,6 +5,7 @@
   2.  How are globals/consts defined so I don't conflict with them?
   3.  Are there any universal options in SBT functions?
   4.  What keywords are reserved by SBT?
+  5.  Why do SBT functions seem to fail when piping to loops?
 xxx.
 
 
@@ -35,3 +36,18 @@ xxx.
         Globals             While Bash is (basically) dynamically scoped, SBT needs to ensure certain variables exist when a given namespace is included.  A namespace will include an initialization block near each top, to set these values.  All globals have '__SBT_' prefixed to the name, e.g.:  __SBT_VERBOSE
         Function Lexicals   SBT functions use locally-scoped variable almost exclusively, which combined with Bash's natural scoping rules allows SBT to be essentially lexically scoped.  All function variables will be prefixed with a single underscore, e.g.:  _some_var
       So in short, try to avoid naming any thing prefixed by '__SBT_' or a single underscore like '_bla'.
+
+  5.  Why do SBT functions seem to fail when piping to loops?
+      This bites most people at one point or another but it is NOT a problem with SBT, or Bash.  Here's a trivial example assuming some_Function outputs three lines to merge:
+        merged=''
+        some_Function | while IFS=$'\n' read -r line ; do merged+="${line}" ; done
+        !!! The $merged variable is STILL blank
+      This is becuse commands in a pipeline operate in their own subshell; they have to.  So when we concatinated the $line variable, we did it in a process that is inaccessible to the program on the left of the pipe.  In fact, the process dies at the end of the loop.
+      How do we fix this?  We use an input method that allows the logic we want to keep alive in the main process:  Process substitution to the rescue!!!
+        merged=''
+        while IFS=$'\n' read -r line ; do merged+="${line}" ; done < <(some_Function)
+        !!! The $merged variable is now what we expect
+      This problem can also be solved with a here-string:
+        merged=''
+        mydata="$(someFunction)"
+        while IFS=$'\n' read -r line ; do merged+="${line}" ; done <<<"${mydata}"
