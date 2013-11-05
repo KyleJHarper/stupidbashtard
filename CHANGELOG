@@ -1,3 +1,57 @@
+* 38091466bd9c2c815084abb443afa7816d33d300
+|   Author: kyle
+|   Date: 2013-11-03 21:52:25 -0600
+|   Comment: Wrote the string_Reverse function and tests.
+| 
+|  
+* fc6d0cd03688836650fc02d48c1d36000407c99b
+|   Author: kyle
+|   Date: 2013-11-03 15:53:40 -0600
+|   Comment: Wrote the string_Pad function and its wrappers and the tests for it.
+| 
+|  
+* 16a151c81d291c6ced04982aad70724057c78521
+|   Author: kyle
+|   Date: 2013-11-03 12:25:58 -0600
+|   Comment: Updated the FAQ to explain naming rules for functions and variables.
+| 
+|  
+* 7fffe6aa1b11f5a80087213b568eb8fef7b8c0bd
+|   Author: kyle
+|   Date: 2013-11-03 12:05:59 -0600
+|   Comment: Prefixed all variables (except exit codes, because Docker reads those) with an underscore.  This enforces the idea of globals being __SBT_something and lexically scoped variables to functions like so: _something.  This fixes #4 and should prevent confusion for end-users later.
+| 
+|  
+* 4b082c476ee427a35185700f53b578f9c72ee983
+|   Author: kyle
+|   Date: 2013-11-03 11:29:36 -0600
+|   Comment: Updated the readme with a support section to advise others to help if they can.  If I'm the only one who ever writes on this system, it will only ever be as effective as I am.
+| 
+|  
+* 1b701986519f9d92172d76334e6f90dd34bc538c
+|   Author: kyle
+|   Date: 2013-11-03 10:08:30 -0600
+|   Comment: Forgot to delete the old file.
+| 
+|  
+* 92185be0c48791c16b01e7de69183111fcfb3b64
+|   Author: kyle
+|   Date: 2013-11-03 10:06:42 -0600
+|   Comment: Renamed file.
+| 
+|  
+* a5c67710c1859e20cf91141edbe7e661c70ec1b1
+|   Author: kyle
+|   Date: 2013-11-03 09:52:53 -0600
+|   Comment: Added -R test to string tests for functions that pass work to string_FormatCase.
+| 
+|  
+* 2367c6d5f5fc56d9fca25bf35b82f3a5a686abc9
+|   Author: kyle
+|   Date: 2013-11-03 09:30:27 -0600
+|   Comment: Couple small changes and updated the change log.  Need to submit a bug and fix it before we go on.
+| 
+|  
 * 5ea63b71e55af7fe5d05f6d995b4d6350142fb4a
 |   Author: kyle
 |   Date: 2013-10-30 20:37:31 -0500

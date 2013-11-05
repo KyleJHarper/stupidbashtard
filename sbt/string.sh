@@ -339,7 +339,7 @@ function string_Pad {
   core_LogVerbose "Expanding pad string until it at least matches length desired."
   while [ ${#_pad} -lt ${_extra_length} ] ; do _pad+="${_pad}" ; done
   core_LogVerbose "Applying padding to the ${_direction} of the string."
-  case "${_direction}" in
+  case "${_direction,,}" in
     'both'   ) core_LogVerbose "Attempting to split up the _extra_length to pad left then right sides."
                printf -v _temp '%*.*s%s'            0 $(( ${_extra_length} / 2 )) "${_pad}" "${_DATA}"
                if [ $(( ${_extra_length} % 2 )) -eq 1 ] ; then
@@ -417,6 +417,7 @@ function string_Reverse {
   done
 
   # Preflight checks
+  core_LogVerbose "Doing preflight checks."
   for _temp in "${__SBT_NONOPT_ARGS[@]}" ; do _DATA+="${_temp}" ; done
   core_ReadDATA "${_files[@]}" || return 1
   core_ToolExists 'gawk' || return 1
@@ -427,4 +428,77 @@ function string_Reverse {
   if [ $? -ne 0 ] ; then core_LogError "Error trying to reverse the information sent.  (aborting)" ; return 1 ; fi
   core_StoreByRef "${_REFERENCE}" "${_temp}" || echo -e "${_temp}"
   return 0
+}
+
+
+function string_Trim {
+  #@Description  Cuts the extraneous length of the specified character off the end(s) of a string.  Default is to trim spaces from both ends.
+  #@Usage  string_Trim [-c --character ' '] [-d --direction 'both'] [-R 'ref_var_name']  <'values' or -f --file 'FILE' or STDIN>
+  #@Date   2013.11.04
+
+  core_LogVerbose 'Entering function.'
+  # Variables
+  local -a __SBT_NONOPT_ARGS  #@$ Local instance for the core_getopts processing below since this will never need exposed to parents.
+  local -a _files             #@$ List of files to count occurrence in.
+  local    _opt=''            #@$ Temporary variable for core_getopts, brought to local scope.
+  local    _REFERENCE=''      #@$ Will hold the name of the var to use for indirect referencing later, if -R used.
+  local    _DATA=''           #@$ Holds all items to search within, mostly to help with the -a/--all items.
+  local    _character=' '     #@$ Character to cut off the end(s) of the string.
+  local    _direction='both'  #@$ The direction to trim on: right, left, or both.
+  local    _temp=''           #@$ Garbage variable for looping.
+
+  # Use core_getopts to not only handle options elegantly, but to put nonopts in __SBT_NONOPT_ARGS
+  core_LogVerbose 'Processing options.'
+  while core_getopts ':c:d:f:R:' _opt ':character:,direction:,file:' "$@" ; do
+    case "${_opt}" in
+      'c' | 'character'  ) _character="${OPTARG}"  ;;
+      'd' | 'direction'  ) _direction="${OPTARG}"  ;;
+      'f' | 'file'       ) _files+=("${OPTARG}")   ;;
+      'R'                ) _REFERENCE="${OPTARG}"  ;;
+      *                  ) core_LogError "Invalid option sent to me: ${_opt}  (aborting)" ; return 1 ;;
+    esac
+  done
+
+  # Preflight checks
+  core_LogVerbose "Doing preflight checks."
+  if [ -z "${_character}" ]   ; then core_LogError "Character to trim is blank.  (aborting)"                  ; return 1 ; fi
+  if [ ${#_character} -gt 1 ] ; then core_LogError "Character is longer than 1: '${_character}'.  (aborting)" ; return 1 ; fi
+  for _temp in "${__SBT_NONOPT_ARGS[@]}" ; do _DATA+="${_temp}" ; done
+  core_ReadDATA "${_files[@]}" || return 1
+  core_ToolExists tr || return 1
+
+  # Main
+  core_LogVerbose "Trimming the string on the direction '${_direction}'"
+  case "${_direction,,}" in
+!!! SEND THIS TO PERL
+    'left'  ) _DATA="${_DATA%%${_character}*}"  ;;
+    'right' ) _DATA="${_DATA##*${_character}}"  ;;
+    'both'  ) _DATA="${_DATA%%${_character}*}"
+              _DATA="${_DATA##*${_character}}"  ;;
+    *       ) core_LogError "Direction specified (${_direction}) isn't one of: left, right, both  (aborting)" ; return 1  ;;
+  esac
+  core_StoreByRef "${_REFERENCE}" "${_DATA}" || echo -e "${_DATA}"
+  return 0
+}
+
+
+function string_TrimRight {
+  #@Description  Cuts the extraneous length off the right-hand side of a string.  Wrapper for string_Trim
+  #@Usage  string_TrimRight [-c --character ' '] [-R 'ref_var_name']  <'values' or -f --file 'FILE' or STDIN>
+  #@Date   2013.11.04
+
+  core_LogVerbose 'Entering function and offloading work to string_Trim'
+  string_Trim -d 'right' "$@"
+  return $?
+}
+
+
+function string_TrimLeft {
+  #@Description  Cuts the extraneous length of the specified character off the end(s) of a string.  Default is to trim spaces from both ends.
+  #@Usage  string_TrimLeft [-c --character ' '] [-R 'ref_var_name']  <'values' or -f --file 'FILE' or STDIN>
+  #@Date   2013.11.04
+
+  core_LogVerbose 'Entering function and offloading work to string_Trim'
+  string_Trim -d 'left' "$@"
+  return $?
 }
