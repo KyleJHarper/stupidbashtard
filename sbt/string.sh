@@ -306,7 +306,7 @@ function string_Pad {
   local -a _files             #@$ List of files to count occurrence in.
   local    _opt=''            #@$ Temporary variable for core_getopts, brought to local scope.
   local    _REFERENCE=''      #@$ Will hold the name of the var to use for indirect referencing later, if -R used.
-  local    _DATA=''           #@$ Holds all items to search within, mostly to help with the -a/--all items.
+  local    _DATA=''           #@$ Holds all items to work with.
   local    _pad=' '           #@$ String to repeat over and over.
   local -i _length=0          #@$ Length of the final string we want to send back.
   local -i _extra_length=0    #@$ Stores the extra length we want to use for padding characters.
@@ -403,7 +403,7 @@ function string_Reverse {
   local -a _files             #@$ List of files to count occurrence in.
   local    _opt=''            #@$ Temporary variable for core_getopts, brought to local scope.
   local    _REFERENCE=''      #@$ Will hold the name of the var to use for indirect referencing later, if -R used.
-  local    _DATA=''           #@$ Holds all items to search within, mostly to help with the -a/--all items.
+  local    _DATA=''           #@$ Holds all items to work with.
   local    _temp=''           #@$ Garbage variable for looping.
 
   # Use core_getopts to not only handle options elegantly, but to put nonopts in __SBT_NONOPT_ARGS
@@ -442,7 +442,7 @@ function string_Trim {
   local -a _files             #@$ List of files to count occurrence in.
   local    _opt=''            #@$ Temporary variable for core_getopts, brought to local scope.
   local    _REFERENCE=''      #@$ Will hold the name of the var to use for indirect referencing later, if -R used.
-  local    _DATA=''           #@$ Holds all items to search within, mostly to help with the -a/--all items.
+  local    _DATA=''           #@$ Holds all items to work with.
   local    _character=' '     #@$ Character to cut off the end(s) of the string.
   local    _direction='both'  #@$ The direction to trim on: right, left, or both.
   local    _temp=''           #@$ Garbage variable for looping.
@@ -497,3 +497,48 @@ function string_TrimLeft {
   string_Trim -d 'left' "$@"
   return $?
 }
+
+
+function string_Insert {
+  #@Description  Inserts the item (source) specified into the _DATA specified at the index specified.  So much specificity!
+  #@Usage  string_Insert [-i --index '#'] [-s --source 'something'] [-R 'ref_var_name']  <'values' or -f --file 'FILE' or STDIN>
+  #@Date   2013.11.05
+
+  core_LogVerbose 'Entering function.'
+  # Variables
+  local -a __SBT_NONOPT_ARGS  #@$ Local instance for the core_getopts processing below since this will never need exposed to parents.
+  local -a _files             #@$ List of files to count occurrence in.
+  local    _opt=''            #@$ Temporary variable for core_getopts, brought to local scope.
+  local    _REFERENCE=''      #@$ Will hold the name of the var to use for indirect referencing later, if -R used.
+  local    _DATA=''           #@$ Holds data sent for manipulation.
+  local    _source=''         #@$ The source we that will insert into _DATA.
+  local -i _index=0           #@$ The zero-based index to inject at.
+  local    _temp=''           #@$ Garbage variable for looping.
+
+  # Use core_getopts to not only handle options elegantly, but to put nonopts in __SBT_NONOPT_ARGS
+  core_LogVerbose 'Processing options.'
+  while core_getopts ':f:i:R:s:' _opt ':file:,index:,source:' "$@" ; do
+    case "${_opt}" in
+      'f' | 'file'    ) _files+=("${OPTARG}")  ;;  #@opt_  File(s) to slurp for input.  The -f and --file can be specified multiple times.
+      'i' | 'index'   ) _index="${OPTARG}"     ;;  #@opt_  The index at which to insert data.  Follows bash rules for index, including negative indexes.
+      's' | 'source'  ) _source="${OPTARG}"    ;;  #@opt_  Source to insert into _DATA.
+      'R'             ) _REFERENCE="${OPTARG}" ;;  #@opt_  Reference variable to assign resultant data to.
+      *               ) core_LogError "Invalid option sent to me: ${_opt}  (aborting)" ; return 1 ;;
+    esac
+  done
+
+  # Preflight checks
+  core_LogVerbose "Doing preflight checks."
+  [ -z "${_source}" ]           && core_LogVerbose 'Source is blank, which is odd.  Value will become simple _DATA sent.'
+  [ ${_index} -eq 0 ]           && core_LogVerbose 'Index is zero, you could have simply concatinated: bla="${one}${two}".  FYI.'
+  [ ${_index} -ge ${#_source} ] && core_LogVerbose 'Index is >= length of source, could have concatinated: bla="${two}${one}"  FYI.'
+  for _temp in "${__SBT_NONOPT_ARGS[@]}" ; do _DATA+="${_temp}" ; done
+  core_ReadDATA "${_files[@]}" || return 1
+
+  # Main
+  core_LogVerbose "Inserting _DATA into source specified."
+  _temp="${_DATA: 0: ${_index}}${_source}${_DATA: ${_index}}"
+  core_StoreByRef "${_REFERENCE}" "${_temp}" || echo -e "${_temp}"
+  return 0
+}
+
