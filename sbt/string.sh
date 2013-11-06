@@ -451,33 +451,28 @@ function string_Trim {
   core_LogVerbose 'Processing options.'
   while core_getopts ':c:d:f:R:' _opt ':character:,direction:,file:' "$@" ; do
     case "${_opt}" in
-      'c' | 'character'  ) _character="${OPTARG}"  ;;
-      'd' | 'direction'  ) _direction="${OPTARG}"  ;;
-      'f' | 'file'       ) _files+=("${OPTARG}")   ;;
-      'R'                ) _REFERENCE="${OPTARG}"  ;;
+      'c' | 'character'  ) _character="${OPTARG}"    ;;
+      'd' | 'direction'  ) _direction="${OPTARG,,}"  ;;
+      'f' | 'file'       ) _files+=("${OPTARG}")     ;;
+      'R'                ) _REFERENCE="${OPTARG}"    ;;
       *                  ) core_LogError "Invalid option sent to me: ${_opt}  (aborting)" ; return 1 ;;
     esac
   done
 
   # Preflight checks
   core_LogVerbose "Doing preflight checks."
-  if [ -z "${_character}" ]   ; then core_LogError "Character to trim is blank.  (aborting)"                  ; return 1 ; fi
-  if [ ${#_character} -gt 1 ] ; then core_LogError "Character is longer than 1: '${_character}'.  (aborting)" ; return 1 ; fi
+  if [ -z "${_character}" ]                     ; then core_LogError "Character to trim is blank.  (aborting)"                               ; return 1 ; fi
+  if [ ${#_character} -gt 1 ]                   ; then core_LogError "Character is longer than 1: '${_character}'.  (aborting)"              ; return 1 ; fi
+  if [[ ! "${_direction}" =~ left|right|both ]] ; then core_LogError "Direction (${_direction}) isn't one of: left, right, both  (aborting)" ; return 1 ; fi
   for _temp in "${__SBT_NONOPT_ARGS[@]}" ; do _DATA+="${_temp}" ; done
   core_ReadDATA "${_files[@]}" || return 1
-  core_ToolExists tr || return 1
+  core_ToolExists 'perl' || return 1
 
   # Main
   core_LogVerbose "Trimming the string on the direction '${_direction}'"
-  case "${_direction,,}" in
-!!! SEND THIS TO PERL
-    'left'  ) _DATA="${_DATA%%${_character}*}"  ;;
-    'right' ) _DATA="${_DATA##*${_character}}"  ;;
-    'both'  ) _DATA="${_DATA%%${_character}*}"
-              _DATA="${_DATA##*${_character}}"  ;;
-    *       ) core_LogError "Direction specified (${_direction}) isn't one of: left, right, both  (aborting)" ; return 1  ;;
-  esac
-  core_StoreByRef "${_REFERENCE}" "${_DATA}" || echo -e "${_DATA}"
+  _temp="$(perl "${__SBT_EXT_DIR}/string_Trim.pl" -c "${_character}" -d "${_direction}" <<<"${_DATA}")"
+  if [ $? -ne 0 ] ; then core_LogError "Perl returned an error, aborting." ; return 1 ; fi
+  core_StoreByRef "${_REFERENCE}" "${_temp}" || echo -e "${_temp}"
   return 0
 }
 
