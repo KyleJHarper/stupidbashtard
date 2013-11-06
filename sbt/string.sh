@@ -92,14 +92,14 @@ function string_FormatCase {
   # Grab options
   while core_getopts ':f:lLpR:tuU' _opt ':file:' "$@" ; do
     case "${_opt}" in
-      'f' | 'file' )  _files+=("${OPTARG}")                                                                                                            ;;
-      'l'          )  [ ! -z "${_CASE}" ] && core_LogError "Case already set to ${_CASE}, overriding with lower (continuing)."     ; _CASE='lower'     ;;
-      'L'          )  [ ! -z "${_CASE}" ] && core_LogError "Case already set to ${_CASE}, overriding with onelower (continuing)."  ; _CASE='onelower'  ;;
-      'p'          )  [ ! -z "${_CASE}" ] && core_LogError "Case already set to ${_CASE}, overriding with proper (continuing)."    ; _CASE='proper'    ;;
-      'R'          )  _REFERENCE="${OPTARG}"                                                                                                           ;;
-      't'          )  [ ! -z "${_CASE}" ] && core_LogError "Case already set to ${_CASE}, overriding with toggle (continuing)."    ; _CASE='toggle'    ;;
-      'u'          )  [ ! -z "${_CASE}" ] && core_LogError "Case already set to ${_CASE}, overriding with upper (continuing)."     ; _CASE='upper'     ;;
-      'U'          )  [ ! -z "${_CASE}" ] && core_LogError "Case already set to ${_CASE}, overriding with oneupper (continuing)."  ; _CASE='oneupper'  ;;
+      'f' | 'file' )  _files+=("${OPTARG}")                                                                                                            ;;  #@opt_  File(s) to slurp for input.  The -f and --file can be specified multiple times.
+      'l'          )  [ ! -z "${_CASE}" ] && core_LogError "Case already set to ${_CASE}, overriding with lower (continuing)."     ; _CASE='lower'     ;;  #@opt_  Convert the first character of the data sent to lower case.
+      'L'          )  [ ! -z "${_CASE}" ] && core_LogError "Case already set to ${_CASE}, overriding with onelower (continuing)."  ; _CASE='onelower'  ;;  #@opt_  Convert all characters in the data sent to lower case.
+      'p'          )  [ ! -z "${_CASE}" ] && core_LogError "Case already set to ${_CASE}, overriding with proper (continuing)."    ; _CASE='proper'    ;;  #@opt_  Convert data to proper (title) case, separation based on IFS.
+      'R'          )  _REFERENCE="${OPTARG}"                                                                                                           ;;  #@opt_  Reference variable to assign resultant data to.
+      't'          )  [ ! -z "${_CASE}" ] && core_LogError "Case already set to ${_CASE}, overriding with toggle (continuing)."    ; _CASE='toggle'    ;;  #@opt_  Convert data by switching the case of all characters between upper/lower.
+      'u'          )  [ ! -z "${_CASE}" ] && core_LogError "Case already set to ${_CASE}, overriding with upper (continuing)."     ; _CASE='upper'     ;;  #@opt_  Convert the first character in data sent to upper case.
+      'U'          )  [ ! -z "${_CASE}" ] && core_LogError "Case already set to ${_CASE}, overriding with oneupper (continuing)."  ; _CASE='oneupper'  ;;  #@opt_  Convert all characters in data sent to upper case.
       *            )  core_LogError "Invalid option:  -${_opt}  (failing)" ; return 1 ;;
     esac
   done
@@ -151,10 +151,10 @@ function string_IndexOf {
   core_LogVerbose 'Processing options.'
   while core_getopts ':f:n:o:R:' _opt ':file:,needle:,occurrence:' "$@" ; do
     case "${_opt}" in
-      'f' | 'file'       ) _files+=("${OPTARG}") ;;
-      'o' | 'occurrence' ) if [[ "${OPTARG}" == 'last' ]] ; then _occurrence=9999 ; else _occurrence="${OPTARG}" ; fi ;;
-      'n' | 'needle'     ) _needles+=( "${OPTARG}" )  ;;
-      'R'                ) _REFERENCE="${OPTARG}"     ;;
+      'f' | 'file'       ) _files+=("${OPTARG}")                                                                        ;;  #@opt_  File(s) to slurp for input.  The -f and --file can be specified multiple times.
+      'o' | 'occurrence' ) if [[ "${OPTARG,,}" == 'last' ]] ; then _occurrence=9999 ; else _occurrence="${OPTARG}" ; fi ;;  #@opt_  Which occurrence to return.  Specify 'last' to indicate 9999 (basically, last).
+      'n' | 'needle'     ) _needles+=( "${OPTARG}" )                                                                    ;;  #@opt_  A need to search for.  Can specify many with multiple switchs: -n 'bla' -n 'bla2'
+      'R'                ) _REFERENCE="${OPTARG}"                                                                       ;;  #@opt_  Reference variable to assign resultant data to.
       *                  ) core_LogError "Invalid option sent to me: ${_opt}  (aborting)" ; return 1 ;;
     esac
   done
@@ -204,10 +204,10 @@ function string_Substring {
   core_LogVerbose 'Processing options.'
   while core_getopts ':f:i:l:R:' _opt ':file:,index:,length:' "$@" ; do
     case "${_opt}" in
-      'f' | 'file'    ) _files+=("${OPTARG}")   ;;
-      'i' | 'index'   ) _index="${OPTARG}"      ;;
-      'l' | 'length'  ) _length="${OPTARG}"     ;;
-      'R'             ) _REFERENCE="${OPTARG}"  ;;
+      'f' | 'file'    ) _files+=("${OPTARG}")   ;;  #@opt_  File(s) to slurp for input.  The -f and --file can be specified multiple times.
+      'i' | 'index'   ) _index="${OPTARG}"      ;;  #@opt_  Starting index to pull from (zero-based).
+      'l' | 'length'  ) _length="${OPTARG}"     ;;  #@opt_  Number of characters to return after index.
+      'R'             ) _REFERENCE="${OPTARG}"  ;;  #@opt_  Reference variable to assign resultant data to.
       *               ) core_LogError "Invalid option sent to me: ${_opt}  (aborting)" ; return 1 ;;
     esac
   done
@@ -244,7 +244,7 @@ function string_Substring {
 
 
 function string_CountOf {
-  #@Description  Returns a count of the times characters/strings are found in the passed values.
+  #@Description  Returns a count of the times characters/strings are found in the passed values.  Uses PCRE (perl) in pattern.
   #@Description  -
   #@Description  If count is zero, exit value will still be 0 for success.
   #@Usage  string_CountOf [-a --all] <-p --pattern 'PCRE regex' > [-R 'ref_var_name'] <'values' or -f --file 'FILE' or STDIN>
@@ -264,10 +264,10 @@ function string_CountOf {
   core_LogVerbose 'Processing options.'
   while core_getopts ':af:p:R:' _opt ':all,file:,pattern:' "$@" ; do
     case "${_opt}" in
-      'a' | 'all'     ) _pattern='[\s\S]'      ;;
-      'f' | 'file'    ) _files+=("${OPTARG}")  ;;
-      'p' | 'pattern' ) _pattern="${OPTARG}"   ;;
-      'R'             ) _REFERENCE="${OPTARG}" ;;
+      'a' | 'all'     ) _pattern='[\s\S]'      ;;  #@opt_  Count all characters in data.  A niceness.
+      'f' | 'file'    ) _files+=("${OPTARG}")  ;;  #@opt_  File(s) to slurp for input.  The -f and --file can be specified multiple times.
+      'p' | 'pattern' ) _pattern="${OPTARG}"   ;;  #@opt_  The PCRE pattern to match against for counting.
+      'R'             ) _REFERENCE="${OPTARG}" ;;  #@opt_  Reference variable to assign resultant data to.
       *               ) core_LogError "Invalid option sent to me: ${_opt}  (aborting)" ; return 1 ;;
     esac
   done
@@ -317,11 +317,11 @@ function string_Pad {
   core_LogVerbose 'Processing options.'
   while core_getopts ':d:f:l:p:R:' _opt ':direction:,file:,length:,pad:' "$@" ; do
     case "${_opt}" in
-      'd' | 'direction'  ) _direction="${OPTARG}"  ;;
-      'f' | 'file'       ) _files+=("${OPTARG}")   ;;
-      'l' | 'length'     ) _length="${OPTARG}"     ;;
-      'p' | 'pad'        ) _pad="${OPTARG}"        ;;
-      'R'                ) _REFERENCE="${OPTARG}"  ;;
+      'd' | 'direction'  ) _direction="${OPTARG}"  ;;  #@opt_  Side of the data pad, default right.
+      'f' | 'file'       ) _files+=("${OPTARG}")   ;;  #@opt_  File(s) to slurp for input.  The -f and --file can be specified multiple times.
+      'l' | 'length'     ) _length="${OPTARG}"     ;;  #@opt_  Length of the string to return.
+      'p' | 'pad'        ) _pad="${OPTARG}"        ;;  #@opt_  Character(s) to repeat and pad with until length specified is met.
+      'R'                ) _REFERENCE="${OPTARG}"  ;;  #@opt_  Reference variable to assign resultant data to.
       *                  ) core_LogError "Invalid option sent to me: ${_opt}  (aborting)" ; return 1 ;;
     esac
   done
@@ -410,8 +410,8 @@ function string_Reverse {
   core_LogVerbose 'Processing options.'
   while core_getopts ':f:R:' _opt ':file:' "$@" ; do
     case "${_opt}" in
-      'f' | 'file'  ) _files+=("${OPTARG}")   ;;
-      'R'           ) _REFERENCE="${OPTARG}"  ;;
+      'f' | 'file'  ) _files+=("${OPTARG}")   ;;  #@opt_  File(s) to slurp for input.  The -f and --file can be specified multiple times.
+      'R'           ) _REFERENCE="${OPTARG}"  ;;  #@opt_  Reference variable to assign resultant data to.
       *             ) core_LogError "Invalid option sent to me: ${_opt}  (aborting)" ; return 1 ;;
     esac
   done
@@ -451,10 +451,10 @@ function string_Trim {
   core_LogVerbose 'Processing options.'
   while core_getopts ':c:d:f:R:' _opt ':character:,direction:,file:' "$@" ; do
     case "${_opt}" in
-      'c' | 'character'  ) _character="${OPTARG}"    ;;
-      'd' | 'direction'  ) _direction="${OPTARG,,}"  ;;
-      'f' | 'file'       ) _files+=("${OPTARG}")     ;;
-      'R'                ) _REFERENCE="${OPTARG}"    ;;
+      'c' | 'character'  ) _character="${OPTARG}"    ;;  #@opt_  Character to trim from ends.
+      'd' | 'direction'  ) _direction="${OPTARG,,}"  ;;  #@opt_  Direction to trim on: left, right, both.  Default both.
+      'f' | 'file'       ) _files+=("${OPTARG}")     ;;  #@opt_  File(s) to slurp for input.  The -f and --file can be specified multiple times.
+      'R'                ) _REFERENCE="${OPTARG}"    ;;  #@opt_  Reference variable to assign resultant data to.
       *                  ) core_LogError "Invalid option sent to me: ${_opt}  (aborting)" ; return 1 ;;
     esac
   done
