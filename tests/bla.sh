@@ -7,6 +7,20 @@
 #./core.sh
 
 
+declare -r -A hash=(['key1']='value1'
+                    ['key2']='value2'
+)
+echo "${hash['key1']}"
+hash['key1']='no work'
+echo "${hash['key1']}"
+echo "${!hash[@]}"
+echo "${hash[@]}"
+
+exit
+bob="${1:-default}"
+echo "$bob"
+
+exit
 bla="$(false)"
 echo $?
 

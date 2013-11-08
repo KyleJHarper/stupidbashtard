@@ -1,3 +1,27 @@
+* a94b0a1c4068112806c36c2ca47ac8324eef21ed
+|   Author: kyle
+|   Date: 2013-11-05 21:09:48 -0600
+|   Comment: Added the string_Insert function and tests.
+| 
+|  
+* c3c5fe49b34af4c6b9aca468d608ca82fb61cf22
+|   Author: kyle
+|   Date: 2013-11-05 19:28:19 -0600
+|   Comment: Added option tags to all of the getopts blocks for docker to read.
+| 
+|  
+* 349f3ced548a76b49f8eda4306a6919920b257d4
+|   Author: kyle
+|   Date: 2013-11-05 18:05:37 -0600
+|   Comment: Finished the trim function and tests.  Perl seemed to be the best solution.
+| 
+|  
+* c302a6c5843928ca7f1025a7963781fa7f2d4d81
+|   Author: kyle
+|   Date: 2013-11-04 23:21:21 -0600
+|   Comment: Updated the TODO a bit and started writing the trim function.  Still need to test the perl ext script and then write unit tests.
+| 
+|  
 * 38091466bd9c2c815084abb443afa7816d33d300
 |   Author: kyle
 |   Date: 2013-11-03 21:52:25 -0600
