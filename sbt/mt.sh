@@ -20,9 +20,13 @@
 #
 
 declare    __SBT_MT_BASE_DIR='/tmp/sbt-mt'   #@$ Root director for pools, workers, etc.
-declare -i __SBT_MT_WORKER_SIZE=4            #@$ Number of workers per pool for processing tasks.
+#declare -i __SBT_MT_WORKER_SIZE=4            #@$ Number of workers per pool for processing tasks.
 
 
+
+# +------------------+
+# |  Pool Functions  |
+# +------------------+
 function mt_InitializePool {
   #@Description  Build a directory structure and files for a new pool.  This is called automatically when a task is assigned to a non-existent pool.
   #@Description  -
@@ -31,12 +35,15 @@ function mt_InitializePool {
   #@Date   2013.11.07
 
   core_LogVerbose "Entering function."
-  local -r _name="${1:-default}"                    #@$ The pool name to use when creating directories.
-  local -r _my_dir="${__SBT_MT_BASE_DIR}/${_name}"  #@$ This instances directory to work with.  For convenience mostly.
+  local -r    _pool="${1:-default}"                    #@$ The pool name to use when creating directories.
+  local -r -i _size="${2:-4}"                          #@$ The size of the pool (number of workers)
+  local -r    _my_dir="${__SBT_MT_BASE_DIR}/${_pool}"  #@$ This instances directory to work with.  For convenience mostly.
 
   core_LogVerbose "Doing preflight checks."
   if [ ! -w "${__SBT_MT_BASE_DIR}" ] ; then core_LogError "Cannot write to MT Base directory '${__SBT_MT_BASE_DIR}'  (aborting)" ; return 1 ; fi
+  if [[ ! "${_size}" =~ ^[0-9]+$ ]]  ; then core_LogError "Size (${_size}) must be a number.  (aborting)"                        ; return 1 ; fi
   if [ -d "${_my_dir}" ]             ; then core_LogVerbose "Pool directory already exists: '${_my_dir}."                        ; return 0 ; fi
+  core_ToolExists 'touch' || return 1
 
   core_LogVerbose "Creating directories."
   if ! mkdir -p "${_my_dir}/{workers,tasks,flags}" ; then
@@ -44,20 +51,18 @@ function mt_InitializePool {
     return 1
   fi
 
-  core_LogVerbose "Setting default flags."
-  if ! (set -o 'noclobber' ; echo "${__SBT_MT_WORKER_SIZE}" > "${_my_dir}/worker_size") ; then
-    core_LogError "Cannot set 'worker_size' file, already set.  This shouldn't have happened."
-    return 1
-  fi
+  core_LogVerbose "Automatically assigning a dispatcher to the new pool."
+  if ! mt_Dispatcher -p "${_pool}" -s "${size}" ; then core_LogError "Failed to start the dispatcher.  (aborting)" ; return 1 ; fi
 
   core_LogVerbose "Pool successfully created, registering pool shutdown function with trap, if not already there."
-  core_RegisterForShutdown "mt_DestroyPools"
+#TODO  core_RegisterForShutdown "mt_DestroyPools"
   return 0
 }
 
 
-function mt_DestroyPools {
+function mt_DestroyPool {
   # Set flag to disallow dispatching new processes.
+  # Flag for all pools
   # For each pool directory:
   #  1. Kill each PID listed in workers directory
   #  2. Log the aborted PID and task
@@ -66,8 +71,68 @@ function mt_DestroyPools {
 }
 
 
-function mt_SetTempDirectory {
-  #@Description  Specify a different pool directory.  For performance reasons, this should be a tmpfs/ramfs directory when possible.
+
+# +------------------------+
+# |  Dispatcher Functions  |
+# +------------------------+
+function mt_Dispatcher {
+  # Controls a dispatcher.  Starting, stopping/pausing.
+  # local -r _pool = pool name passed
+  # if start ; then mt_RunDispatcher & fi
+}
+
+function mt_RunDispatcher {
+  # MUST BE CALLED ASYNCHRONOUSLY!!!  _pool PROVIDED BY CALLER.
+  # This is a parent to all further calls, so worker_id will propagate.
+  # Put PID in dispatcher file, no clobber.  Fail if already running.
+  # while <dispatcher file exists>
+    # If no tasks to run, sleep a few and continue 1
+    # until worker_id=$(mt_FindFreeWorker) sleep a few and continue 1
+    # mt_LockWorker
+    # mt_RunTask -t 'task_id' &
+  # done
+}
+
+
+# +------------------+
+# |  Task Functions  |
+# +------------------+
+function mt_AddTask {
+  # DO NOT CALL ASYNC!!!
+}
+
+function mt_RunTask {
+  # MUST BE CALLED ASYNCHRONOUSLY!!!  _pool AND _worker_id PROVIDED BY CALLER.
+  # Build header file for worker
+  #   Spacing
+  #   Thick Separator
+  #   Thin Separator
+  #   Command String
+  #   PID
+  #   Exit Code
+  #   Thin Separator
+  # Run the task synchronously 1>/Worker_Output_File 2>&1
+  # Thick Separator 1>/Worker_Output_File 2>&1
+  # mt_ConsolidateWorkerLogs
+  # mt_ReleaseWorker
+}
+
+
+
+# +--------------------+
+# |  Worker Functions  |
+# +--------------------+
+function mt_FindFreeWorker {
+  # Search all available workers in _pool from caller.  Return with the id of a the open worker.
+}
+function mt_LockWorker {
+  # Lock the worker with id in _worker_id from caller.
+}
+function mt_ReleaseWorker {
+  # Release the worker with id in _worker_id from caller.
+}
+function mt_WorkerLog {
+  # Log an item to the header or body section of a temp file.  Or consolidate the two into the main log and wipe the temps out.
 }
 
 function mt_TODO {
@@ -120,6 +185,23 @@ function mt_TODO {
   core_StoreByRef "${_REFERENCE}" "${_temp}" || echo -e "${_temp}"
 
   return 0
+}
+
+
+
+# +--------------------------+
+# |  Property Set Functions  |
+# +--------------------------+
+function mt_SetTempDirectory {
+  #@Description  Specify a different pool directory.  For performance reasons, this should be a tmpfs/ramfs directory when possible.
+
+#FIND a RAMFS drive
+#Make the sbt folder
+}
+
+
+function mt_SetWorkerSize {
+  # Set the __SBT_MT_WORKER_SIZE
 }
 
 

@@ -6,3 +6,5 @@ Need to util-linux source as part of SBT lib. Mostly for uuidgen and others.
 
 Need core_SetTrap and a core_RegisterForShutdown and core_ProcessShutdownRegistry
 
+Niceness feature: create an all-lower-case version of function names as wrappers
+

@@ -6,7 +6,69 @@
 #./docker.sh
 #./core.sh
 
+echo "this is \"a{one,two}\" test"
 
+exit
+function hi {
+  echo '2'
+  return 0
+}
+function uhoh {
+  echo '1'
+  return 1
+}
+
+#if worker_id=$(hi) ; then echo 'woohoo' ; fi
+#echo "${worker_id}"
+if worker_id=$(uhoh) ; then echo 'woohoo' ; fi
+echo "${worker_id}"
+
+exit
+
+set -o 'noclobber'
+> /tmp/howdy
+echo $?
+> /tmp/howdy
+echo $?
+
+
+exit
+function SetTrap {
+  local cmds="${1}"
+  shift
+  trap "${cmds}" $@
+}
+
+function hi {
+  echo 'hi there'
+}
+
+function bob {
+  echo "bob hope"
+}
+
+SetTrap 'hi' 0
+SetTrap 'bob' SIGINT
+
+sleep 3
+
+exit
+TRAP_SPRUNG=false
+count=0
+function hi {
+#  ${TRAP_SPRUNG} && return 0
+#  TRAP_SPRUNG=true
+  let count++
+  echo "hi was called: ${count}"
+}
+
+bob='whee'
+echo "${bob}"
+trap 'hi' 0 SIGINT
+sleep 3
+
+
+exit
 declare -r -A hash=(['key1']='value1'
                     ['key2']='value2'
 )
