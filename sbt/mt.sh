@@ -19,9 +19,8 @@
 # -- Initialize Globals for this Namespace
 #
 
-declare    __SBT_MT_BASE_DIR='/tmp/sbt-mt'   #@$ Root director for pools, workers, etc.
-#declare -i __SBT_MT_WORKER_SIZE=4            #@$ Number of workers per pool for processing tasks.
-
+declare __SBT_MT_BASE_DIR='/tmp/sbt-mt'          #@$ Root director for pools, workers, etc.
+declare __SBT_MT_DISPATCHER_POLL_INTERVAL='0.1'  #@$ How long should a dispatcher wait, in seconds, before trying trying to run a new task?
 
 
 # +------------------+
@@ -30,20 +29,33 @@ declare    __SBT_MT_BASE_DIR='/tmp/sbt-mt'   #@$ Root director for pools, worker
 function mt_InitializePool {
   #@Description  Build a directory structure and files for a new pool.  This is called automatically when a task is assigned to a non-existent pool.
   #@Description  -
-  #@Description  The name should be provided by the caller.  If absent 'default' is used.  Not using core_getopts because it's overkill.
-  #@Usage  mt_InitializePool ['pool_name']
+  #@Description  The name should be provided by the caller.  If absent 'default' is used.
+  #@Usage  mt_InitializePool [-n --name 'pool_name'] [-s --size '#']
   #@Date   2013.11.07
 
   core_LogVerbose "Entering function."
-  local -r    _pool="${1:-default}"                    #@$ The pool name to use when creating directories.
-  local -r -i _size="${2:-4}"                          #@$ The size of the pool (number of workers)
-  local -r    _my_dir="${__SBT_MT_BASE_DIR}/${_pool}"  #@$ This instances directory to work with.  For convenience mostly.
+  local    _pool="default"                          #@$ The pool name to use when creating directories.
+  local -i _size="4"                                #@$ The size of the pool (number of workers)
+  local -r _my_dir="${__SBT_MT_BASE_DIR}/${_pool}"  #@$ This instances directory to work with.  For convenience mostly.
+  local    _opt                                     #@$ For getopts loop
+
+  core_LogVerbose "Getting options, if any, and overriding defaults."
+  while core_getopts ':n:s:' _opt ':name:,size:' "$@" ; do
+    case "${_opt}" in
+      'n' | 'name' ) _pool="${OPTARG}"   ;;  #@opt_  The name to store in _pool for referencing this pool.
+      's' | 'size' ) _size="${OPTARG}"   ;;  #@opt_  The size of the pool, representing the number of workers to execute simultaneously.
+      *            ) core_LogError "Invalid option sent to me: ${_opt}  (aborting)" ; return 1 ;;
+    esac
+  done
+  local -r _my_dir="${__SBT_MT_BASE_DIR}/${_pool}"  #@$ This instances directory to work with.  For convenience mostly.
 
   core_LogVerbose "Doing preflight checks."
   if [ ! -w "${__SBT_MT_BASE_DIR}" ] ; then core_LogError "Cannot write to MT Base directory '${__SBT_MT_BASE_DIR}'  (aborting)" ; return 1 ; fi
   if [[ ! "${_size}" =~ ^[0-9]+$ ]]  ; then core_LogError "Size (${_size}) must be a number.  (aborting)"                        ; return 1 ; fi
+  if [ -z "${_pool}" ]               ; then core_LogError "Pool name (-n) cannot be blank."                                      ; return 1 ; fi
+  if [ "${_pool}" == '__ALL' ]       ; then core_LogError "Pool cannot be named '__ALL', that name is reserved.  (aborting)"     ; return 1 ; fi
   if [ -d "${_my_dir}" ]             ; then core_LogVerbose "Pool directory already exists: '${_my_dir}."                        ; return 0 ; fi
-  core_ToolExists 'touch' || return 1
+  core_ToolExists 'mkdir' || return 1
 
   core_LogVerbose "Creating directories."
   if ! mkdir -p "${_my_dir}/{workers,tasks,flags}" ; then
@@ -55,7 +67,7 @@ function mt_InitializePool {
   if ! mt_Dispatcher -p "${_pool}" -s "${size}" ; then core_LogError "Failed to start the dispatcher.  (aborting)" ; return 1 ; fi
 
   core_LogVerbose "Pool successfully created, registering pool shutdown function with trap, if not already there."
-#TODO  core_RegisterForShutdown "mt_DestroyPools"
+#TODO  core_RegisterForShutdown "mt_DestroyPool __ALL"
   return 0
 }
 
@@ -79,14 +91,78 @@ function mt_Dispatcher {
   # Controls a dispatcher.  Starting, stopping/pausing.
   # local -r _pool = pool name passed
   # if start ; then mt_RunDispatcher & fi
+  #@Description  Controls a dispatcher by affecting it's flags.  This function cannot infer _pool because it might getting controlled manually (user code).
+  #@Usage  mt_Dispatcher [-a --action 'start or stop'] <-n --name 'pool_name'>
+  #@Date   2013.11.29
+
+  core_LogVerbose "Entering function."
+  local _action  #@$ The action we want to take.
+  local _pool    #@$ The pool we want to perform an action against
+  local _opt     #@$ For getopts loop
+
+  core_LogVerbose "Getting options, if any."
+  while core_getopts ':a:n:' _opt ':action:,name:' "$@" ; do
+    case "${_opt}" in
+      'a' | 'action' ) _action="${OPTARG}"   ;;  #@opt_  Action to take.
+      'n' | 'name'   ) _pool="${OPTARG}"     ;;  #@opt_  The name to store in _pool for referencing this pool.
+      *              ) core_LogError "Invalid option sent to me: ${_opt}  (aborting)" ; return 1 ;;
+    esac
+  done
+  local -r _my_dir="${__SBT_MT_BASE_DIR}/${_pool}"  #@$ This instances directory to work with.  For convenience mostly.
+  local -r _my_run_flag="${_my_dir}/flags/running"
+
+  core_LogVerbose "Doing preflight checks."
+  if [ -z "${_pool}" ]     ; then core_LogError "Pool name (-n) cannot be blank."            ; return 1 ; fi
+  if [ ! -d "${_my_dir}" ] ; then core_LogVerbose "Pool directory not found: '${_my_dir}."   ; return 1 ; fi
+  core_ToolExists 'sleep' 'ps' || return 1
+
+  core_LogVerbose "Attempting to to execute the action '${_action}' on the dispatcher for pool '${_pool}'."
+  case "${_action}" in
+    'start' )
+              if [ -f "${_my_run_flag}" ] ; then
+                core_LogVerbose "This pool (${_pool}) is already running.  Leaving with code 0 (ok)."
+                return 0
+              fi
+              if ! (set -o noclobber ; > "${_my_run_flag}") ; then
+                core_LogError "Unable to set running flag for this pool.  Aborting."
+                return 1
+              fi
+              core_LogVerbose "Starting the dispatcher asynchronously."
+              mt_RunDispatcher &
+              ;;
+    'stop'  )
+              if [ ! -f "${_my_run_flag}" ] ; then
+                core_LogError "The 'running' flag file is missing: ${_my_run_flag}  (aborting)"
+                return 1
+              fi
+              local -r -i _dispatcher_pid=$(cat "${_my_run_flag}")  #@$ Store the pid number if we're stopping a dispatcher.
+              local    -i _i=0                                      #@$ Counter to increment while we wait for dispatcher pid to evaporate.
+              if ! rm "${_my_run_flag}" ; then
+                core_LogError "Unable to remove the running flag for this pool.  Returning failure."
+                return 1
+              fi
+              while [ ${i} -lt 5 ] && ps ${_dispatcher_pid} 1>/dev/null ; do sleep 1 ; let i++ ; done
+              [ ${i} -eq 5 ] && core_LogVerbose "Dispatcher's PID didn't die after ${i} seconds.  Could be due to long timeouts.  Continuing."
+              core_LogVerbose "'Stop' operation finished, be aware tasks started by the dispatcher are still alive if they haven't finished."
+              ;;
+    *       )
+              core_LogError "Action specified must be 'start' or 'stop', not '${_action}'.  (aborting)"
+              return 1
+              ;;
+  esac
+
+  core_LogVerbose "Finished starting/stopping pool."
+  return 0
 }
 
 function mt_RunDispatcher {
   # MUST BE CALLED ASYNCHRONOUSLY!!!  _pool PROVIDED BY CALLER.
   # This is a parent to all further calls, so worker_id will propagate.
   # Put PID in dispatcher file, no clobber.  Fail if already running.
+  # If $BASHPID == $$ fail
+  # _poll_interval=${__SBT_MT_DISPATCHER_POLL_INTERVAL}  (override with getopts)
   # while <dispatcher file exists>
-    # If no tasks to run, sleep a few and continue 1
+    # If no tasks to run, sleep ${__SBT_MT_DISPATCHER_POLL_INTERVAL} a few and continue 1
     # until worker_id=$(mt_FindFreeWorker) sleep a few and continue 1
     # mt_LockWorker
     # mt_RunTask -t 'task_id' &
@@ -103,6 +179,7 @@ function mt_AddTask {
 
 function mt_RunTask {
   # MUST BE CALLED ASYNCHRONOUSLY!!!  _pool AND _worker_id PROVIDED BY CALLER.
+  # If $BASHPID == $$ fail
   # Build header file for worker
   #   Spacing
   #   Thick Separator
@@ -199,10 +276,6 @@ function mt_SetTempDirectory {
 #Make the sbt folder
 }
 
-
-function mt_SetWorkerSize {
-  # Set the __SBT_MT_WORKER_SIZE
-}
 
 
 
