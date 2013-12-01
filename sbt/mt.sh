@@ -88,11 +88,8 @@ function mt_DestroyPool {
 # |  Dispatcher Functions  |
 # +------------------------+
 function mt_Dispatcher {
-  # Controls a dispatcher.  Starting, stopping/pausing.
-  # local -r _pool = pool name passed
-  # if start ; then mt_RunDispatcher & fi
   #@Description  Controls a dispatcher by affecting it's flags.  This function cannot infer _pool because it might getting controlled manually (user code).
-  #@Usage  mt_Dispatcher [-a --action 'start or stop'] <-n --name 'pool_name'>
+  #@Usage  mt_Dispatcher <-a --action 'start or stop'> <-n --name 'pool_name'>
   #@Date   2013.11.29
 
   core_LogVerbose "Entering function."
@@ -156,6 +153,17 @@ function mt_Dispatcher {
 }
 
 function mt_RunDispatcher {
+  #@Description  This IS a dispatcher.  It is an asynchronous process which will regularly scan the task folder of a given pool for things to do.  Tasks will be passed off to workers in futher asynchronous calls.
+  #@Description  -
+  #@Description  It's compulsory for the caller to have a variable called _pool with the name of the pool defined.  This check is handled by the caller (mt_Dispatcher) and therefore is not checked here.
+  #@Usage        mt_RunDispatcher &
+  #@Date         2013.11.30
+
+  if getconf INT_MAX >/dev/null 2>&1 ; then
+    core_LogVerbose "Found the 'getconf' command, using it to capture INT_MAX to override the _MAX_TASK_ID safety variable."
+    _MAX_TASK_ID="$(getconf INT_MAX)"
+  fi
+
   # MUST BE CALLED ASYNCHRONOUSLY!!!  _pool PROVIDED BY CALLER.
   # This is a parent to all further calls, so worker_id will propagate.
   # Put PID in dispatcher file, no clobber.  Fail if already running.

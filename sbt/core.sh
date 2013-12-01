@@ -83,7 +83,7 @@ function core_getopts {
     # Try to store positional argument in _OPT.  If the option we tried to store in _OPT is blank, we're done.
     core_LogVerbose 'Assigning value to _OPT and leaving if blank.'
     eval _OPT="\"\${${_MY_OPTIND}}\""
-    if [ -z "${_OPT}" ] ; then OPTIND=1 ; return 1 ; fi
+    if [ -z "${_OPT}" ] ; then OPTIND=1 ; __SBT_SHORT_OPTIND=1 ; return 1 ; fi
 
     # If the _OPT has an equal sign, we need to place the right-hand contents in value and trim _OPT.
     if [[ "${_OPT}" =~ ^--[a-zA-Z0-9][a-zA-Z0-9-]*= ]] || [[ "${_OPT}" =~ ^-[a-zA-Z0-9][a-zA-Z0-9-]*= ]] ; then

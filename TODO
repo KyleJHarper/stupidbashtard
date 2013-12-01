@@ -8,3 +8,7 @@ Need core_SetTrap and a core_RegisterForShutdown and core_ProcessShutdownRegistr
 
 Niceness feature: create an all-lower-case version of function names as wrappers
 
+Need to add a local OPTIND to each function to ensure no problems with core_getopts.  Will leave __SBT_SHORT_OPTIND alone.
+
+__SBT variables ar eall upper case, but _VAR variables are not.  The caps doesn't mean "read only"... maybe it should?
+
