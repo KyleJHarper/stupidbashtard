@@ -64,7 +64,7 @@ function mt_InitializePool {
   fi
 
   core_LogVerbose "Automatically assigning a dispatcher to the new pool."
-  if ! mt_Dispatcher -p "${_pool}" -s "${size}" ; then core_LogError "Failed to start the dispatcher.  (aborting)" ; return 1 ; fi
+  if ! mt_Dispatcher -a 'start' -p "${_pool}" -s "${size}" ; then core_LogError "Failed to start the dispatcher.  (aborting)" ; return 1 ; fi
 
   core_LogVerbose "Pool successfully created, registering pool shutdown function with trap, if not already there."
 #TODO  core_RegisterForShutdown "mt_DestroyPool __ALL"
@@ -106,40 +106,44 @@ function mt_Dispatcher {
     esac
   done
   local -r _my_dir="${__SBT_MT_BASE_DIR}/${_pool}"  #@$ This instances directory to work with.  For convenience mostly.
-  local -r _my_run_flag="${_my_dir}/flags/running"
+  local -r _my_dispatcher="${_my_dir}/dispatcher/pid"
 
   core_LogVerbose "Doing preflight checks."
   if [ -z "${_pool}" ]     ; then core_LogError "Pool name (-n) cannot be blank."            ; return 1 ; fi
   if [ ! -d "${_my_dir}" ] ; then core_LogVerbose "Pool directory not found: '${_my_dir}."   ; return 1 ; fi
-  core_ToolExists 'sleep' 'ps' || return 1
+  core_ToolExists 'sleep' 'ps' 'cat' 'rm' || return 1
 
   core_LogVerbose "Attempting to to execute the action '${_action}' on the dispatcher for pool '${_pool}'."
   case "${_action}" in
     'start' )
-              if [ -f "${_my_run_flag}" ] ; then
-                core_LogVerbose "This pool (${_pool}) is already running.  Leaving with code 0 (ok)."
+              if [ -f "${_my_dispatcher}" ] ; then
+                core_LogVerbose "This pool (${_pool}) already has a dispatcher running.  Leaving with code 0 (ok)."
                 return 0
               fi
-              if ! (set -o noclobber ; > "${_my_run_flag}") ; then
-                core_LogError "Unable to set running flag for this pool.  Aborting."
+              if ! (set -o noclobber ; exec 2&>/dev/null ; > "${_my_dispatcher}") ; then
+                core_LogError "Unable to create the dispatcher pid file for this pool.  Aborting."
                 return 1
               fi
               core_LogVerbose "Starting the dispatcher asynchronously."
               mt_RunDispatcher &
               ;;
     'stop'  )
-              if [ ! -f "${_my_run_flag}" ] ; then
-                core_LogError "The 'running' flag file is missing: ${_my_run_flag}  (aborting)"
+              if [ ! -f "${_my_dispatcher}" ] ; then
+                core_LogError "The dispatcher pid file is missing: ${_my_dispatcher}  (aborting)"
                 return 1
               fi
-              local -r -i _dispatcher_pid=$(cat "${_my_run_flag}")  #@$ Store the pid number if we're stopping a dispatcher.
-              local    -i _i=0                                      #@$ Counter to increment while we wait for dispatcher pid to evaporate.
-              if ! rm "${_my_run_flag}" ; then
-                core_LogError "Unable to remove the running flag for this pool.  Returning failure."
+              local -r -i _dispatcher_pid=$(cat "${_my_dispatcher}")  #@$ Stores the pid number of the dispatcher we're stopping.
+              local    -i _i=0                                        #@$ Counter to increment while we wait for dispatcher pid to evaporate.
+              if [[ ! ${_dispatcher_pid} =~ ^[0-9}+$ ]] ; then
+                core_LogError "PID for dispatcher came back blank or not-a-number: '${_dispatcher_pid}'  (aborting)"
+                return 1
+              fi
+              if ! rm "${_my_dispatcher}" ; then
+                core_LogError "Unable to remove the dispatcher PID file for this pool.  Returning failure."
                 return 1
               fi
               while [ ${i} -lt 5 ] && ps ${_dispatcher_pid} 1>/dev/null ; do sleep 1 ; let i++ ; done
-              [ ${i} -eq 5 ] && core_LogVerbose "Dispatcher's PID didn't die after ${i} seconds.  Could be due to long timeouts.  Continuing."
+              [ ${i} -ge 5 ] && core_LogVerbose "Dispatcher's PID didn't die after ${i} seconds.  Could be due to long timeouts.  Continuing."
               core_LogVerbose "'Stop' operation finished, be aware tasks started by the dispatcher are still alive if they haven't finished."
               ;;
     *       )
@@ -148,22 +152,29 @@ function mt_Dispatcher {
               ;;
   esac
 
-  core_LogVerbose "Finished starting/stopping pool."
+  core_LogVerbose "Finished the '${_action}' action for the pool '${_pool}'."
   return 0
 }
 
 function mt_RunDispatcher {
   #@Description  This IS a dispatcher.  It is an asynchronous process which will regularly scan the task folder of a given pool for things to do.  Tasks will be passed off to workers in futher asynchronous calls.
   #@Description  -
-  #@Description  It's compulsory for the caller to have a variable called _pool with the name of the pool defined.  This check is handled by the caller (mt_Dispatcher) and therefore is not checked here.
+  #@Description  It's compulsory for the caller to have variables called _pool and _my_dir with the name of the pool and directory location.  This check is handled by the caller (mt_Dispatcher) and therefore is not checked here.
   #@Usage        mt_RunDispatcher &
-  #@Date         2013.11.30
+  #@Date         2013.12.04
 
+  #@$_pool    The name of the pool to work with.  This must be provided by the parent (caller).
+  #@$_my_dir  The root directory of the pool.  This must be provided by the parent (caller).
   if getconf INT_MAX >/dev/null 2>&1 ; then
     core_LogVerbose "Found the 'getconf' command, using it to capture INT_MAX to override the _MAX_TASK_ID safety variable."
     _MAX_TASK_ID="$(getconf INT_MAX)"
   fi
-
+#OVERRIDE LOG FILE LOCATION FOR core_LogVerbose and core_LogError:  _my_log_file="${_my_dir}/dispatcher/output.log"
+  core_LogVerbose "Doing pre-flight checks."
+  if [ ${BASHPID} -eq $$ ] ; then
+    core_LogError 'The dispatcher must run asynchronously.  Currently BASHPID matches $$.  (aborting)'
+    mt_DestroyPool -p "${_pool}"
+  fi
   # MUST BE CALLED ASYNCHRONOUSLY!!!  _pool PROVIDED BY CALLER.
   # This is a parent to all further calls, so worker_id will propagate.
   # Put PID in dispatcher file, no clobber.  Fail if already running.

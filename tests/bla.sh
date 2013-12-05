@@ -6,6 +6,12 @@
 #./docker.sh
 #./core.sh
 
+
+(set -o noclobber ; > /tmp/test_file 2>/dev/null) || echo 'failed 1'
+(set -o noclobber ; exec 2&>/dev/null ; > /tmp/test_file) || echo 'failed 2'
+(set -o noclobber ;  > /tmp/test_file) || echo 'failed 3'
+
+exit
 echo "this is \"a{one,two}\" test"
 
 exit
