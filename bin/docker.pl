@@ -367,7 +367,7 @@ sub add_options {
   # Process long opts
   if ( $LONG_OPTS ) {
     foreach my $opt ( split /,/, $LONG_OPTS ) {
-      if ( $opt eq ':' ) { $func->options($last_opt, 'true') ; next ; }
+      if ( $opt =~ /:$/ ) { $func->options(substr($opt, 0, -1), 'true') ; next ; }
       $func->options($opt, 'false') ;
       $last_opt = $opt ;
     }

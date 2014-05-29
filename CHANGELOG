@@ -1,3 +1,33 @@
+* 95e14779c36a8e395cb20fd18191a460845a36aa
+|   Author: kyle
+|   Date: 2013-12-04 21:49:17 -0600
+|   Comment: More work on the mt stuff.  Still trying to flesh out the outline.  Taking extra time because I'm watching video game speed runs...
+| 
+|  
+* 303011d6408fdf48897d8499c8f2a4fd3032c7fa
+|   Author: kyle
+|   Date: 2013-11-30 23:24:59 -0600
+|   Comment: Updated the TODO with a couple items I realized I did stupidly.  Modified core_getopts to support resetting of __SBT_SHORT_OPTIND when options parsing is done; a niceness feature.  Made minor changes to the mt_RunDispatcher, ready to start fleshing it and everything else out a LOT more.
+| 
+|  
+* b8ccc30d8037f1aa3e8d0e4fec06f9e87a81fba6
+|   Author: kyle
+|   Date: 2013-11-29 23:07:17 -0600
+|   Comment: Touched up the initialize pool function a bit and wrote the controller for a dispatcher.  Using a flag file to signal it.  Much, much more to go.
+| 
+|  
+* 6f9e7de5cf2ee5328c5a802555cbb9a52cfa19b1
+|   Author: kyle
+|   Date: 2013-11-11 21:50:20 -0600
+|   Comment: MT work in progress.  Have a basic outline done, just need to code it in.
+| 
+|  
+* a94727db8feec5bdcfdc912db93f021b89748b57
+|   Author: kyle
+|   Date: 2013-11-07 22:54:25 -0600
+|   Comment: Started on the mt namespace.  Conceptually there is a tremendous amount of work left to do this correctly.  Right now I'm focusing on getting a pool initialized and the flags and whatnot setup for it.
+| 
+|  
 * a94b0a1c4068112806c36c2ca47ac8324eef21ed
 |   Author: kyle
 |   Date: 2013-11-05 21:09:48 -0600
