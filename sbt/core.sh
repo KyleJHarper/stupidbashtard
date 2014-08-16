@@ -17,6 +17,7 @@
 declare -a __SBT_NONOPT_ARGS         #@$ Holds all arguments sent to getopts that are not part of the switch syntax.  Unique to SBT.  Similar to BASH_ARGV, only better.  Can store unlimited options, BASH_ARGV stores a max of 10, and in reverse order which is unintuitive when processing as-passed-in.
 declare -i __SBT_SHORT_OPTIND=1      #@$ Tracks the position of the short option if they're side by side -abcd etc.  Unique to SBT.
 declare -A __SBT_TOOL_LIST           #@$ List of all tools asked for by SBT.  Prevent expensive lookups with recurring calls.
+           __SBT_NO_MORE_OPTS=false  #@$ If a double hypen (--) is passed, we put all future items into __SBT_NONOPT_ARGS.
            __SBT_VERBOSE=false       #@$ Enable or disable verbose messages for debugging.
            __SBT_WARNING=true        #@$ Enable or disable warning messages.
 declare -r __SBT_ROOT_DIR="$(cd "$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")/.." ; pwd)"   #@$ Root directory for the SBT system when sourced properly
@@ -62,8 +63,9 @@ function core_getopts {
   # If we're on the first index, turn off OPTERR if our prescribed opts start with a colon.
   core_LogVerbose 'Checking to see if OPTIND is 1 so we can reset items.'
   if [ ${OPTIND} -eq 1 ] ; then
-    core_LogVerbose 'OPTIND is 1.  Resetting OPTERR.'
+    core_LogVerbose 'OPTIND is 1.  Resetting OPTERR and __SBT_NO_MORE_OPTS.'
     OPTERR=1
+    __SBT_NO_MORE_OPTS=false
     if [ "${1:0:1}" == ':' ] || [ "${3:0:1}" == ':' ] ; then
       core_LogVerbose 'Error handling overriden, to be handled by caller.  OPTERR disabled.'
       OPTERR=0
@@ -92,20 +94,23 @@ function core_getopts {
       _OPT="${_OPT%%=*}"
     fi
 
+    # Check for a double hyphen (--) and/or __SBT_NO_MORE_OPTS setting.
+    if [ "${_OPT}" = '--' ]  ; then core_LogVerbose "Found bare double-hyphen (--).  Disabling option parsing."  ; __SBT_NO_MORE_OPTS=true          ; continue ; fi
+    if ${__SBT_NO_MORE_OPTS} ; then core_LogVerbose "__SBT_NO_MORE_OPTS flag set, storing in __SBT_NONOPT_ARGS." ; __SBT_NONOPT_ARGS+=( "${_OPT}" ) ; continue ; fi
+
     # If _OPT is a short opt with muliple switches at once, read/modify the __SBT_SHORT_OPTIND and _OPT.
     # Also need to decrement OPTIND if we're on the last item in the compact list.
     if [[ "${_OPT}" =~ ^-[a-zA-Z0-9][a-zA-Z0-9]+ ]] ; then
-      core_LogVerbose "Option is short and compacted (-abc...).  Getting new _OPT with short index of ${__SBT_SHORT_OPTIND}"
-      if [ -z "${_OPT:${__SBT_SHORT_OPTIND}:1}" ] ; then
-        core_LogVerbose "Current SHORT_OPTIND makes empty string, no more compact options in this OPTIND.  Setting SHORT_OPTIND to 1 and returning 0 for next OPTIND."
-        __SBT_SHORT_OPTIND=1
-        return 0
-      fi
-      core_LogVerbose "Assigning '-${_OPT:${__SBT_SHORT_OPTIND}:1}' to _OPT and incrementing SHORT_OPTIND for next run."
-      _OPT="-${_OPT:${__SBT_SHORT_OPTIND}:1}"
+      core_LogVerbose "Option is short and compacted (-abc...).  Getting new _OPT with short index of ${__SBT_SHORT_OPTIND} and incrementing short index."
+      _temp_opt="-${_OPT:${__SBT_SHORT_OPTIND}:1}"
       let __SBT_SHORT_OPTIND++
-      core_LogVerbose "Substring based on SHORT_OPTIND was not blank, decrementing OPTIND for next run."
       let OPTIND--
+      if [ -z "${_OPT:${__SBT_SHORT_OPTIND}:1}" ] ; then
+        core_LogVerbose "Next SHORT_OPTIND makes empty string.  Setting SHORT_OPTIND to 1 and incrementing OPTIND back to next item."
+        __SBT_SHORT_OPTIND=1
+        let OPTIND++
+      fi
+      _OPT="${_temp_opt}"
     fi
 
     ##############################################
