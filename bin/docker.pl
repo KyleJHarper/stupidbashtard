@@ -13,7 +13,7 @@ use warnings ;
 use Getopt::Std ;
 use Cwd 'abs_path' ;
 use File::Basename ;
-use Switch ;
+use feature 'switch' ;
 use lib dirname ( abs_path( __FILE__ ) ) ;
 use Function ;
 
@@ -276,14 +276,14 @@ sub add_variable {
     if ( $10 ) { $value          = $10 ; }
     $flag_switches =~ s/[^a-zA-Z]// ;
     foreach my $flag ( split /-/, $flag_switches ) {
-      switch ($flag) {
-        case /a/  { $flags .= 'array '     ; }
-        case /A/  { $flags .= 'hash '      ; }
-        case /i/  { $flags .= 'integer '   ; }
-        case /l/  { $flags .= 'lowercase ' ; }
-        case /r/  { $flags .= 'readonly '  ; }
-        case /u/  { $flags .= 'uppercase ' ; }
-        else      { &print_so_verbose("Found a declare switch I don't have a mapping for: $flag") ; }
+      given ($flag) {
+        when (/a/)  { $flags .= 'array '     ; }
+        when (/A/)  { $flags .= 'hash '      ; }
+        when (/i/)  { $flags .= 'integer '   ; }
+        when (/l/)  { $flags .= 'lowercase ' ; }
+        when (/r/)  { $flags .= 'readonly '  ; }
+        when (/u/)  { $flags .= 'uppercase ' ; }
+        default      { &print_so_verbose("Found a declare switch I don't have a mapping for: $flag") ; }
       }
     }
   }

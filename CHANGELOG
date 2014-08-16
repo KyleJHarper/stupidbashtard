@@ -1,3 +1,15 @@
+* 4846b8ef870fe27d13fd1f64f1b0c250111e15da
+|   Author: kyle
+|   Date: 2014-08-15 23:45:23 -0500
+|   Comment: Fixed a bad 'let' statement when calculating TPS (tests per second) in string functions.
+| 
+|  
+* 0ddcdcde6efb369ac70d496653d558bbc8341f6e
+|   Author: kyle
+|   Date: 2014-05-28 21:14:57 -0500
+|   Comment: Fixed a bug in docker when searching for long options.  If they accept a value to the long option, it was being appended incorrectly in the yaml file and the true/false logic was simply broken.
+| 
+|  
 * 95e14779c36a8e395cb20fd18191a460845a36aa
 |   Author: kyle
 |   Date: 2013-12-04 21:49:17 -0600
