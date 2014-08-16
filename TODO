@@ -1,7 +1,5 @@
 Ability to store core_LogVerbose into a file and/or std out
 
-Docker isn't stripping the colon after a long-opt in the options list
-
 Need to util-linux source as part of SBT lib. Mostly for uuidgen and others.
 
 Need core_SetTrap and a core_RegisterForShutdown and core_ProcessShutdownRegistry

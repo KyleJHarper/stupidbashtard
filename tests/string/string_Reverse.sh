@@ -72,7 +72,6 @@ done
 if [ "${1}" == 'performance' ] ; then
   END="$(date '+%s%N')"
   let "TOTAL = (${END} - ${START}) / 1000000"
-  let "TPS   = ${test_number} / (${TOTAL} / 1000)"
   printf "  %'.0f tests in %'.0f ms (%s tests/sec)\n" "${test_number}" "${TOTAL}" "$(bc <<< "scale = 3; ${test_number} / (${TOTAL} / 1000)")" >&2
 fi
 
