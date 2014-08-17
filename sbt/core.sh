@@ -49,16 +49,19 @@ function core_getopts {
 
   # Invocation and preflight checks.
   core_LogVerbose 'Entering function.'
-  if [ -z "${2}" ] || [ -z "${1}" ] ; then core_LogError "Invalid invocation of core_getopts."                           ; return 1 ; fi
-  if [ -z "${4}" ]                  ; then core_LogVerbose "No positionals were sent, odd.  Not an error, but aborting." ; return 1 ; fi
+  if [ -z "${1}" ] && [ -z "${3}" ] ; then core_LogError   'Both short and long options ($1 and $3) are blank.  Aborting.'     ; return ${E_UHOH} ; fi
+  if [ -z "${2}" ]                  ; then core_LogError   'Variable to assign option to ($2) is blank.'                       ; return ${E_UHOH} ; fi
+  if [ -z "${4}" ]                  ; then core_LogVerbose 'No positionals were sent ($4+), odd.  Not an error, but aborting.' ; return ${E_UHOH} ; fi
 
   # Clean out OPTARG and setup variables
   core_LogVerbose 'Setting up variables.'
   OPTARG=''
-  local    _OPT=''     #@$ Holds the positional argument based on OPTIND.
-  local    _temp_opt   #@$ Used for parsing against _OPT to find a match.
-  local -i _i          #@$ Loop control, that's it.
-  local -i _MY_OPTIND  #@$ Holds the correctly offset OPTIND for grabbing arguments (because this function shifts 1, 2, and 3 for control).
+  local    _OPT=''      #@$ Holds the positional argument based on OPTIND.
+  local    _temp_opt    #@$ Used for parsing against _OPT to find a match.
+  local -i _i           #@$ Loop control, that's it.
+  local -i _MY_OPTIND   #@$ Holds the correctly offset OPTIND for grabbing arguments (because this function shifts 1, 2, and 3 for control).
+  local -i E_GENERIC=1  #@$ Basic catch-all.  Used when option parsing should stop for expected reasons (like no more options found).
+  local -i E_UHOH=2     #@$ If a parsing error occurs that is fatal, send this code.
 
   # If we're on the first index, turn off OPTERR if our prescribed opts start with a colon.
   core_LogVerbose 'Checking to see if OPTIND is 1 so we can reset items.'
@@ -85,7 +88,7 @@ function core_getopts {
     # Try to store positional argument in _OPT.  If the option we tried to store in _OPT is blank, we're done.
     core_LogVerbose 'Assigning value to _OPT and leaving if blank.'
     eval _OPT="\"\${${_MY_OPTIND}}\""
-    if [ -z "${_OPT}" ] ; then OPTIND=1 ; __SBT_SHORT_OPTIND=1 ; return 1 ; fi
+    if [ -z "${_OPT}" ] ; then OPTIND=1 ; __SBT_SHORT_OPTIND=1 ; return ${E_GENERIC} ; fi
 
     # If the _OPT has an equal sign, we need to place the right-hand contents in value and trim _OPT.
     if [[ "${_OPT}" =~ ^--[a-zA-Z0-9][a-zA-Z0-9-]*= ]] || [[ "${_OPT}" =~ ^-[a-zA-Z0-9][a-zA-Z0-9-]*= ]] ; then
@@ -121,7 +124,7 @@ function core_getopts {
       _OPT="${_OPT:2}"
       if [ ${#_OPT} -lt 1 ] ; then
         core_LogError "Long option attempted (--) but no name found."
-        return 1
+        return ${E_UHOH}
       fi
       core_LogVerbose "Searching available options for option specified: ${_OPT}"
       for _temp_opt in ${3//,/ } ; do
@@ -136,7 +139,7 @@ function core_getopts {
             eval OPTARG="\"\${${_MY_OPTIND}}\""
             if [ ${OPTERR} -ne 0 ] && [ -z "${OPTARG}" ] ; then
               core_LogError "Option specified (--${_OPT}) requires a value."
-              return 1
+              return ${E_UHOH}
             fi
           fi
           core_LogVerbose "Successfully captured a long option. Leaving returning 0."
@@ -146,7 +149,7 @@ function core_getopts {
       # No options were found in the allowed list.  Send a warning, if necessary, and return failure.
       if [ ${OPTERR} -ne 0 ] ; then
         core_LogError "Invalid argument: --${_OPT}"
-        return 1
+        return ${E_UHOH}
       fi
       # If we're not handling errors internally. Return success and let the user handle it.  Set OPTARG too because bash does... odd.
       core_LogVerbose "Found an option that isn't in the list but I was told to shut up about it:  --${_OPT}"
@@ -163,7 +166,7 @@ function core_getopts {
       _OPT="${_OPT:1}"
       if [ ${#_OPT} -lt 1 ] ; then
         core_LogError "Short option attempted (-) but no name found."
-        return 1
+        return ${E_UHOH}
       fi
       core_LogVerbose "Searching available options for option specified: ${_OPT}"
       _i=0
@@ -182,7 +185,7 @@ function core_getopts {
             eval OPTARG="\"\${${_MY_OPTIND}}\""
             if [ ${OPTERR} -ne 0 ] && [ -z "${OPTARG}" ] ; then
               core_LogError "Option specified (-${_OPT}) requires a value."
-              return 1
+              return ${E_UHOH}
             fi
           fi
           core_LogVerbose "Successfully captured a short option. Leaving returning 0."
@@ -193,7 +196,7 @@ function core_getopts {
       # No options were found in the allowed list.  Send a warning, if necessary, and return failure.
       if [ ${OPTERR} -ne 0 ] ; then
         core_LogError "Invalid argument: -${_OPT}"
-        return 1
+        return ${E_UHOH}
       fi
       # If we're not handling errors internally. Return success and let the user handle it.  Set OPTARG too because bash does... odd.
       core_LogVerbose "Found an option that isn't in the list but I was told to shut up about it:  -${_OPT}"
@@ -207,7 +210,53 @@ function core_getopts {
     core_LogVerbose 'Argument sent not actually an option, storing in __SBT_NONOPT_ARGS array and moving to next positional argument.'
     __SBT_NONOPT_ARGS+=( "${_OPT}" )
   done
-  return 1  # This should never be reached
+  return ${E_UHOH}  # This should never be reached
+}
+
+
+function core_EasyGetOpts {
+  #@Description  A much simpler function for getopts processing.  It acts like perl's getopts, putting them into opt_<name>.
+  #@Description  Important: Long options with hyphens will be converted to underscores because hyphens are not allowed in bash variable names.  E.g.:  long-option becomes long_option.  The full option name assigned will be option_long_option.
+  #@Date         2014.08.16
+  #@Usage        core_EasyGetOpts <'short options'> <'long options'> "$@"
+
+  #@$1  The list short options, same format as bash built-in getopts.
+  #@$2  A list of the allowed long options.  Even if it's blank, it must be passed: "" or ''
+  #@$3  The arguments sent to the caller and now passed to us.  It should always be passed quoted, like so:  "$@"  (NOT "$*").
+
+  # Setup variables and shift out
+  local    _opt              #@$ Temporary option holder for the while-loop below.
+  local -a _opts_found=()    #@$ Stores all variables found for reporting later.
+  local    _short_opts="$1"  #@$ List of short options.  Will be passed directly to core_getopts.
+  local    _long_opts="$2"   #@$ List of long optins.  Will be passed directly to core_getopts.
+  local -i _rc=0             #@$ Stored the return code from core_getopts so we can use it non-immediately.
+  shift 2
+
+  # Build the loop and start handling options.
+  while true ; do
+    core_getopts "${_short_opts}" _opt "${_long_opts}" "$@"
+    _rc=$?
+    case ${_rc} in
+      0 )  [[ "${_opt}" =~ - ]] && _opt="${_opt//-/_}"
+           _opts_found+=("${_opt}")
+           if [ -z "${OPTARG}" ] ; then
+             core_LogVerbose "Option found was '${_opt}' and OPTARG is blank.  Giving this option 'true' and continuing loop."
+             eval option_${_opt}=true
+             continue
+           fi
+           core_LogVerbose "Option found was '${_opt}' and OPTARG has a value.  Assigning OPTARG to option and continuing loop."
+           OPTARG="${OPTARG//\"/\\\"}"
+           eval option_${_opt}="\"${OPTARG}\""
+           ;;
+      1 )  core_LogVerbose "Received code 1, getopts is done.  Breaking loop."                    ; break    ;;
+      2 )  core_LogError   "Received code 2 (E_UHOH) from core_getopts.  Returning failure here." ; return 1 ;;
+      * )  core_LogError   "Received an unexpected return code (${_rc}).  Quitting here."         ; return 1 ;;
+    esac
+  done
+
+  # All Done
+  core_LogVerbose "Option parsing done.  Variables found are: ${_opts_found[@]}"
+  return 0
 }
 
 

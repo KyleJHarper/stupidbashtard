@@ -285,11 +285,11 @@ while [ ${iteration} -le ${MAX_ITERATIONS} ] ; do
   # -- 22 -- Option parsing should end when double hyphen is used (--).   (2014.08.15 Real Case)
   __SBT_NONOPT_ARGS=()
   new_test "Sending double-hyphen (--) should end option processing: "
-  opts_sbt ":${SHORT_OPTS}" "${LONG_OPTS}" --longA --longB "${B_TEXT}" -- '-27' '--hyphen-hammer bros'|| fail 1
-  test_long_vars a b                                                                                  || fail 2
-  [ ${#__SBT_NONOPT_ARGS[@]} -eq 2 ]                                                                  || fail 3
-  [ "${__SBT_NONOPT_ARGS[0]}" == '-27' ]                                                              || fail 4
-  [ "${__SBT_NONOPT_ARGS[1]}" == '--hyphen-hammer bros' ]                                             || fail 5
+  opts_sbt ":${SHORT_OPTS}" "${LONG_OPTS}" --longA --longB "${B_TEXT}" -- '-27' '--hyphen-hammer bros' || fail 1
+  test_long_vars a b                                                                                   || fail 2
+  [ ${#__SBT_NONOPT_ARGS[@]} -eq 2 ]                                                                   || fail 3
+  [ "${__SBT_NONOPT_ARGS[0]}" == '-27' ]                                                               || fail 4
+  [ "${__SBT_NONOPT_ARGS[1]}" == '--hyphen-hammer bros' ]                                              || fail 5
   pass
 
   # -- 23 -- Compressed short options without an argument at the end shouldn't return blank and fail.  (2014.08.15 Real Case)
@@ -297,6 +297,13 @@ while [ ${iteration} -le ${MAX_ITERATIONS} ] ; do
   opts_sbt ":${SHORT_OPTS}" '' -ac -d "${D_TEXT}" || fail 1
   test_vars a c d                                 || fail 2
   pass
+
+  # -- 24 -- Not sending short opts should be ok as long as long opts are there.
+  new_test "Sending only long opts (no short opts) should be ok: "
+  opts_sbt "" "${LONG_OPTS}" --longA --longB "${B_TEXT}" || fail 1
+  test_long_vars a b                                     || fail 2
+  pass
+
 
   let iteration++
 done
