@@ -217,6 +217,8 @@ function core_getopts {
 function core_EasyGetOpts {
   #@Description  A much simpler function for getopts processing.  It acts like perl's getopts, putting them into opt_<name>.
   #@Description  Important: Long options with hyphens will be converted to underscores because hyphens are not allowed in bash variable names.  E.g.:  long-option becomes long_option.  The full option name assigned will be option_long_option.
+  #@Description  -
+  #@Description  Since variables are assigned automatically, they are top-scoped.  To help keep lexical scope the caller (parent function) should declare each possible option name.  For example, if you have options a, b, and c you should declare/local/typeset option_a, option_b, and option_c.  This will prevent the options from being thrown all the way to top scope which is probably not what you'll ever want to have happen.
   #@Date         2014.08.16
   #@Usage        core_EasyGetOpts <'short options'> <'long options'> "$@"
 
