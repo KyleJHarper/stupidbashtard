@@ -4,7 +4,7 @@
 
 #@Author    Kyle Harper
 #@Date      2013.07.07
-#@Version   0.0.1-beta
+#@Version   0.1.0
 #@Namespace core
 
 #@Description  These functions serve as some of the primative tools and requirements for all of SBT.  This will likely become a large namespace, but attempts should be made to keep it as small as possible.  ALL modules require this namespace.  No other namespace should be a wide-spread requirement like this.

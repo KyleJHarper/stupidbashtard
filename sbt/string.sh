@@ -4,7 +4,7 @@
 
 #@Author    Kyle Harper
 #@Date      2013.08.12
-#@Version   0.0.1-beta
+#@Version   0.1.0
 #@Namespace string
 
 #@Description Bash has some built-in string handling functionality, but it's far from complete.  This helps extend that.  In many cases, it simply provides a nice name to do things that the bash syntax for is convoluted.  Like lowercase: ${var,,}
