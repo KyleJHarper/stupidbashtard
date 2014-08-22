@@ -36,7 +36,7 @@ function core_getopts {
   #@Description  This function breaks the typical naming convention (upper/proper-casing latter segement of function name) on purpose.  It makes it more in line with the internal getopts naming convention, plus it makes scanning with Docker easier.
   #@Description  -
   #@Description  A note about the OPTIND global.  Bash uses this and so do we.  But we have added a niceness feature.  This is it:
-  #@Description  SBT's getopts will set OPTIND back to default when we're done.  The normal getopts doesn't do this niceness.  I deviate here because the only time it'll conflict is if a getopts case statement in a caller hits a function which does its own getopts. BUT!!!  For this to work in normal bash getopts, you need:  local OPTIND=1 anyway.  So we fix add one niceness without affecting anticipated logic.
+  #@Description  SBT's getopts will set OPTIND back to default when we're done.  The normal getopts doesn't do this niceness.  I deviate here because the only time it'll conflict is if a getopts case statement in a caller hits a function which does its own getopts. BUT!!!  For this to work in normal bash getopts, you need:  local OPTIND=1 anyway.  So we add one niceness without affecting anticipated logic.  It is still perfectly safe and frankly quite reasonable to add local OPTIND to each function to avoid reliance on the parent/global OPTIND anyway.
 
   #@Date  2013.07.13
   #@Usage core_getopts <'short options'> <'return_variable_name'> <'long options'> <"$@">
@@ -124,6 +124,7 @@ function core_getopts {
       _OPT="${_OPT:2}"
       if [ ${#_OPT} -lt 1 ] ; then
         core_LogError "Long option attempted (--) but no name found."
+        OPTIND=1
         return ${E_UHOH}
       fi
       core_LogVerbose "Searching available options for option specified: ${_OPT}"
@@ -137,8 +138,9 @@ function core_getopts {
             let OPTIND++
             let _MY_OPTIND++
             eval OPTARG="\"\${${_MY_OPTIND}}\""
-            if [ ${OPTERR} -ne 0 ] && [ -z "${OPTARG}" ] ; then
+            if [ -z "${OPTARG}" ] ; then
               core_LogError "Option specified (--${_OPT}) requires a value."
+              OPTIND=1
               return ${E_UHOH}
             fi
           fi
@@ -146,10 +148,11 @@ function core_getopts {
           return 0
         fi
       done
-      # No options were found in the allowed list.  Send a warning, if necessary, and return failure.
+      # No options were found in the allowed list.  Send a warning but keep going, because bash does... odd.
       if [ ${OPTERR} -ne 0 ] ; then
-        core_LogError "Invalid argument: --${_OPT}"
-        return ${E_UHOH}
+        core_LogError "Option specified (--${_OPT}) not found in list: '$3' (storing in __SBT_NONOPT_ARGS and continuing).  If you meant to send a non-option argument that starts with a hyphen, end getopts processing first with the double-hyphen switch: --"
+        __SBT_NONOPT_ARGS+=( "${_OPT}" )
+        continue
       fi
       # If we're not handling errors internally. Return success and let the user handle it.  Set OPTARG too because bash does... odd.
       core_LogVerbose "Found an option that isn't in the list but I was told to shut up about it:  --${_OPT}"
@@ -166,6 +169,7 @@ function core_getopts {
       _OPT="${_OPT:1}"
       if [ ${#_OPT} -lt 1 ] ; then
         core_LogError "Short option attempted (-) but no name found."
+        OPTIND=1
         return ${E_UHOH}
       fi
       core_LogVerbose "Searching available options for option specified: ${_OPT}"
@@ -183,8 +187,9 @@ function core_getopts {
             let OPTIND++
             let _MY_OPTIND++
             eval OPTARG="\"\${${_MY_OPTIND}}\""
-            if [ ${OPTERR} -ne 0 ] && [ -z "${OPTARG}" ] ; then
+            if [ -z "${OPTARG}" ] ; then
               core_LogError "Option specified (-${_OPT}) requires a value."
+              OPTIND=1
               return ${E_UHOH}
             fi
           fi
@@ -193,10 +198,11 @@ function core_getopts {
         fi
         let _i++
       done
-      # No options were found in the allowed list.  Send a warning, if necessary, and return failure.
+      # No options were found in the allowed list.  Send a warning and continue on... because bash does :(
       if [ ${OPTERR} -ne 0 ] ; then
-        core_LogError "Invalid argument: -${_OPT}"
-        return ${E_UHOH}
+        core_LogError "Option specified (-${_OPT}) not found in list: '$1' (storing in __SBT_NONOPT_ARGS and continuing).  If you meant to send a non-option argument that starts with a hyphen, end getopts processing first with the double-hyphen switch: --"
+        __SBT_NONOPT_ARGS+=( "${_OPT}" )
+        continue
       fi
       # If we're not handling errors internally. Return success and let the user handle it.  Set OPTARG too because bash does... odd.
       core_LogVerbose "Found an option that isn't in the list but I was told to shut up about it:  -${_OPT}"
@@ -210,6 +216,7 @@ function core_getopts {
     core_LogVerbose 'Argument sent not actually an option, storing in __SBT_NONOPT_ARGS array and moving to next positional argument.'
     __SBT_NONOPT_ARGS+=( "${_OPT}" )
   done
+  OPTIND=1
   return ${E_UHOH}  # This should never be reached
 }
 
@@ -434,7 +441,7 @@ function core_StoreByRef {
   shift
 
   # Assign the values
-  core_LogVerbose "Assigning remaining positionals to variable: ${REFERENCE}"
+  core_LogVerbose "Assigning remaining positionals to variable: ${_REFERENCE}"
   eval "${_REFERENCE}=\"$@\""
   return 0
 }

@@ -90,7 +90,9 @@ function opts_sbt {
   local LONG_OPTS="$2"
   shift 2
   local opt
-  while core_getopts "${SHORT_OPTS}" opt "${LONG_OPTS}" "$@" ; do
+  while true ; do
+    core_getopts "${SHORT_OPTS}" opt "${LONG_OPTS}" "$@"
+    case $? in  2 ) core_LogError "Getopts failed.  Aborting function." ; return 1 ;;  1 ) break ;; esac
     case "${opt}" in
       a           ) myA="${A_TEXT}" ;;
       longA       ) myLongA="${A_TEXT}" ;;
@@ -105,7 +107,6 @@ function opts_sbt {
       * ) echo "Bad option -${OPTARG} (${opt})" >&2 ;;
     esac
   done
-  shift $(( ${OPTIND} - 1 ))
   return 0
 }
 
@@ -304,6 +305,11 @@ while [ ${iteration} -le ${MAX_ITERATIONS} ] ; do
   test_long_vars a b                                     || fail 2
   pass
 
+  # -- 25 -- Trigging an exit code of 2+ should reset OPTIND
+  new_test "Causing a failure in getopts should set OPTIND back to 1, even if OPTERR is disabled: "
+  opts_sbt "" "${LONG_OPTS}" --longA --longB  2>/dev/null && fail 1
+  [ ${OPTIND} -eq 1 ]                                     || fail 2
+  pass
 
   let iteration++
 done
