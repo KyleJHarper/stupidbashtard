@@ -234,6 +234,7 @@ function core_EasyGetOpts {
   #@$3  The arguments sent to the caller and now passed to us.  It should always be passed quoted, like so:  "$@"  (NOT "$*").
 
   # Setup variables and shift out
+  local -i OPTIND=1          #@$ Localizing OPTIND to avoid scoping issues.
   local    _opt              #@$ Temporary option holder for the while-loop below.
   local -a _opts_found=()    #@$ Stores all variables found for reporting later.
   local    _short_opts="$1"  #@$ List of short options.  Will be passed directly to core_getopts.
@@ -326,6 +327,7 @@ function core_ToolExists {
 
   # Variables
   local -a __SBT_NONOPT_ARGS                   #@$ Capture a list of tools for use.  Localize array since we'll only use it here.
+  local -i OPTIND=1                            #@$ Localizing OPTIND to avoid scoping issues.
   local    _opt=''                             #@$ Used for looping through getopts
   local -i E_CMD_NOT_FOUND=10                  #@$ Help differentiate between a generic failure and a failure due to a tool not found.
   local -i _MAJOR=0                            #@$ Major version number

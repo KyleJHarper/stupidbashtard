@@ -37,6 +37,7 @@ function mt_InitializePool {
   local    _pool="default"                          #@$ The pool name to use when creating directories.
   local -i _size="4"                                #@$ The size of the pool (number of workers)
   local -r _my_dir="${__SBT_MT_BASE_DIR}/${_pool}"  #@$ This instances directory to work with.  For convenience mostly.
+  local -i OPTIND=1                                 #@$ Localizing OPTIND to avoid scoping issues.
   local    _opt                                     #@$ For getopts loop
 
   core_LogVerbose "Getting options, if any, and overriding defaults."
@@ -93,9 +94,10 @@ function mt_Dispatcher {
   #@Date   2013.11.29
 
   core_LogVerbose "Entering function."
-  local _action  #@$ The action we want to take.
-  local _pool    #@$ The pool we want to perform an action against
-  local _opt     #@$ For getopts loop
+  local _action      #@$ The action we want to take.
+  local _pool        #@$ The pool we want to perform an action against
+  local -i OPTIND=1  #@$ Localizing OPTIND to avoid scoping issues.
+  local _opt         #@$ For getopts loop
 
   core_LogVerbose "Getting options, if any."
   while core_getopts ':a:n:' _opt ':action:,name:' "$@" ; do
@@ -244,6 +246,7 @@ function mt_TODO {
   local -a __SBT_NONOPT_ARGS  #@$ Local instance for the core_getopts processing below since this will never need exposed to parents.
   local -a _files             #@$ List of files to count occurrence in.
   local    _pattern=''        #@$ Holds the pattern to search for.  PCRE (as in, real perl, not grep -P).
+  local -i OPTIND=1           #@$ Localizing OPTIND to avoid scoping issues.
   local    _opt=''            #@$ Temporary variable for core_getopts, brought to local scope.
   local    _REFERENCE=''      #@$ Will hold the name of the var to use for indirect referencing later, if -R used.
   local    _DATA=''           #@$ Holds all items to search within, mostly to help with the -a/--all items.

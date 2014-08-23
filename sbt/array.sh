@@ -21,6 +21,7 @@ function array_Length {
   #@Usage        array_Length <-a or --array 'name_of_array_to_check'> [-R 'ref_var_name']
 
   core_LogVerbose "Entering function."
+  local -i OPTIND=1    #@$ Localizing OPTIND to avoid scoping issues.
   local -i _count=0    #@$ Stores the count in case we need to manipulate it in the future.
   local    _opt        #@$ Localizing opt for use in getopts below.
   local    _array      #@$ Local variable to hold the array we're going to work with.

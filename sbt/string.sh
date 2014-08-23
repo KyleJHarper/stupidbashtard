@@ -82,6 +82,7 @@ function string_FormatCase {
 
   core_LogVerbose 'Entering function.'
   local -a __SBT_NONOPT_ARGS  #@$ Local instance for the core_getopts processing below since this will never need exposed to parents.
+  local -i OPTIND=1           #@$ Localizing OPTIND to avoid scoping issues.
   local    _opt               #@$ Localizing opt for use in getopts below.
   local    _REFERENCE=''      #@$ Name to use for setting output rather than sending to std out.
   local    _CASE=''           #@$ The type of formatting to do.
@@ -141,6 +142,7 @@ function string_IndexOf {
   local -i _index=-1          #@$ Positional index to return, zero-based.  Starting at -1 because awk is 1-based, not 0.
   local -i _occurrence=1      #@$ The Nth occurrence we want to find the index of.
   local -a _needles=()        #@$ Holds the patterns to search for.  Should be a string as we'll do fixed-string searching
+  local -i OPTIND=1           #@$ Localizing OPTIND to avoid scoping issues.
   local    _opt=''            #@$ Temporary variable for core_getopts, brought to local scope.
   local    _REFERENCE=''      #@$ Will hold the name of the var to use for indirect referencing later, if -R used.
   local    _needle=''         #@$ Hold values for looping.
@@ -195,6 +197,7 @@ function string_Substring {
   local -a _files             #@$ Files to read if no positionals passed.
   local -i _index=0           #@$ Zero-based index to start the substring at.  Supports negative values to wrap back from end of string.
   local -i _length=0          #@$ Number of characters to return.  Negative value will return remainder minus $length characters.  Zero means return all.
+  local -i OPTIND=1           #@$ Localizing OPTIND to avoid scoping issues.
   local    _opt=''            #@$ Temporary variable for core_getopts, brought to local scope.
   local    _REFERENCE=''      #@$ Will hold the name of the var to use for indirect referencing later, if -R used.
   local    _DATA=''           #@$ Stores the values we're going to search within.
@@ -255,6 +258,7 @@ function string_CountOf {
   local -a __SBT_NONOPT_ARGS  #@$ Local instance for the core_getopts processing below since this will never need exposed to parents.
   local -a _files             #@$ List of files to count occurrence in.
   local    _pattern=''        #@$ Holds the pattern to search for.  PCRE (as in, real perl, not grep -P).
+  local -i OPTIND=1           #@$ Localizing OPTIND to avoid scoping issues.
   local    _opt=''            #@$ Temporary variable for core_getopts, brought to local scope.
   local    _REFERENCE=''      #@$ Will hold the name of the var to use for indirect referencing later, if -R used.
   local    _DATA=''           #@$ Holds all items to search within, mostly to help with the -a/--all items.
@@ -304,6 +308,7 @@ function string_Pad {
   # Variables
   local -a __SBT_NONOPT_ARGS  #@$ Local instance for the core_getopts processing below since this will never need exposed to parents.
   local -a _files             #@$ List of files to count occurrence in.
+  local -i OPTIND=1           #@$ Localizing OPTIND to avoid scoping issues.
   local    _opt=''            #@$ Temporary variable for core_getopts, brought to local scope.
   local    _REFERENCE=''      #@$ Will hold the name of the var to use for indirect referencing later, if -R used.
   local    _DATA=''           #@$ Holds all items to work with.
@@ -401,6 +406,7 @@ function string_Reverse {
   # Variables
   local -a __SBT_NONOPT_ARGS  #@$ Local instance for the core_getopts processing below since this will never need exposed to parents.
   local -a _files             #@$ List of files to count occurrence in.
+  local -i OPTIND=1           #@$ Localizing OPTIND to avoid scoping issues.
   local    _opt=''            #@$ Temporary variable for core_getopts, brought to local scope.
   local    _REFERENCE=''      #@$ Will hold the name of the var to use for indirect referencing later, if -R used.
   local    _DATA=''           #@$ Holds all items to work with.
@@ -440,6 +446,7 @@ function string_Trim {
   # Variables
   local -a __SBT_NONOPT_ARGS  #@$ Local instance for the core_getopts processing below since this will never need exposed to parents.
   local -a _files             #@$ List of files to count occurrence in.
+  local -i OPTIND=1           #@$ Localizing OPTIND to avoid scoping issues.
   local    _opt=''            #@$ Temporary variable for core_getopts, brought to local scope.
   local    _REFERENCE=''      #@$ Will hold the name of the var to use for indirect referencing later, if -R used.
   local    _DATA=''           #@$ Holds all items to work with.
@@ -508,6 +515,7 @@ function string_Insert {
   # Variables
   local -a __SBT_NONOPT_ARGS  #@$ Local instance for the core_getopts processing below since this will never need exposed to parents.
   local -a _files             #@$ List of files to count occurrence in.
+  local -i OPTIND=1           #@$ Localizing OPTIND to avoid scoping issues.
   local    _opt=''            #@$ Temporary variable for core_getopts, brought to local scope.
   local    _REFERENCE=''      #@$ Will hold the name of the var to use for indirect referencing later, if -R used.
   local    _DATA=''           #@$ Holds data sent for manipulation.
