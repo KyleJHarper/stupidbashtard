@@ -47,6 +47,13 @@ while [ ${iteration} -le ${MAX_ITERATIONS} ] ; do
   [ $( array_Length --array 'temp' ) -eq 5 ]  || fail 1
   pass
 
+  # -- 6 -- Associative arrays should work
+  new_test "Using an associative array should be fine: "
+  declare -A tempA
+  tempA=([key1]='one' [key2]='two' [key3]='three' [key4]='four elements' [key5]=$'fifth\nelement')
+  [ $( array_Length --array 'tempA' ) -eq 5 ]  || fail 1
+  pass
+
 
   let iteration++
 done
