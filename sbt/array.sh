@@ -53,7 +53,7 @@ function array_Length {
 }
 
 
-function array_Remove {
+function array_RemoveKey {
   #@Description  Removes elements from an array based on the criteria specified.  In it's simplest form it does: unset array[key].  Be aware, specifying a key will always result in that key being removed, even if you specify pattern matching removing, N-th element removal, etc.  The order of precedence is:  N-th > pattern > key.
   #@Description  -
   #@Description  The better uses for this are: removing multiple in one function call, removing those matching pattern(s), removing every N-th.  You must specify at least one of the following: a pattern, an N-th value, or a key.  Keys purposely do not require a switch like -k; this is to support feeding the output of array_IndexOf to this function more easily.
