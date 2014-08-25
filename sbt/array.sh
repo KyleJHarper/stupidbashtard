@@ -20,7 +20,7 @@
 
 function array_Length {
   #@Description  Returns the number of elements of an array.  Trivial for now, but might support advanced checking/reporting in the future.
-  #@Usage        array_Length <-a or --array 'name_of_array_to_check'> [-R 'ref_var_name']
+  #@Usage        array_Length <-a --array 'name_of_array_to_check'> [-R 'ref_var_name']
 
   core_LogVerbose "Entering function."
   local -i OPTIND=1    #@$ Localizing OPTIND to avoid scoping issues.
@@ -58,7 +58,7 @@ function array_RemoveKey {
   #@Description  -
   #@Description  The better uses for this are: removing multiple in one function call, removing those matching pattern(s), removing every N-th.  You must specify at least one of the following: a pattern, an N-th value, or a key.  Keys purposely do not require a switch like -k; this is to support feeding the output of array_IndexOf to this function more easily.
   #@Description  !! IMPORTANT !!  Using the N-th switch with an associative array is nonsensical.  Associative arrays do not maintain key order.  Also be aware that standard arrays don't push/pop.  So performing an N-th removal will not move ordinal values up/down; so running an N-th removal on the same array multiple times is probably not going to do what you expect.  You've been warned.
-  #@Usage        array_Remove <-a or --array 'name_of_array'> [-n '#'] [-p 'PCRE regex pattern'] ['key1' ...]
+  #@Usage        array_Remove <-a --array 'name_of_array'> [-n --nth '#'] [-p --pattern 'PCRE regex pattern'] ['key1' ...]
 
   core_LogVerbose "Entering function."
   local -a __SBT_NONOPT_ARGS  #@$ Localizing to store the keys we'll use later.
@@ -137,7 +137,7 @@ function array_RemoveKey {
 function array_Keys {
   #@Description  Very simple function to return the list of all keys in an array.  Only takes options for the array name and reference variable to store the keys in.
   #@Description  !! IMPORTANT !! The reference variable specified by -R MUST be an array already declared by the caller!
-  #@Usage        array_Keys <-a or --array 'name_of_array'> <-R 'reference_output_name'>
+  #@Usage        array_Keys <-a --array 'name_of_array'> <-R 'reference_output_name'>
 
   core_LogVerbose "Entering function."
   local -i OPTIND=1           #@$ Localizing OPTIND to avoid scoping issues.
@@ -160,7 +160,61 @@ function array_Keys {
   if [ -z "${_array}" ]     ; then core_LogError "The _array variable is empty, you must send the array name with -a/--array."    ; return 1 ; fi
   if [ -z "${_REFERENCE}" ] ; then core_LogError "The _REFERENCE variable is empty, you must specify an array name here with -R." ; return 1 ; fi
 
+  # Main logic
   core_LogVerbose "Assigning keys to the variable '${_REFERENCE}' from the array named '${_array}' with a nasty eval."
   eval ${_REFERENCE}=\(\"\${!${_array}[@]}\"\)
   return 0
+}
+
+
+function array_KeyExists {
+  #@Description  Returns true (code 0) if the key(s) specified exist in the array specified.  A switch is available to return true (code 0) if any key matches.
+  #@Usage        array_KeyExists <-a --array 'name_of_array'> [--any] <'key1' ['key2'...]>
+
+  core_LogVerbose "Entering function."
+  local -a __SBT_NONOPT_ARGS  #@$ Localizing to store the keys we'll use later.
+  local -i OPTIND=1           #@$ Localizing OPTIND to avoid scoping issues.
+  local    _opt               #@$ Localizing _opt for use in getopts below.
+  local    _array=''          #@$ Name of the array we wil be working with.
+  local    _any=false         #@$ Flag to cut-out early if any of mutliple keys are found.
+  local    _temp              #@$ Junk variable for the loop below.
+  local    _key               #@$ Temporary variable to hold key to check against the list.
+  local -i _found=0           #@$ Count of the number of items found, useful when needing multiple keys and --any isn't specified.
+  local -i E_GENERIC=1        #@$ Return code for generic failures.
+  local -i E_NOT_FOUND=2      #@$ Code for failure to find the key(s) to differentiate from generic failures (code 1).
+
+  # Grab options
+  while true ; do
+    core_getopts ':a:p:' _opt ':any,array:,pattern:' "$@"
+    case $? in  2 ) core_LogError "Getopts failed.  Aborting function." ; return ${E_GENERIC} ;;  1 ) break ;; esac
+    case "${_opt}" in
+            'any'   ) _any=true                                                                ;;  #@opt_  Toggles the flag to quit early when checking multiple keys and one is found.
+      'a' | 'array' ) _array="${OPTARG}"                                                       ;;  #@opt_  Name of the array to work with.
+      *             ) core_LogError "Invalid option: ${_opt}  (failing)" ; return ${E_GENERIC} ;;
+    esac
+  done
+
+  # Preflight checks
+  if [ -z "${_array}" ] ; then core_LogError "The _array variable is empty, you must send the array name with -a/--array." ; return ${E_GENERIC} ; fi
+
+  # Main logic
+  core_LogVerbose "Beginning double-loop structure to find matching keys."
+  while read -r _temp ; do
+    for _key in "${__SBT_NONOPT_ARGS[@]}" ; do
+      if [ "${_temp}" = "${_key}" ] ; then
+        core_LogVerbose "Found key: ${_key}"
+        ${_any} && return 0
+        let _found++
+        continue 2
+      fi
+    done
+  done < <(eval printf \"%s\\n\" \"\${${_array}[@]}\")
+  if [ ${_found} -eq ${#__SBT_NONOPT_ARGS[@]} ] ; then
+    core_LogVerbose "Found all keys.  Returning success."
+    return 0
+  fi
+
+  # If we haven't returned successfully by now, we failed.
+  core_LogVerbose "Couldn't find one or more keys.  Returning E_NOT_FOUND (code 2)."
+  return ${E_NOT_FOUND}
 }
