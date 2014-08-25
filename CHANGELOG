@@ -1,3 +1,51 @@
+* 413e8b469ca87a15f3308de498f071b34dd36380
+|   Author: kyle
+|   Date: 2014-08-22 23:07:13 -0500
+|   Comment: Added OPTIND localization to all functions... which I should have done all along.
+| 
+|  
+* 3fe5e14af401153ca724d919dcc9896f7664624e
+|   Author: kyle
+|   Date: 2014-08-22 01:06:21 -0500
+|   Comment: Added the first function for array manipulation.  This was mostly for proof of concept.  I'm well aware of the #variable length feature and that it works on arrays just fine.  More complicated functions to come.
+| 
+|  
+* 84ce11a8bdd762d35ac6fc904479e3cf26cb7614
+|   Author: kyle
+|   Date: 2014-08-22 01:05:29 -0500
+|   Comment: Had to fix 2 flaws in getopts.  The first is that to be more bash-compatible, OPTERR being internalized means we KEEP GOING.  Which is stupid... but whatever.  I now throw an error (which bash does) via core_LogError and I put the item in __SBT_NONOPT_ARGS.  I also give a friendly message that you can stop options parsing with -- if some args really need to start with a hyphen.  The other changes were minor goofs: in conditions where I exited badly (e.g.: E_UHOH) I wasn't setting OPTIND back to 1 before leaving.  All functions should probably do local OPTIND=1 anyway... but this will help ensure OPTIND is 1 any time getopts finishes, fatal or not.
+| 
+|  
+* 1e9f1fb369026f0568ec29fd83b4155d63aaf316
+|   Author: kyle
+|   Date: 2014-08-17 22:58:20 -0500
+|   Comment: Changed versions on the 'string' and 'core' namespaces, as they're complete and all tests for them pass.
+| 
+|  
+* 63c72cf18a99348b622bfb13b60c7ec8a35eb5fe
+|   Author: kyle
+|   Date: 2014-08-17 17:20:54 -0500
+|   Comment: Added some extra description for the core_EasyGetOpts function.
+| 
+|  
+* 140b9b8c6e40a1a0d88da5ac95a6a818eba01eb2
+|   Author: kyle
+|   Date: 2014-08-16 19:35:31 -0500
+|   Comment: Fixed a couple bugs in the core_getopts function.  Added a new function called core_EasyGetOpts which acts like the perl getopts('short_opts') feature.  Except this is native bash and also supports long options.  Closes #9.
+| 
+|  
+* 44ae72aa2bcfbf4027ebbbab00c87e430fa7ac7e
+|   Author: kyle
+|   Date: 2014-08-16 01:40:07 -0500
+|   Comment: Resolved a bug with short options.  I was late-checking and aborting which was sending a blank option back.  This was masked in test 15 (I think that's it) because if a compressed opt has an arg is reset short opt index by design... doh.  Also added support to end option processing with a double hyphen (--).  Closes #6.
+| 
+|  
+* ec01b4154484cd908a08c8953ce625866298c442
+|   Author: kyle
+|   Date: 2014-08-16 00:06:27 -0500
+|   Comment: Changed from the Switch module to the feature 'switch' added in perl 5; used the given-when syntax obviously.  Fixes #7.
+| 
+|  
 * 4846b8ef870fe27d13fd1f64f1b0c250111e15da
 |   Author: kyle
 |   Date: 2014-08-15 23:45:23 -0500
