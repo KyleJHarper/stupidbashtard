@@ -13,6 +13,6 @@ fi
 for dir in $@ ; do
   if [ ! -d "${dir}" ] ; then echo "Namespace specified doesn't exist." >&2 ; exit 1 ; fi
   for file in ${dir}/* ; do
-    ./${file} ${1}
+    ./${file} ${1} || exit 1
   done
 done
