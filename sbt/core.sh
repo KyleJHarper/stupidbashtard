@@ -56,10 +56,10 @@ function core_getopts {
   # Clean out OPTARG and setup variables
   core_LogVerbose 'Setting up variables.'
   OPTARG=''
-  local    _OPT=''      #@$ Holds the positional argument based on OPTIND.
-  local    _temp_opt    #@$ Used for parsing against _OPT to find a match.
+  local    _opt_=''     #@$ Holds the positional argument based on OPTIND.  Needs to be unique compared to all callers because we use eval!
+  local    _temp_opt    #@$ Used for parsing against _opt_ to find a match.
   local -i _i           #@$ Loop control, that's it.
-  local -i _MY_OPTIND   #@$ Holds the correctly offset OPTIND for grabbing arguments (because this function shifts 1, 2, and 3 for control).
+  local -i _my_optind   #@$ Holds the correctly offset OPTIND for grabbing arguments (because this function shifts 1, 2, and 3 for control).
   local -i E_GENERIC=1  #@$ Basic catch-all.  Used when option parsing should stop for expected reasons (like no more options found).
   local -i E_UHOH=2     #@$ If a parsing error occurs that is fatal, send this code.
 
@@ -79,67 +79,67 @@ function core_getopts {
   while true ; do
     # If the item was a non-switch item (__SBT_NONOPT_ARGS), we will loop multiple times.  Ergo, reset vars here.
     core_LogVerbose "Clearing variables for loop with OPTIND of ${OPTIND}"
-    _OPT=''
+    _opt_=''
     _temp_opt=''
-    _MY_OPTIND=${OPTIND}
-    let _MY_OPTIND+=3
+    _my_optind=${OPTIND}
+    let _my_optind+=3
     let OPTIND++
 
-    # Try to store positional argument in _OPT.  If the option we tried to store in _OPT is blank, we're done.
-    core_LogVerbose 'Assigning value to _OPT and leaving if blank.'
-    eval _OPT="\"\${${_MY_OPTIND}}\""
-    if [ -z "${_OPT}" ] ; then OPTIND=1 ; __SBT_SHORT_OPTIND=1 ; return ${E_GENERIC} ; fi
+    # Try to store positional argument in _opt_.  If the option we tried to store in _opt is blank, we're done.
+    core_LogVerbose 'Assigning value to _opt_ and leaving if blank.'
+    eval _opt_="\"\${${_my_optind}}\""
+    if [ -z "${_opt_}" ] ; then OPTIND=1 ; __SBT_SHORT_OPTIND=1 ; return ${E_GENERIC} ; fi
 
-    # If the _OPT has an equal sign, we need to place the right-hand contents in value and trim _OPT.
-    if [[ "${_OPT}" =~ ^--[a-zA-Z0-9][a-zA-Z0-9-]*= ]] || [[ "${_OPT}" =~ ^-[a-zA-Z0-9][a-zA-Z0-9-]*= ]] ; then
-      core_LogVerbose 'Option specified has a value via assignment operator (=).  Setting OPTARG and re-setting _OPT.'
-      OPTARG="${_OPT##*=}"
-      _OPT="${_OPT%%=*}"
+    # If the _opt_ has an equal sign, we need to place the right-hand contents in value and trim _opt_.
+    if [[ "${_opt_}" =~ ^--[a-zA-Z0-9][a-zA-Z0-9-]*= ]] || [[ "${_opt_}" =~ ^-[a-zA-Z0-9][a-zA-Z0-9-]*= ]] ; then
+      core_LogVerbose 'Option specified has a value via assignment operator (=).  Setting OPTARG and re-setting _opt_.'
+      OPTARG="${_opt_##*=}"
+      _opt_="${_opt_%%=*}"
     fi
 
     # Check for a double hyphen (--) and/or __SBT_NO_MORE_OPTS setting.
-    if [ "${_OPT}" = '--' ]  ; then core_LogVerbose "Found bare double-hyphen (--).  Disabling option parsing."  ; __SBT_NO_MORE_OPTS=true          ; continue ; fi
-    if ${__SBT_NO_MORE_OPTS} ; then core_LogVerbose "__SBT_NO_MORE_OPTS flag set, storing in __SBT_NONOPT_ARGS." ; __SBT_NONOPT_ARGS+=( "${_OPT}" ) ; continue ; fi
+    if [ "${_opt_}" = '--' ] ; then core_LogVerbose "Found bare double-hyphen (--).  Disabling option parsing."  ; __SBT_NO_MORE_OPTS=true           ; continue ; fi
+    if ${__SBT_NO_MORE_OPTS} ; then core_LogVerbose "__SBT_NO_MORE_OPTS flag set, storing in __SBT_NONOPT_ARGS." ; __SBT_NONOPT_ARGS+=( "${_opt_}" ) ; continue ; fi
 
-    # If _OPT is a short opt with muliple switches at once, read/modify the __SBT_SHORT_OPTIND and _OPT.
+    # If _opt_ is a short opt with muliple switches at once, read/modify the __SBT_SHORT_OPTIND and _opt_.
     # Also need to decrement OPTIND if we're on the last item in the compact list.
-    if [[ "${_OPT}" =~ ^-[a-zA-Z0-9][a-zA-Z0-9]+ ]] ; then
-      core_LogVerbose "Option is short and compacted (-abc...).  Getting new _OPT with short index of ${__SBT_SHORT_OPTIND} and incrementing short index."
-      _temp_opt="-${_OPT:${__SBT_SHORT_OPTIND}:1}"
+    if [[ "${_opt_}" =~ ^-[a-zA-Z0-9][a-zA-Z0-9]+ ]] ; then
+      core_LogVerbose "Option is short and compacted (-abc...).  Getting new _opt_ with short index of ${__SBT_SHORT_OPTIND} and incrementing short index."
+      _temp_opt="-${_opt_:${__SBT_SHORT_OPTIND}:1}"
       let __SBT_SHORT_OPTIND++
       let OPTIND--
-      if [ -z "${_OPT:${__SBT_SHORT_OPTIND}:1}" ] ; then
+      if [ -z "${_opt_:${__SBT_SHORT_OPTIND}:1}" ] ; then
         core_LogVerbose "Next SHORT_OPTIND makes empty string.  Setting SHORT_OPTIND to 1 and incrementing OPTIND back to next item."
         __SBT_SHORT_OPTIND=1
         let OPTIND++
       fi
-      _OPT="${_temp_opt}"
+      _opt_="${_temp_opt}"
     fi
 
-    ##############################################
-    #  Try to match _OPT against a long option.  #
-    ##############################################
-    if [ "${_OPT:0:2}" == '--' ] ; then
+    ###############################################
+    #  Try to match _opt_ against a long option.  #
+    ###############################################
+    if [ "${_opt_:0:2}" == '--' ] ; then
       core_LogVerbose 'Option is long format.  Processing as such.'
-      _OPT="${_OPT:2}"
-      if [ ${#_OPT} -lt 1 ] ; then
+      _opt_="${_opt_:2}"
+      if [ ${#_opt_} -lt 1 ] ; then
         core_LogError "Long option attempted (--) but no name found."
         OPTIND=1
         return ${E_UHOH}
       fi
-      core_LogVerbose "Searching available options for option specified: ${_OPT}"
+      core_LogVerbose "Searching available options for option specified: ${_opt_}"
       for _temp_opt in ${3//,/ } ; do
         [ "${_temp_opt:0:1}" = ':' ] && _temp_opt="${_temp_opt:1}"
-        if [ "${_temp_opt%:}" = "${_OPT}" ] ; then
+        if [ "${_temp_opt%:}" = "${_opt_}" ] ; then
           core_LogVerbose "Found a matching option.  Assigning to: $2"
           eval $2="\"${_temp_opt%:}\""
           if [ "${_temp_opt: -1}" == ':' ] && [ -z "${OPTARG}" ] ; then
-            core_LogVerbose "Option sent (${_OPT}) requires an argument; gathering now."
+            core_LogVerbose "Option sent (${_opt_}) requires an argument; gathering now."
             let OPTIND++
-            let _MY_OPTIND++
-            eval OPTARG="\"\${${_MY_OPTIND}}\""
+            let _my_optind++
+            eval OPTARG="\"\${${_my_optind}}\""
             if [ -z "${OPTARG}" ] ; then
-              core_LogError "Option specified (--${_OPT}) requires a value."
+              core_LogError "Option specified (--${_opt_}) requires a value."
               OPTIND=1
               return ${E_UHOH}
             fi
@@ -150,45 +150,45 @@ function core_getopts {
       done
       # No options were found in the allowed list.  Send a warning but keep going, because bash does... odd.
       if [ ${OPTERR} -ne 0 ] ; then
-        core_LogError "Option specified (--${_OPT}) not found in list: '$3' (storing in __SBT_NONOPT_ARGS and continuing).  If you meant to send a non-option argument that starts with a hyphen, end getopts processing first with the double-hyphen switch: --"
-        __SBT_NONOPT_ARGS+=( "${_OPT}" )
+        core_LogError "Option specified (--${_opt_}) not found in list: '$3' (storing in __SBT_NONOPT_ARGS and continuing).  If you meant to send a non-option argument that starts with a hyphen, end getopts processing first with the double-hyphen switch: --"
+        __SBT_NONOPT_ARGS+=( "${_opt_}" )
         continue
       fi
       # If we're not handling errors internally. Return success and let the user handle it.  Set OPTARG too because bash does... odd.
-      core_LogVerbose "Found an option that isn't in the list but I was told to shut up about it:  --${_OPT}"
-      eval $2="\"${_OPT}\""
-      eval OPTARG="\"${_OPT}\""
+      core_LogVerbose "Found an option that isn't in the list but I was told to shut up about it:  --${_opt_}"
+      eval $2="\"${_opt_}\""
+      eval OPTARG="\"${_opt_}\""
       return 0
     fi
 
-    ##############################################
-    #  Try to match _OPT against a short option  #
-    ##############################################
-    if [ "${_OPT:0:1}" == '-' ] ; then
+    ###############################################
+    #  Try to match _opt_ against a short option  #
+    ###############################################
+    if [ "${_opt_:0:1}" == '-' ] ; then
       core_LogVerbose 'Option is short format.  Processing as such.'
-      _OPT="${_OPT:1}"
-      if [ ${#_OPT} -lt 1 ] ; then
+      _opt_="${_opt_:1}"
+      if [ ${#_opt_} -lt 1 ] ; then
         core_LogError "Short option attempted (-) but no name found."
         OPTIND=1
         return ${E_UHOH}
       fi
-      core_LogVerbose "Searching available options for option specified: ${_OPT}"
+      core_LogVerbose "Searching available options for option specified: ${_opt_}"
       _i=0
       while [ ${_i} -lt ${#1} ] ; do
         core_LogVerbose "Checking item ${_i} with value of: ${1:${_i}:1}"
         _temp_opt="${1:${_i}:1}"
-        if [ "${_temp_opt}" = "${_OPT}" ] ; then
+        if [ "${_temp_opt}" = "${_opt_}" ] ; then
           core_LogVerbose "Found a matching option.  Assigning to: $2"
           eval $2="\"${_temp_opt}\""
           let _i++
           if [ "${1:${_i}:1}" == ':' ] && [ -z "${OPTARG}" ] ; then
-            core_LogVerbose "Option sent (${_OPT}) requires an argument; gathering now. Also resetting SHORT OPTIND, as it must be the end."
+            core_LogVerbose "Option sent (${_opt_}) requires an argument; gathering now. Also resetting SHORT OPTIND, as it must be the end."
             __SBT_SHORT_OPTIND=1
             let OPTIND++
-            let _MY_OPTIND++
-            eval OPTARG="\"\${${_MY_OPTIND}}\""
+            let _my_optind++
+            eval OPTARG="\"\${${_my_optind}}\""
             if [ -z "${OPTARG}" ] ; then
-              core_LogError "Option specified (-${_OPT}) requires a value."
+              core_LogError "Option specified (-${_opt_}) requires a value."
               OPTIND=1
               return ${E_UHOH}
             fi
@@ -200,21 +200,21 @@ function core_getopts {
       done
       # No options were found in the allowed list.  Send a warning and continue on... because bash does :(
       if [ ${OPTERR} -ne 0 ] ; then
-        core_LogError "Option specified (-${_OPT}) not found in list: '$1' (storing in __SBT_NONOPT_ARGS and continuing).  If you meant to send a non-option argument that starts with a hyphen, end getopts processing first with the double-hyphen switch: --"
-        __SBT_NONOPT_ARGS+=( "${_OPT}" )
+        core_LogError "Option specified (-${_opt_}) not found in list: '$1' (storing in __SBT_NONOPT_ARGS and continuing).  If you meant to send a non-option argument that starts with a hyphen, end getopts processing first with the double-hyphen switch: --"
+        __SBT_NONOPT_ARGS+=( "${_opt_}" )
         continue
       fi
       # If we're not handling errors internally. Return success and let the user handle it.  Set OPTARG too because bash does... odd.
-      core_LogVerbose "Found an option that isn't in the list but I was told to shut up about it:  -${_OPT}"
-      eval $2="\"${_OPT}\""
-      eval OPTARG="\"${_OPT}\""
+      core_LogVerbose "Found an option that isn't in the list but I was told to shut up about it:  -${_opt_}"
+      eval $2="\"${_opt_}\""
+      eval OPTARG="\"${_opt_}\""
       return 0
     fi
 
     # If we're here, then the positional item exists, is non-blank, and is not an option.
     # This means it's a non-option param (file, etc) and we need to keep processing.
     core_LogVerbose 'Argument sent not actually an option, storing in __SBT_NONOPT_ARGS array and moving to next positional argument.'
-    __SBT_NONOPT_ARGS+=( "${_OPT}" )
+    __SBT_NONOPT_ARGS+=( "${_opt_}" )
   done
   OPTIND=1
   return ${E_UHOH}  # This should never be reached
@@ -330,14 +330,14 @@ function core_ToolExists {
   local -i OPTIND=1                            #@$ Localizing OPTIND to avoid scoping issues.
   local    _opt=''                             #@$ Used for looping through getopts
   local -i E_CMD_NOT_FOUND=10                  #@$ Help differentiate between a generic failure and a failure due to a tool not found.
-  local -i _MAJOR=0                            #@$ Major version number
-  local -i _MEDIUM=0                           #@$ Medium version number
-  local -i _MINOR=0                            #@$ Minor version number
-  local    _FOUND_ONE=false                    #@$ Flag to determine if at least one item was found, useful when --any is used.
-  local    _EXACT=false                        #@$ Compare the version numbers exactly, not in a greater-than fashion
-  local    _ANY=false                          #@$ Flag to determine if we should abort when any of the tools checked for are found.
-  local    _VERSION_SWITCH='--version'         #@$ The switch syntax to present the version information string
-  local    _REGEX_PATTERN='\d+\.\d+([.]\d+)?'  #@$ The PCRE (grep -P) regex pattern to use to finding the version string.  By default MAJOR.MEDIUM only.
+  local -i _major=0                            #@$ Major version number
+  local -i _medium=0                           #@$ Medium version number
+  local -i _minor=0                            #@$ Minor version number
+  local    _found_one=false                    #@$ Flag to determine if at least one item was found, useful when --any is used.
+  local    _exact=false                        #@$ Compare the version numbers exactly, not in a greater-than fashion
+  local    _any=false                          #@$ Flag to determine if we should abort when any of the tools checked for are found.
+  local    _version_switch='--version'         #@$ The switch syntax to present the version information string
+  local    _regex_pattern='\d+\.\d+([.]\d+)?'  #@$ The PCRE (grep -P) regex pattern to use to finding the version string.  By default MAJOR.MEDIUM only.
   local    _tool=''                            #@$ Temp variable to hold tool name, kept in local scope.
   local    _found_version=''                   #@$ Misc temp variable, kept in local scope.
 
@@ -348,64 +348,64 @@ function core_ToolExists {
   core_LogVerbose 'Checking options and loading tools to check into array.'
   while core_getopts ':1:2:3:er:v:' _opt ':exact,major:,medium:,minor:,regex-pattern:,version-switch:' "$@" ; do
     case "${_opt}" in
-      '1' | 'major'          ) _MAJOR="${OPTARG}"          ;;  #@opt_  Sets the major version number for comparison.
-      '2' | 'medium'         ) _MEDIUM="${OPTARG}"         ;;  #@opt_  Sets the medium version number for comparison.
-      '3' | 'minor'          ) _MINOR="${OPTARG}"          ;;  #@opt_  Sets the minor version number for comparison.
-      'a' | 'any'            ) _ANY=true                   ;;  #@opt_  Return successful after matching any tool, if multiple provided, rather than all.
-      'e' | 'exact'          ) _EXACT=true                 ;;  #@opt_  Make the version match exactly, rather than greater-than.
-      'r' | 'regex-pattern'  ) _REGEX_PATTERN="${OPTARG}"  ;;  #@opt_  Specify a custom regex pattern for getting the version number from program output.
-      'v' | 'version-switch' ) _VERSION_SWITCH="${OPTARG}" ;;  #@opt_  Specify a custom switch to use to get version information from the program output.
+      '1' | 'major'          ) _major="${OPTARG}"          ;;  #@opt_  Sets the major version number for comparison.
+      '2' | 'medium'         ) _medium="${OPTARG}"         ;;  #@opt_  Sets the medium version number for comparison.
+      '3' | 'minor'          ) _minor="${OPTARG}"          ;;  #@opt_  Sets the minor version number for comparison.
+      'a' | 'any'            ) _any=true                   ;;  #@opt_  Return successful after matching any tool, if multiple provided, rather than all.
+      'e' | 'exact'          ) _exact=true                 ;;  #@opt_  Make the version match exactly, rather than greater-than.
+      'r' | 'regex-pattern'  ) _regex_pattern="${OPTARG}"  ;;  #@opt_  Specify a custom regex pattern for getting the version number from program output.
+      'v' | 'version-switch' ) _version_switch="${OPTARG}" ;;  #@opt_  Specify a custom switch to use to get version information from the program output.
       *                      ) core_LogError "Invalid option for the core_ToolExists function:  ${_opt}  (continuing)" ;;
     esac
   done
 
   # Preflight checks
   core_LogVerbose 'Doing pre-flight checks to make sure all necessary options were passed.'
-  if [ -z "${_REGEX_PATTERN}" ]         ; then core_LogError 'Regex pattern cannot be blank.  (aborting)'  ; return 1 ; fi
-  if [ -z "${_VERSION_SWITCH}" ]        ; then core_LogError 'Version switch cannot be blank.  (aborting)' ; return 1 ; fi
+  if [ -z "${_regex_pattern}" ]         ; then core_LogError 'Regex pattern cannot be blank.  (aborting)'  ; return 1 ; fi
+  if [ -z "${_version_switch}" ]        ; then core_LogError 'Version switch cannot be blank.  (aborting)' ; return 1 ; fi
   if [ ${#__SBT_NONOPT_ARGS[@]} -eq 0 ] ; then core_LogError 'No tools sent to check for.  (aborting).'    ; return 1 ; fi
 
   # Search for tools
-  core_LogVerbose "Checking for programs/tools.  Exact: ${_EXACT}.  Version: ${_MAJOR}.${_MEDIUM}.${_MINOR}."
+  core_LogVerbose "Checking for programs/tools.  Exact: ${_exact}.  Version: ${_major}.${_medium}.${_minor}."
   for _tool in ${__SBT_NONOPT_ARGS[@]} ; do
     core_LogVerbose "Scanning existing tool list for an previously found match of: ${_tool}"
     _found_version="${__SBT_TOOL_LIST[${_tool}]}"
     if [ -z "${_found_version}" ] ; then
       core_LogVerbose 'Not found.  Seeing if tool exists on our PATH anywhere.'
-      if ! ${_tool} ${_VERSION_SWITCH} >/dev/null 2>/dev/null ; then
-        ${_ANY} && continue
+      if ! ${_tool} ${_version_switch} >/dev/null 2>/dev/null ; then
+        ${_any} && continue
         core_LogError "Could not find tool '${_tool}'.  Check path and add paths using core_SetToolPath if needed."
         return ${E_CMD_NOT_FOUND}
       fi
-      core_LogVerbose "Trying to grab the version string for comparison using:  ${_tool} ${_VERSION_SWITCH} | grep -oP '${_REGEX_PATTERN}'"
-      _found_version="$(${_tool} ${_VERSION_SWITCH} 2>/dev/null | grep -oP "${_REGEX_PATTERN}")"
+      core_LogVerbose "Trying to grab the version string for comparison using:  ${_tool} ${_version_switch} | grep -oP '${_regex_pattern}'"
+      _found_version="$(${_tool} ${_version_switch} 2>/dev/null | grep -oP "${_regex_pattern}")"
       if [ -z "${_found_version}" ] ; then
-        ${_ANY} && continue
+        ${_any} && continue
         core_LogError "Could not find a version string in program output.  If caller is an SBT function, this shouldn't have happened."
         return ${E_CMD_NOT_FOUND}
       fi
     fi
     core_LogVerbose "Found the version string: '${_found_version}'.  Comparing it now."
-    if ${_EXACT} && [ ! "${_found_version}" == "${_MAJOR}.${_MEDIUM}.${_MINOR}" ] ; then
-      ${_ANY} && continue
+    if ${_exact} && [ ! "${_found_version}" == "${_major}.${_medium}.${_minor}" ] ; then
+      ${_any} && continue
       core_LogError 'Exact version match requested, but the versions do not match.  Failing.'
       return ${E_CMD_NOT_FOUND}
     fi
-    if [ "$(echo -e "${_found_version}\n${_MAJOR}.${_MEDIUM}.${_MINOR}" | sort -V | head -n 1)" == "${_found_version}" ] ; then
-      ${_ANY} && continue
+    if [ "$(echo -e "${_found_version}\n${_major}.${_medium}.${_minor}" | sort -V | head -n 1)" == "${_found_version}" ] ; then
+      ${_any} && continue
       core_LogError 'Tool found is a lower version number than required version.'
       return ${E_CMD_NOT_FOUND}
     fi
     core_LogVerbose 'Found tool and it meets requirements!  Storing in __SBT_TOOL_LIST hash for faster future lookups.'
     __SBT_TOOL_LIST["${_tool}"]="${_found_version}"
-    _FOUND_ONE=true
+    _found_one=true
 
     # If we hit this point, we found a tool and are about to loop again.  But if we'll take any match, report it and leave.
-    if ${_ANY} ; then core_LogVerbose "Found a tool (${_tool}) and the ANY flag is set; reporting to stdout and leaving." ; echo "${_tool}" ; break ; fi
+    if ${_any} ; then core_LogVerbose "Found a tool (${_tool}) and the ANY flag is set; reporting to stdout and leaving." ; echo "${_tool}" ; break ; fi
   done
 
   # If we're here, make sure we found what we were looking for.
-  ${_FOUND_ONE} && return 0
+  ${_found_one} && return 0
   return ${E_CMD_NOT_FOUND}
 }
 
@@ -437,20 +437,20 @@ function core_StoreByRef {
 
   # Preflight checks
   core_LogVerbose "Entering function, doing preflight checks now."
-  local -r _REFERENCE="${1}"  #@$ Store positional number 1 so we can shift out and use $@.
+  local -r _reference="${1}"  #@$ Store positional number 1 so we can shift out and use $@.
   if [ ${#@} -lt 2 ] ; then core_LogError   'You must specify at least 2 positionals.  1 = name.  2+ = values to assign.  (aborting)' ; return 1 ; fi
   if [ -z "${1}" ]   ; then core_LogVerbose 'Positional number 1 is missing, no by-ref storage intended.  (aborting)'                 ; return 1 ; fi
   shift
 
   # Assign the values
   core_LogVerbose "Assigning remaining positionals to variable: ${_REFERENCE}"
-  eval "${_REFERENCE}=\"$@\""
+  eval "${_reference}=\"$@\""
   return 0
 }
 
 
 function core_SlurpSTDIN {
-  #@Description  Attempts to read from Standard Input and store data in a variable named: _DATA.  The _DATA variable must be provided by the caller to keep things safe.
+  #@Description  Attempts to read from Standard Input and store data in a variable named: _data.  The _data variable must be provided by the caller to keep things safe.
   #@Description  -
   #@Description  This function lacks most frills in an effort to be as efficient as possible.  Work offloaded to 'cat' program for speed.
   #@Description  IMPORTANT!!!  You MUST ensure there is a pipe waiting on STDIN or this will hang forever, like any program waiting on STDIN.
@@ -458,13 +458,13 @@ function core_SlurpSTDIN {
   #@Usage  core_SlurpSTDIN
 
   core_LogVerbose 'Entering function.'
-  _DATA="$(cat -)"
+  _data="$(cat -)"
   return $?
 }
 
 
 function core_SlurpFiles {
-  #@Description  Attempts to read from files specified and store data in a variable named: _DATA.  The _DATA variable must be provided by the caller to keep things safe.
+  #@Description  Attempts to read from files specified and store data in a variable named: _data.  The _data variable must be provided by the caller to keep things safe.
   #@Description  -
   #@Description  This function lacks most frills in an effort to be as efficient as possible.  Work offloaded to 'cat' program for speed.
   #@Description  IMPORTANT!!!  This function will test existence and read permissions of files specified, but that's it.
@@ -483,31 +483,32 @@ function core_SlurpFiles {
     if [ ! -r "${_temp}" ] ; then core_LogError "No read permission for file: '${_temp}'  (aborting)" ; return ${E_BAD_IO} ; fi
   done
 
-  _DATA="$(cat "${_files[@]}")"
+  _data="$(cat "${_files[@]}")"
   return $?
 }
 
 
 function core_ReadDATA {
-  #@Description  Employs the basic 1-2-3 of data entry for SBT functions: positional data, slurp files from ${files[@]}, and slurp from STDIN.
+  #@Description  Employs the basic 1-2 of data entry for SBT functions: slurp files from positionals ($1, $2...) and slurp from STDIN.
+  #@Description  If data is sent via positionals the CALLER needs to check for that and put it in _data.  We will safely abort from there.
   #@Description  Helps deduplicate code efforts.
   #@Description  -
-  #@Description  IMPORTANT!!!  The caller MUST provide a variable named:  _DATA.  Used by core_SlurpFiles and core_SlurpSTDIN.
+  #@Description  IMPORTANT!!!  The caller MUST provide a variable named:  _data.  Used by core_SlurpFiles and core_SlurpSTDIN.
   #@Date   2013.10.27
   #@Usage  core_ReadDATA ['/path/to/file/for/core_SlurpFiles' [...]]
 
   core_LogVerbose 'Entering function.'
-  # If positionals already loaded in _DATA, leave.
-  if [ ! -z "${_DATA}" ] ; then core_LogVerbose "_DATA wasn't blank, must have received values from positionals.  Leaving." ; return 0 ; fi
+  # If positionals already loaded in _data, leave.
+  if [ ! -z "${_data}" ] ; then core_LogVerbose "The _data variable wasn't blank, must have received values from positionals.  Leaving." ; return 0 ; fi
 
-  # Try to slurp any files sent into DATA.  Leave on success.
+  # Try to slurp any files sent into _data.  Leave on success.
   core_SlurpFiles "$@" || return $?
-  if [ ! -z "${_DATA}" ] ; then core_LogVerbose "_DATA is no longer blank, must have found files to read.  Leaving." ; return 0 ; fi
+  if [ ! -z "${_data}" ] ; then core_LogVerbose "The _data variable is no longer blank, must have found files to read.  Leaving." ; return 0 ; fi
 
   # Last chance to find some data to work with... otherwise we're gonna be hung here.
   core_SlurpSTDIN || return $?
 
   # If data is still empty (not sure how...) send a warning but keep going.
-  [ -z "${_DATA}" ] && core_LogVerbose "Reached the end and DATA is still empty, not sure how though.  Continuing."
+  [ -z "${_data}" ] && core_LogVerbose "Reached the end and _data is still empty, not sure how though.  Continuing."
   return 0
 }

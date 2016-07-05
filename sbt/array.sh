@@ -27,7 +27,7 @@ function array_Length {
   local -i _count=0    #@$ Stores the count in case we need to manipulate it in the future.
   local    _opt        #@$ Localizing opt for use in getopts below.
   local    _array      #@$ Local variable to hold the array we're going to work with.
-  local    _REFERENCE  #@$ Holds the variable name to store output in if desired.
+  local    _reference  #@$ Holds the variable name to store output in if desired.
 
   # Grab options
   while true ; do
@@ -35,7 +35,7 @@ function array_Length {
     case $? in  2 ) core_LogError "Getopts failed.  Aborting function." ; return 1 ;;  1 ) break ;; esac
     case "${_opt}" in
       'a' | 'array' )  _array="${OPTARG}"                                             ;;  #@opt_  Name of the array to work with.
-      'R'           )  _REFERENCE="${OPTARG}"                                         ;;  #@opt_  Return variable to send output to.
+      'R'           )  _reference="${OPTARG}"                                         ;;  #@opt_  Return variable to send output to.
       *             )  core_LogError "Invalid option: -${_opt}  (failing)" ; return 1 ;;
     esac
   done
@@ -48,7 +48,7 @@ function array_Length {
   eval _count=\${#${_array}[@]}
 
   # Return information
-  core_StoreByRef "${_REFERENCE}" "${_count}" || echo -e "${_count}"
+  core_StoreByRef "${_reference}" "${_count}" || echo -e "${_count}"
   return 0
 }
 
@@ -143,7 +143,7 @@ function array_Keys {
   local -i OPTIND=1           #@$ Localizing OPTIND to avoid scoping issues.
   local    _opt               #@$ Localizing _opt for use in getopts below.
   local    _array=''          #@$ Name of the array we wil be working with.
-  local    _REFERENCE         #@$ Hold a list of all keys for use when N-th or pattern removal is happening.
+  local    _reference         #@$ Hold a list of all keys for use when N-th or pattern removal is happening.
 
   # Grab options
   while true ; do
@@ -151,18 +151,18 @@ function array_Keys {
     case $? in  2 ) core_LogError "Getopts failed.  Aborting function." ; return 1 ;;  1 ) break ;; esac
     case "${_opt}" in
       'a' | 'array'  ) _array="${OPTARG}"                                            ;;  #@opt_  Name of the array to work with.
-      'R'            ) _REFERENCE="${OPTARG}"                                        ;;  #@opt_  Reference variable name to put results in.  MUST be an array.
+      'R'            ) _reference="${OPTARG}"                                        ;;  #@opt_  Reference variable name to put results in.  MUST be an array.
       *              ) core_LogError "Invalid option: ${_opt}  (failing)" ; return 1 ;;
     esac
   done
 
   # Preflight checks
   if [ -z "${_array}" ]     ; then core_LogError "The _array variable is empty, you must send the array name with -a/--array."    ; return 1 ; fi
-  if [ -z "${_REFERENCE}" ] ; then core_LogError "The _REFERENCE variable is empty, you must specify an array name here with -R." ; return 1 ; fi
+  if [ -z "${_reference}" ] ; then core_LogError "The _REFERENCE variable is empty, you must specify an array name here with -R." ; return 1 ; fi
 
   # Main logic
-  core_LogVerbose "Assigning keys to the variable '${_REFERENCE}' from the array named '${_array}' with a nasty eval."
-  eval ${_REFERENCE}=\(\"\${!${_array}[@]}\"\)
+  core_LogVerbose "Assigning keys to the variable '${_reference}' from the array named '${_array}' with a nasty eval."
+  eval ${_reference}=\(\"\${!${_array}[@]}\"\)
   return 0
 }
 

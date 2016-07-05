@@ -174,8 +174,8 @@ function doc_examples_05-MixedDeclaration () {
 function doc_examples_10-SimpleLocalVariables {
   #@Description  This function will setup a few local variables.  That's it. (No tags).
 
-  local VERBOSE=false
-  local MAX_THINGS=20
+  local verbose=false
+  local max_things=20
   # Docker will note the above variables and their default values.
 
   local i
@@ -188,8 +188,8 @@ function doc_examples_10-SimpleLocalVariables {
 function doc_examples_11-MixedVariables {
   #@Description  This function establishes both local variables and a few non-locals.
 
-  local VERBOSE=false
-  ITEMS_FOUND=13
+  local verbose=false
+  items_found=13
   # Docker will notice the missing local keyword and flag ITEMS_FOUND as a by-ref variable (when synchronous of course).
 
   return 0
@@ -201,8 +201,8 @@ function doc_examples_12-ThreadSafe {
   #@Description  asynchronously.  If all detected variables are declared with the local keyword, the function will be flagged
   #@Description  as thread safe.
 
-  local START_TIME="$(date +%s)"
-  local VERBOSE=false
+  local start_time="$(date +%s)"
+  local verbose=false
 
   return 0
 }
@@ -212,8 +212,8 @@ function doc_examples_13-NonThreadSafe {
   #@Description  This simple function will be flaged as non-thread safe because there is a variable defined without a local
   #@Description  keyword.  Ruh roh!
 
-  local START_TIME="$(date +%s)"
-  VERBOSE=false
+  local start_time="$(date +%s)"
+  verbose=false
 
   return 0
 }
@@ -224,16 +224,16 @@ function doc_examples_14-TypedVariables {
   #@Description  to use the typeset or local keywords.
 
   # Docker will note the special attributes for the following variables
-  declare -r local my_uuid="$(uuidgen)"  # Read only
-  declare -i local i                     # integer
-  declare -a local index_array           # Simple array
-  declare -A local some_hash             # Associative array (hash)
+  local    -r MY_UUID="$(uuidgen)"  # Read only
+  local -i i                        # integer
+  local -a index_array              # Simple array
+  local -A some_hash                # Associative array (hash)
 
   # Docker understands typeset too
   typeset -r local START_TIME="$(date +%s)"
 
   # Regular variables are untyped.
-  local WOOHOO=true
+  local woohoo=true
 
   return 0
 }
@@ -244,6 +244,8 @@ function doc_examples_14-TypedVariables {
 # --
 function doc_examples_20-NumericParameters {
   #@Description  This function accepts $1 and $2 as parameters.
+  #@$1           Parameter 1 is for bla.
+  #@$2           Parameter 2 is for something else.
 
 }
 
@@ -254,7 +256,7 @@ function doc_examples_20-NumericParameters {
 function doc_examples_40-SimpleVariableTag {
   #@Description  A single, simple variable tag (happens to be a line-end tag too)
 
-  local VERBOSE=false  #@$VERBOSE  Disable verbosity unless the user enables it with -v
+  local verbose=false  #@$verbose  Disable verbosity unless the user enables it with -v
   return 0
 }
 
@@ -262,11 +264,11 @@ function doc_examples_40-SimpleVariableTag {
 function doc_examples_41-LineEndVariableTags {
   #@Description  This function will show simple variable tags:  Line-End and federated.
 
-  local VERBOSE=false  #@$VERBOSE  Disable verbosity unless the user enables it with -v
-  local SUPPRESS=false #@$SUPPRESS Don't sent error messages if the user specifies -s
+  local verbose=false  #@$verbose  Disable verbosity unless the user enables it with -v
+  local suppress=false #@$suppress Don't sent error messages if the user specifies -s
 
   # Line-end tags infer names, so Docker will transform the following variable tag (#@$) into  #@$QUIET
-  local QUIET=false    #@$ Limit output of regular messages.  Will NOT disable error message output (see -s).
+  local quiet=false    #@$ Limit output of regular messages.  Will NOT disable error message output (see -s).
 
   return 0
 }
@@ -274,13 +276,13 @@ function doc_examples_41-LineEndVariableTags {
 
 function doc_examples_42-FederatedVariableTags {
   #@Description  This function shows how variable tags can be federated from the actual code declaring the variable; if desired.
-  #@$VERBOSE  Disable verbosity unless the user enables it with -v
-  #@$SUPPRESS Don't sent error messages if the user specifies -s
-  #@$QUIET    Limit output of regular messages.  Will NOT disable error message output (see -s).
+  #@$verbose  Disable verbosity unless the user enables it with -v
+  #@$suppress Don't sent error messages if the user specifies -s
+  #@$quiet    Limit output of regular messages.  Will NOT disable error message output (see -s).
 
-  local VERBOSE=false
-  local SUPPRESS=false
-  local QUIET=false
+  local verbose=false
+  local suppress=false
+  local quiet=false
 
   return 0
 }
@@ -293,8 +295,8 @@ function doc_examples_43-ParameterVariableTags {
   #@$1  The file we will use for <whatever>.
   #@$2  The maximum results to find before leaving.
 
-  declare -r    local INPUT_FILE="$1"  #@$  This will hold the contents of $1, mostly for readability later.
-  declare -r -i local MAX_RESULTS=$2   #@$  This will hold the value of $2, mostly for readability later.
+  local -r    INPUT_FILE="$1"  #@$  This will hold the contents of $1, mostly for readability later.
+  local -r -i MAX_RESULTS=$2   #@$  This will hold the value of $2, mostly for readability later.
 
   return 0
 }
@@ -308,14 +310,14 @@ function doc_examples_50-GetOptsTags {
   #@Usage        doc_examples_50-GetOptsTags <-b 'Book Name'> [-a]
 
   local my_opt
-  local AWESOME_MODE=false
-  local BOOK_NAME='Plumbing Guide to Angling'
+  local awesome_mode=false
+  local book_name='Plumbing Guide to Angling'
   while getopts 'ab:' my_opt ; do
     case "${my_opt}" in
       'a' ) #@opt_ When specified, turns on AWESOME mode... yea.
-            AWESOME_MODE=true     ;;
+            awesome_mode=true     ;;
       'b' ) #@opt_ Override the default book name to use.
-            BOOK_NAME="${OPTARG}" ;;
+            book_name="${OPTARG}" ;;
       *   ) echo "Invalid option -${OPTARG}" >&2
             return 1
             ;;
@@ -331,12 +333,12 @@ function doc_examples_51-LineEndGetOptsTags {
   #@Usage        doc_examples_51-LineEndGetOptsTags <-b 'Book Name'> [-a]
 
   local my_opt
-  local AWESOME_MODE=false
-  local BOOK_NAME='Plumbing Guide to Angling'
+  local awesome_mode=false
+  local book_name='Plumbing Guide to Angling'
   while getopts 'ab:' my_opt ; do
     case "${my_opt}" in
-      'a' ) AWESOME_MODE=true     ;;  #@opt_ When specified, turns on AWESOME mode... yea.
-      'b' ) BOOK_NAME="${OPTARG}" ;;  #@opt_ Override the default book name to use.
+      'a' ) awesome_mode=true     ;;  #@opt_ When specified, turns on AWESOME mode... yea.
+      'b' ) book_name="${OPTARG}" ;;  #@opt_ Override the default book name to use.
       *   ) echo "Invalid option -${OPTARG}" >&2
             return 1
             ;;
@@ -352,14 +354,14 @@ function doc_examples_52-LongOptsWithLineEndComments {
   #@Usage        doc_examples_52-LongOptsWithLineEndComments <-b --book 'Book Name'> [-a --awesome]
 
   local my_opt
-  local AWESOME_MODE=false
-  local BOOK_NAME='Plumbing Guide to Angling'
+  local awesome_mode=false
+  local book_name='Plumbing Guide to Angling'
   while getopts 'ab:' my_opt 'awesome,book:' ; do
     case "${my_opt}" in
-      'a'       ) AWESOME_MODE=true     ;;  #@opt_ When specified, turns on AWESOME mode... yea.
-      'b'       ) BOOK_NAME="${OPTARG}" ;;  #@opt_ Override the default book name to use.
-      'awesome' ) AWESOME_MODE=true     ;;  #@opt_ When specified, turns on AWESOME mode... yea.
-      'book'    ) BOOK_NAME="${OPTARG}" ;;  #@opt_ Override the default book name to use.
+      'a'       ) awesome_mode=true     ;;  #@opt_ When specified, turns on AWESOME mode... yea.
+      'b'       ) book_name="${OPTARG}" ;;  #@opt_ Override the default book name to use.
+      'awesome' ) awesome_mode=true     ;;  #@opt_ When specified, turns on AWESOME mode... yea.
+      'book'    ) book_name="${OPTARG}" ;;  #@opt_ Override the default book name to use.
       *         ) echo "Invalid option -${OPTARG}" >&2
                   return 1
                   ;;
@@ -377,12 +379,12 @@ function doc_examples_53-FederatedGetOptsTags {
   #@opt_b Override the default book name to use.
 
   local my_opt
-  local AWESOME_MODE=false
-  local BOOK_NAME='Plumbing Guide to Angling'
+  local awesome_mode=false
+  local book_name='Plumbing Guide to Angling'
   while getopts 'ab:' my_opt ; do
     case "${my_opt}" in
-      'a' ) AWESOME_MODE=true     ;;
-      'b' ) BOOK_NAME="${OPTARG}" ;;
+      'a' ) awesome_mode=true     ;;
+      'b' ) book_name="${OPTARG}" ;;
       *   ) echo "Invalid option -${OPTARG}" >&2
             return 1
             ;;
@@ -408,15 +410,15 @@ function doc_examples_98-ComplexZelda {
 
   # Variables
   #@$1 The first option (after shifting from getopts) will be a file name to operate on.
-  local E_GENERIC=1                      #@$E_GENERIC If we need to exit and don't have a better ERROR choice, use this.
-  local E_BAD_INPUT=10                   #@$ Send when file specified in $1 is invalid or when -D is blank.
-  local VERBOSE=false                    #@$VERBOSE Flag to decide if we should be chatty with our output.
-  local temp='something'                 #@$ A temp variable for our operations below.  (Note: Docker will record defaults.)
-  declare -r local wife_is_hot=true      #@$ Pointless boolean flag, and it is now read only (and accurate).
-  declare -a local index_array=( Zelda ) #@$ Index array with 1 element (element 0, value of Zelda)
-  declare -A local assoc_array           #@$ Associative array (hash) to hold misc things as we read file.
-  declare -i local i                     #@$ A counter variable, forced to be integer only.
-  final_value=''                         #@$ The final value to expose to the caller after we exit. (Note: Docker will flag as by-ref.)
+  local       E_GENERIC=1            #@$E_GENERIC If we need to exit and don't have a better ERROR choice, use this.
+  local       E_BAD_INPUT=10         #@$ Send when file specified in $1 is invalid or when -D is blank.
+  local       verbose=false          #@$verbose Flag to decide if we should be chatty with our output.
+  local       temp='something'       #@$ A temp variable for our operations below.  (Note: Docker will record defaults.)
+  local    -r wife_is_hot=true       #@$ Pointless boolean flag, and it is now read only (and accurate).
+  local -a    index_array=( Zelda )  #@$ Index array with 1 element (element 0, value of Zelda)
+  local -A    assoc_array            #@$ Associative array (hash) to hold misc things as we read file.
+  local -i    i                      #@$ A counter variable, forced to be integer only.
+  final_value=''                     #@$ The final value to expose to the caller after we exit. (Note: Docker will flag as by-ref.)
 
   # Process options
   while getopts ":D:hv" opt; do
@@ -429,7 +431,7 @@ function doc_examples_98-ComplexZelda {
            echo 'No help exists for this function yet.' >&2
            return ${E_GENERIC}
            ;;
-      v  ) VERBOSE=true ;; #@opt_ Change the verbose flag to true so we can send more output to the caller.
+      v  ) verbose=true ;; #@opt_ Change the verbose flag to true so we can send more output to the caller.
       \? ) echo "Invalid option: -$OPTARG" >&2 ; return ${E_GENERIC} ;;
     esac
   done
@@ -438,7 +440,7 @@ function doc_examples_98-ComplexZelda {
   if ! core_ToolExists 'grep'     ; then echo 'The required tools to run this function were not found.' >&2 ; return ${E_GENERIC}   ; fi
   if [ ${#index_array[@]} -lt 2 ] ; then echo "You must provide at least 1 Hyrule item (via -D option)" >&2 ; return ${E_BAD_INPUT} ; fi
   if [ ! -f ${1} ]                ; then echo "Cannot find specified file to read: ${1}"                >&2 ; return ${E_BAD_INPUT} ; fi
-  ${VERBOSE} && echo "Verbosity enabled.  Done processing variables and cleared pre-flight checks."
+  ${verbose} && echo "Verbosity enabled.  Done processing variables and cleared pre-flight checks."
 
   # Main function logic
   i=1
@@ -456,6 +458,7 @@ function doc_examples_98-ComplexZelda {
   return 0
 }
 
+
 function doc_examples_99-ComplexZeldaLongOpts {
   #@Author Hank BoFrank
   #@Date   2013.03.04
@@ -468,27 +471,27 @@ function doc_examples_99-ComplexZeldaLongOpts {
 
   # Variables
   #@$1 The first option (after shifting from getopts) will be a file name to operate on.
-  local E_GENERIC=1                      #@$E_GENERIC If we need to exit and don't have a better ERROR choice, use this.
-  local E_BAD_INPUT=10                   #@$ Send when file specified in $1 is invalid or when -D is blank.
-  local VERBOSE=false                    #@$VERBOSE Flag to decide if we should be chatty with our output.
-  local temp='something'                 #@$ A temp variable for our operations below.  (Note: Docker will record defaults.)
-  declare -r local wife_is_hot=true      #@$ Pointless boolean flag, and it is now read only (and accurate).
-  declare -a local index_array=( Zelda ) #@$ Index array with 1 element (element 0, value of Zelda)
-  declare -A local assoc_array           #@$ Associative array (hash) to hold misc things as we read file.
-  declare -i local i                     #@$ A counter variable, forced to be integer only.
-  final_value=''                         #@$ The final value to expose to the caller after we exit. (Note: Docker will flag as by-ref.)
+  local    -r E_GENERIC=1            #@$E_GENERIC If we need to exit and don't have a better ERROR choice, use this.
+  local    -r E_BAD_INPUT=10         #@$ Send when file specified in $1 is invalid or when -D is blank.
+  local       verbose=false          #@$verbose Flag to decide if we should be chatty with our output.
+  local       temp='something'       #@$ A temp variable for our operations below.  (Note: Docker will record defaults.)
+  local    -r wife_is_hot=true       #@$ Pointless boolean flag, and it is now read only (and accurate).
+  local -a    index_array=( Zelda )  #@$ Index array with 1 element (element 0, value of Zelda)
+  local -A    assoc_array            #@$ Associative array (hash) to hold misc things as we read file.
+  local -i    i                      #@$ A counter variable, forced to be integer only.
+  final_value=''                     #@$ The final value to expose to the caller after we exit. (Note: Docker will flag as by-ref.)
 
   # Process options
   while core_getopts ":D:hv" opt 'help,verbose'; do
     case $opt in
-      D           ) #@opt_ Add bonus items to the index_array variable.
+      D           ) #@opt_  Add bonus items to the index_array variable.
                     index_array+=("${OPTARG}")
                     ;;
-      h|help      ) #@opt_     Display an error and return non-zero if the user tries to use -h for this function.
+      h|help      ) #@opt_  Display an error and return non-zero if the user tries to use -h for this function.
                     echo 'No help exists for this function yet.' >&2
                     return ${E_GENERIC}
                     ;;
-      v | verbose ) VERBOSE=true ;; #@opt_ Change the verbose flag to true so we can send more output to the caller.
+      v | verbose ) verbose=true ;; #@opt_  Change the verbose flag to true so we can send more output to the caller.
       \?          ) echo "Invalid option: -$OPTARG" >&2 ; return ${E_GENERIC} ;;
     esac
   done
