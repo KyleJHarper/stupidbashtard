@@ -9,10 +9,10 @@
 
 function dummy {
   # Placeholder to ensure nested piping works
-  local _DATA=''
+  local _data=''
   echo 'I am a dummy'
   core_SlurpSTDIN || return 1
-  echo -e "${_DATA}"
+  echo -e "${_data}"
   return 0
 }
 

@@ -8,10 +8,10 @@
 . "$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )/../../sbt/core.sh"
 
 function dummy {
-  local _DATA=''
-  if [ "${1}" == 'rawr' ] ; then _DATA='rawr from positional' ; shift ; fi
+  local _data=''
+  if [ "${1}" == 'rawr' ] ; then _data='rawr from positional' ; shift ; fi
   core_ReadDATA "$@" || return 1
-  echo -e "${_DATA}"
+  echo -e "${_data}"
   return 0
 }
 
