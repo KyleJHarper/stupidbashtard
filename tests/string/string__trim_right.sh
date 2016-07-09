@@ -17,26 +17,26 @@ if [ "${1}" == 'performance' ] ; then iteration=1 ; START="$(date '+%s%N')" ; el
 while [ ${iteration} -le ${MAX_ITERATIONS} ] ; do
   # -- 1 -- Simple invocation with expected parameters
   new_test "Sending expected arguments for a normal usage: "
-  [ "$(string_TrimRight -c '_' 'some string______')" == 'some string' ]  || fail 1
+  [ "$(string__trim_right -c '_' 'some string______')" == 'some string' ]  || fail 1
   pass
 
   # -- 2 -- Saving results in reference variable
   new_test "Storing results in reference variable: "
   rv=''
-  string_TrimRight -c '+' '++++some_string+++' -R 'rv'
+  string__trim_right -c '+' '++++some_string+++' -R 'rv'
   [ "${rv}" == '++++some_string' ] || fail 1
   pass
 
   # -- 3 -- Reading from a file for kicks.
   new_test "Reading data from a file just because: "
-  echo '++++some_string++++' >/tmp/string_TrimRight.tmp
-  [ "$(string_TrimRight -c '+' -f '/tmp/string_TrimRight.tmp')" == '++++some_string' ]  || fail 1
+  echo '++++some_string++++' >/tmp/string__trim_right.tmp
+  [ "$(string__trim_right -c '+' -f '/tmp/string__trim_right.tmp')" == '++++some_string' ]  || fail 1
   pass
-  rm /tmp/string_TrimRight.tmp
+  rm /tmp/string__trim_right.tmp
 
   # -- 4 -- Defaults shouldn't change
   new_test "Trim's character and direction have defaults, ensuring they persist: "
-  [ "$(string_TrimRight '   some_string   ')" == '   some_string' ]  || fail 1
+  [ "$(string__trim_right '   some_string   ')" == '   some_string' ]  || fail 1
   pass
 
   let iteration++

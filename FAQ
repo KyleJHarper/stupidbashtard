@@ -7,7 +7,7 @@
   4.  What keywords are reserved by SBT?
   5.  Why do SBT functions seem to fail when piping to loops?
 xxx.
-
+100.  How should functions and variables be named?
 
 
 
@@ -51,3 +51,15 @@ xxx.
         merged=''
         mydata="$(someFunction)"
         while IFS=$'\n' read -r line ; do merged+="${line}" ; done <<<"${mydata}"
+
+100.  How should functions and variables be named inside SBT.
+      Functions should be all lower case and led with 'namespace__'.
+        For example:  string__index_of
+      Variables should follow these conventions:
+        1) Use of the keyword 'local' should be used to keep dynamic scope.
+        2) All variables should be prefixed with an underscore: local _my_var
+        3) Variables should be typed when possible:  local -i _my_var
+        4) Read-only variables should be upper-case and declared properly:  local -r _MY_VAR="something"
+        5) Variables used for indirection (eval-ing) should end in an underscore: local _my_var_
+        6) All exit code variables should be prefixed with E_:  local -i -r E_BAD_INPUT=10
+

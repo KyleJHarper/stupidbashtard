@@ -17,31 +17,31 @@ if [ "${1}" == 'performance' ] ; then iteration=1 ; START="$(date '+%s%N')" ; el
 while [ ${iteration} -le ${MAX_ITERATIONS} ] ; do
   # -- 1 -- Simple invocation with expected parameters
   new_test "Sending expected arguments for a normal usage: "
-  [ "$(string_PadLeft -l 20 -p '-' 'some_string')" == '---------some_string' ]  || fail 1
+  [ "$(string__insert -s 'am a ' -i '2' 'I hero')" == 'I am a hero' ]  || fail 1
   pass
 
-  # -- 2 -- Saving results in reference variable
+  # -- 2 -- Negative index should work as expected
+  new_test "Sending expected arguments for a normal usage: "
+  [ "$(string__insert -s 'am a ' -i '-2' 'I hero')" == 'I heam a ro' ]  || fail 1
+  pass
+
+  # -- 3 -- Saving results in reference variable
   new_test "Storing results in reference variable: "
   rv=''
-  string_PadLeft -l 20 -p '-' 'some_string' -R 'rv'
-  [ "${rv}" == '---------some_string' ] || fail 1
+  string__insert -s 'am a ' -i '2' 'I hero' -R 'rv'
+  [ "${rv}" == 'I am a hero' ] || fail 1
   pass
 
-  # -- 3 -- Reading from a file for kicks.
+  # -- 4 -- Reading from a file for kicks.
   new_test "Reading data from a file just because: "
-  echo 'some_string' >/tmp/string_Pad.tmp
-  [ "$(string_PadLeft -l 20 -p '-' -f '/tmp/string_Pad.tmp')" == '---------some_string' ]  || fail 1
+  echo 'I hero' >/tmp/string__insert.tmp
+  [ "$(string__insert -s 'am a ' -i '2' 'I hero' -f '/tmp/string__insert.tmp')" == 'I am a hero' ]  || fail 1
   pass
-  rm /tmp/string_Pad.tmp
-
-  # -- 4 -- Not specifying required items should fail
-  new_test "Length is required, checking: "
-  string_PadLeft -p '-' 'random junk' 2>/dev/null 1>/dev/null && fail 1
-  pass
+  rm /tmp/string__insert.tmp
 
   # -- 5 -- Defaults shouldn't change
-  new_test "Pad string and direction have defaults, ensuring they persist: "
-  [ "$(string_PadLeft -l 20 'some_string')" == '         some_string' ] || fail 1
+  new_test "Trim's character and direction have defaults, ensuring they persist: "
+  [ "$(string__insert -s 'am a ' 'I hero')" == 'am a I hero' ]  || fail 1
   pass
 
   let iteration++

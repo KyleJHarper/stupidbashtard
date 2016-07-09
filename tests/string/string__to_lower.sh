@@ -15,16 +15,16 @@ if [ "${1}" == 'performance' ] ; then iteration=1 ; START="$(date '+%s%N')" ; el
 
 # Testing loop
 while [ ${iteration} -le ${MAX_ITERATIONS} ] ; do
-  # -- 1 -- Support Proper (Title) casing items
-  new_test "Sending multiple items for proper (title) casing (e.g.: I Am Some Text): "
-  [ "$( string_ProperCase $'heLlo\ntheRE ' $'Joe\tschmoe '  'RAWR'  )" == $'Hello\nThere Joe\tSchmoe Rawr' ]   || fail 1
+  # -- 1 -- Simple invocation with 1 argument
+  new_test "Sending a single argument for lower casing: "
+  [ "$( string__to_lower 'RAWR' )" == 'rawr' ]   || fail 1
   pass
 
-  # -- 2 -- Options sent to this should go to string_FormatCase
-  new_test "Sending options supported by the back-end function string_FormatCase (like -R): "
+  # -- 2 -- Options sent to this should go to string__format_case
+  new_test "Sending options supported by the back-end function string__format_case (like -R): "
   rv=''
-  string_ProperCase -R rv 'rawr' || fail 1
-  [ "${rv}" == "Rawr" ]          || fail 2
+  string__to_lower -R rv 'RaWR' || fail 1
+  [ "${rv}" == "rawr" ]         || fail 2
   pass
 
   let iteration++

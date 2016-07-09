@@ -91,8 +91,8 @@ function opts_sbt {
   shift 2
   local opt
   while true ; do
-    core_getopts "${SHORT_OPTS}" opt "${LONG_OPTS}" "$@"
-    case $? in  2 ) core_LogError "Getopts failed.  Aborting function." ; return 1 ;;  1 ) break ;; esac
+    core__getopts "${SHORT_OPTS}" opt "${LONG_OPTS}" "$@"
+    case $? in  2 ) core__log_error "Getopts failed.  Aborting function." ; return 1 ;;  1 ) break ;; esac
     case "${opt}" in
       a           ) myA="${A_TEXT}" ;;
       longA       ) myLongA="${A_TEXT}" ;;

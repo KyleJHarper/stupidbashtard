@@ -247,8 +247,8 @@ sub reset_variables {
 }
 
 sub add_tools {
-  # Search for core_ToolExists to build a list of required tools
-  if ( /core_ToolExists(([\s]+['"]?[a-zA-Z0-9_\-.\/]+['"]?)+)/ ) {
+  # Search for core__tool_exists to build a list of required tools
+  if ( /core__tool_exists(([\s]+['"]?[a-zA-Z0-9_\-.\/]+['"]?)+)/ ) {
     TOOL: foreach my $tool ( split / /, $1 ) {
       if ( ! $tool ) { next ; }
       foreach my $existing_tool ( split /,/, $func->tools() ) {
@@ -352,7 +352,7 @@ sub add_options {
 
   # Do some checking in case we find a problem
   if ( ! $SHORT_OPTS && ! $LONG_OPTS ) { &print_so_verbose('Found a getopts block, but  no long or short options were sent.  Just FYI.') ; return 0 ; }
-  if ( $GETOPT_TYPE eq 'core_getopts' && ! $LONG_OPTS ) { &print_so_verbose('Found core_getopts but no long opts were sent.  Just FYI.') ; }
+  if ( $GETOPT_TYPE eq 'core__getopts' && ! $LONG_OPTS ) { &print_so_verbose('Found core__getopts but no long opts were sent.  Just FYI.') ; }
 
   # Process short opts
   if ( $SHORT_OPTS ) {

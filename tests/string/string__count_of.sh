@@ -7,7 +7,7 @@
 . "$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )/../__shared.inc.sh"
 . "$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )/../../sbt/core.sh"
 . "$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )/../../sbt/string.sh"
-core_SetToolPath "$(here)/../lib/tools"
+core__set_tool_path "$(here)/../lib/tools"
 
 
 
@@ -19,12 +19,12 @@ if [ "${1}" == 'performance' ] ; then iteration=1 ; START="$(date '+%s%N')" ; el
 while [ ${iteration} -le ${MAX_ITERATIONS} ] ; do
   # -- 1 -- Use it as expected
   new_test "Sending all arguments as required, to simulate a good test: "
-  [ "$(string_CountOf -a '123456789')" -eq 9 ] || fail 1
+  [ "$(string__count_of -a '123456789')" -eq 9 ] || fail 1
   pass
 
   # -- 2 -- Make sure a regex pattern works
   new_test "Using a custom regex pattern to ensure it passes correctly: "
-  [ "$(string_CountOf -p '[\s\S]' '123456789')" -eq 9 ] || fail 1
+  [ "$(string__count_of -p '[\s\S]' '123456789')" -eq 9 ] || fail 1
   pass
 
   # -- 3 -- Reading files should work
@@ -33,23 +33,23 @@ while [ ${iteration} -le ${MAX_ITERATIONS} ] ; do
   echo -n '123456789' > "${myuuid}"
   echo -n '123456789' > "${myuuid2}"
   new_test "Reading a file (or files) should work: "
-  [ "$(string_CountOf -a -f "${myuuid}")" -eq 9 ]                  || fail 1
-  [ "$(string_CountOf -a -f "${myuuid}" -f "${myuuid2}")" -eq 18 ] || fail 2
-  [ "$(string_CountOf -a -f "${myuuid}")" -eq 9 ]                  || fail 3
-  [ "$(string_CountOf -a -f "${myuuid}" -f "${myuuid2}")" -eq 18 ] || fail 4
+  [ "$(string__count_of -a -f "${myuuid}")" -eq 9 ]                  || fail 1
+  [ "$(string__count_of -a -f "${myuuid}" -f "${myuuid2}")" -eq 18 ] || fail 2
+  [ "$(string__count_of -a -f "${myuuid}")" -eq 9 ]                  || fail 3
+  [ "$(string__count_of -a -f "${myuuid}" -f "${myuuid2}")" -eq 18 ] || fail 4
   pass
 
   # -- 4 -- Long options should work
   new_test "Long options should work: "
-  [ "$(string_CountOf --all '123456789')" -eq 9 ]                             || fail 1
-  [ "$(string_CountOf --pattern '[\s\S]' '123456789')" -eq 9 ]                || fail 2
-  [ "$(string_CountOf --all --file "${myuuid}" --file "${myuuid2}")" -eq 18 ] || fail 3
+  [ "$(string__count_of --all '123456789')" -eq 9 ]                             || fail 1
+  [ "$(string__count_of --pattern '[\s\S]' '123456789')" -eq 9 ]                || fail 2
+  [ "$(string__count_of --all --file "${myuuid}" --file "${myuuid2}")" -eq 18 ] || fail 3
   pass
 
   # -- 5 -- ByRef storage
   new_test "Storing byref should work (-R): "
   myvar=1
-  string_CountOf --all --file "${myuuid}" --file "${myuuid2}" -R 'myvar'
+  string__count_of --all --file "${myuuid}" --file "${myuuid2}" -R 'myvar'
   [ ${myvar} -eq 18 ] || fail 1
   pass
 
@@ -57,7 +57,7 @@ while [ ${iteration} -le ${MAX_ITERATIONS} ] ; do
   # -- 6 -- Make sure searching for a different regex pattern will work.
   new_test "Searching for a different regex pattern instead of all chars: "
   myvar=1
-  string_CountOf --pattern '[0-9]{3}' --file "${myuuid}" --file "${myuuid2}" -R 'myvar'
+  string__count_of --pattern '[0-9]{3}' --file "${myuuid}" --file "${myuuid2}" -R 'myvar'
   [ ${myvar} -eq 6 ] || fail 1
   pass
 

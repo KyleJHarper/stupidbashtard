@@ -11,7 +11,7 @@ function dummy {
   # Placeholder to ensure nested piping works
   local _data=''
   echo 'I am a dummy'
-  core_SlurpSTDIN || return 1
+  core__slurp_stdin || return 1
   echo -e "${_data}"
   return 0
 }
@@ -23,12 +23,12 @@ if [ "${1}" == 'performance' ] ; then iteration=1 ; START="$(date '+%s%N')" ; el
 
 # Testing loop
 while [ ${iteration} -le ${MAX_ITERATIONS} ] ; do
-  # -- 1 -- Piping test.  Need a dummy function, because piping to core_SlurpSTDIN direclty puts it in a subshell.  sigh
-  new_test 'Piping a command into a dummy function that uses core_SlurpSTDIN: '
+  # -- 1 -- Piping test.  Need a dummy function, because piping to core__slurp_stdin direclty puts it in a subshell.  sigh
+  new_test 'Piping a command into a dummy function that uses core__slurp_stdin: '
   [ "$(echo 'this is a test' | dummy)" == $'I am a dummy\nthis is a test' ] || fail 1
   pass
 
-  # -- 2 -- Chained pipes caused an issue.  Race conditions and sigpipes.  core_SlurpSTDIN should work.
+  # -- 2 -- Chained pipes caused an issue.  Race conditions and sigpipes.  core__slurp_stdin should work.
   # Real world case from 2013.10.25
   new_test 'Piping a series together (chained piping) because improper handling will cause sigpipes and race conditions: '
   [ "$(echo 'this is a test' | dummy | dummy | dummy | dummy)" == $'I am a dummy\nI am a dummy\nI am a dummy\nI am a dummy\nthis is a test' ] || fail 1
@@ -46,10 +46,10 @@ while [ ${iteration} -le ${MAX_ITERATIONS} ] ; do
 
   # -- 5 -- Here-doc should work fine too.
   new_test 'Here-document should be connected to STDIN and read as expected: '
-  echo 'this is a test' > /tmp/core_SlurpSTDIN--test
-  [ "$(dummy < /tmp/core_SlurpSTDIN--test)" == $'I am a dummy\nthis is a test' ] || fail 1
-  [ "$(dummy < /tmp/core_SlurpSTDIN--test | dummy | dummy )" == $'I am a dummy\nI am a dummy\nI am a dummy\nthis is a test' ] || fail 2
-  rm /tmp/core_SlurpSTDIN--test
+  echo 'this is a test' > /tmp/core__slurp_stdin--test
+  [ "$(dummy < /tmp/core__slurp_stdin--test)" == $'I am a dummy\nthis is a test' ] || fail 1
+  [ "$(dummy < /tmp/core__slurp_stdin--test | dummy | dummy )" == $'I am a dummy\nI am a dummy\nI am a dummy\nthis is a test' ] || fail 2
+  rm /tmp/core__slurp_stdin--test
   pass
 
 

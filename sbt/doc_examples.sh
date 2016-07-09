@@ -63,6 +63,8 @@
 # +-----------------+
 # -- Crawling Basics
 # Docker is designed to crawl code and scan for functions, variables, and certain structures. It uses the information it finds to generate a report about each function.  The information is then stored in the meta-file along with tags (see above).
+#
+# Note that Docker scans line-by-line, not by character or word.  If you follow simple, clean coding standards it's good at what it does.
 
 # -- Function Declarations
 # You do NOT need to use special comments and tags declare a function.  You ONLY need to write the function using valid bash syntax.  The documentation tool will read everything after it.  The braces for the function simply need to comply with bash rules.  The opening is on the same line or directly after.  The closing must be on it's own line, or preceeded by a semicolon.  Again, whatever bash allows.
@@ -82,7 +84,9 @@
 # As mentioned in the parameters section, you should never set a variable in a function for use outside the function (see thread safety).  If Docker identifies a variable being set which was NOT defined earlier in the function with a local/declare/typeset keyword, it will flag the function as non-thread safe.
 
 # -- Thread Safety
-# While bash doesn't support true threading, it can spawn (asynchronous) sub-processes and emulate a similar behavior.  Docker will mark all functions thread-safe until it finds a reason not to.  The primary reason for marking a function as non-thread safe is if Docker finds non-local variables.
+# While bash doesn't support true threading, it can spawn (asynchronous) sub-processes and emulate a similar watered-down behavior.  Docker will mark all functions thread-safe until it finds a reason not to.  The primary reason for marking a function as non-thread safe is if Docker finds non-local variables.
+#
+# This is, at best, a generic indicator that a thread isn't trying to assign values to a variable declared in another scope.
 #
 # Note:  Docker is a static-analysis tool.  It cannot begin to comprehend how you're using various functions.  A function marked thread-safe does not mean it'll magically protect you from race conditions and data corruption if you use the functions with shared resources or in a non-thread safe manner.  (You have been warned.)
 
@@ -106,25 +110,36 @@
 # Any variable starting with E_ will be assumed to be an exit-code and documented as such.  The value assigned will be included in docs.  Use variable tags to add descriptions: #@$E_SOME_ERR <description text>
 
 # -- GetOpts
-# Docker will scan for a while loop that uses getopts (or core_getopts) and a case statement.  It MUST be presented like so:
+# Docker will scan for a while loop that uses getopts (or core__getopts) and a case statement.  It MUST be presented like so:
 #   while getopts '<chars>' some_var ; do     # You CAN use double quotes around <chars> too.
 #     case $some_var in                       # You CAN use any variable name you want.  some_var is an example.
 #       ...                                   # You CAN put the 'do' keyword on a separate line, if you want.
-#     esac                                    # You CAN quote $some_var or the case items in your case statement if desired.
-#   done                                      # You CAN NOT make a description for \? or * (wildcards) in the case statement.  This would be silly.
+#     esac                                    # You CAN NOT make a description for \? or * (wildcards) in the case statement.  This would be silly.
+#   done
+#
+#   [OR]
+#
+#   while true ; do                           # This second form is useful with core__getopts because core__getopts differentiates between "no more options" (code 1) and "error processing option" (code 2).
+#     core__getopts '<chars>' some_var
+#     case $? in  2 ) core__log_error "Getopts failed.  Aborting function." ; return 1 ;;  1 ) break ;; esac
+#     case $some_var in
+#       ...
+#     esac
+#   done
 #
 # When Docker sees the aforementioned, it will scan for getopt tags (#@opt_).  Typically you will place these tags inside each case item.  Docker will understand which case item the tag is in and record it appropriately.  You can also specify the name of the option if desired (e.g. #@opt_a).  This will override Docker's auto-detected case-item at run time... though it should always be the same, so why would you?
 #
-# StupidBashTard supports long options via the core_getopts function.  It is fully backward compatible with the built-in getopts.  It takes a 3rd parameter, a comma-separated list of long option names.  The above example with long opts would be as such:
-#   while core_getopts '<chars>' some_var '<long_opts>' ; do     # You CAN use double quotes around <chars> or long_opts too.
+# StupidBashTard supports long options via the core__getopts function.  It is fully backward compatible with the built-in getopts.  It takes a 3rd parameter, a comma-separated list of long option names.  The above example with long opts would be as such:
+#   while core__getopts '<chars>' some_var '<long_opts>' ; do     # You CAN use double quotes around <chars> or long_opts too.
 
-# -- Required Programs & Functions (SBT core_ToolExists)
-# Docker is capable of reading the core_ToolExists function calls (from StupidBashtard).  If a function invokes core_ToolExists, all arguments listed afterward will be listed in the documentation as dependencies of the caller.
+# -- Required Programs & Functions (SBT core__tool_exists)
+# Docker is capable of reading the core__tool_exists function calls (from StupidBashtard).  If a function invokes core__tool_exists, all arguments listed afterward will be listed in the documentation as dependencies of the caller.
 
 
 # +------------+
 # |  Examples  |
 # +------------+
+# NOTE!!!  These violate the normal naming convention for SBT functions.  Just FYI.
 # 01 - 09:  Function Declarations
 # 10 - 19:  Variables (Typing & Scope)
 # 20 - 29:  Parameters
@@ -174,11 +189,11 @@ function doc_examples_05-MixedDeclaration () {
 function doc_examples_10-SimpleLocalVariables {
   #@Description  This function will setup a few local variables.  That's it. (No tags).
 
-  local verbose=false
-  local max_things=20
+  local _verbose=false
+  local _max_things=20
   # Docker will note the above variables and their default values.
 
-  local i
+  local _i
   # Docker will acknowledge the variable above, and that it does not have a default value.
 
   return 0
@@ -188,7 +203,7 @@ function doc_examples_10-SimpleLocalVariables {
 function doc_examples_11-MixedVariables {
   #@Description  This function establishes both local variables and a few non-locals.
 
-  local verbose=false
+  local _verbose=false
   items_found=13
   # Docker will notice the missing local keyword and flag ITEMS_FOUND as a by-ref variable (when synchronous of course).
 
@@ -201,8 +216,8 @@ function doc_examples_12-ThreadSafe {
   #@Description  asynchronously.  If all detected variables are declared with the local keyword, the function will be flagged
   #@Description  as thread safe.
 
-  local start_time="$(date +%s)"
-  local verbose=false
+  local _start_time="$(date +%s)"
+  local _verbose=false
 
   return 0
 }
@@ -212,7 +227,7 @@ function doc_examples_13-NonThreadSafe {
   #@Description  This simple function will be flaged as non-thread safe because there is a variable defined without a local
   #@Description  keyword.  Ruh roh!
 
-  local start_time="$(date +%s)"
+  local _start_time="$(date +%s)"
   verbose=false
 
   return 0
@@ -225,15 +240,15 @@ function doc_examples_14-TypedVariables {
 
   # Docker will note the special attributes for the following variables
   local    -r MY_UUID="$(uuidgen)"  # Read only
-  local -i i                        # integer
-  local -a index_array              # Simple array
-  local -A some_hash                # Associative array (hash)
+  local -i    _i                    # integer
+  local -a    _index_array          # Simple array
+  local -A    _some_hash            # Associative array (hash)
 
   # Docker understands typeset too
-  typeset -r local START_TIME="$(date +%s)"
+  typeset -r _START_TIME="$(date +%s)"
 
   # Regular variables are untyped.
-  local woohoo=true
+  local _woohoo=true
 
   return 0
 }
@@ -256,7 +271,7 @@ function doc_examples_20-NumericParameters {
 function doc_examples_40-SimpleVariableTag {
   #@Description  A single, simple variable tag (happens to be a line-end tag too)
 
-  local verbose=false  #@$verbose  Disable verbosity unless the user enables it with -v
+  local _verbose=false  #@$_verbose  Disable verbosity unless the user enables it with -v
   return 0
 }
 
@@ -264,11 +279,11 @@ function doc_examples_40-SimpleVariableTag {
 function doc_examples_41-LineEndVariableTags {
   #@Description  This function will show simple variable tags:  Line-End and federated.
 
-  local verbose=false  #@$verbose  Disable verbosity unless the user enables it with -v
-  local suppress=false #@$suppress Don't sent error messages if the user specifies -s
+  local _verbose=false  #@$_verbose  Disable verbosity unless the user enables it with -v
+  local _suppress=false #@$_suppress Don't sent error messages if the user specifies -s
 
   # Line-end tags infer names, so Docker will transform the following variable tag (#@$) into  #@$QUIET
-  local quiet=false    #@$ Limit output of regular messages.  Will NOT disable error message output (see -s).
+  local _quiet=false    #@$ Limit output of regular messages.  Will NOT disable error message output (see -s).
 
   return 0
 }
@@ -276,13 +291,13 @@ function doc_examples_41-LineEndVariableTags {
 
 function doc_examples_42-FederatedVariableTags {
   #@Description  This function shows how variable tags can be federated from the actual code declaring the variable; if desired.
-  #@$verbose  Disable verbosity unless the user enables it with -v
-  #@$suppress Don't sent error messages if the user specifies -s
-  #@$quiet    Limit output of regular messages.  Will NOT disable error message output (see -s).
+  #@$_verbose  Disable verbosity unless the user enables it with -v
+  #@$_suppress Don't sent error messages if the user specifies -s
+  #@$_quiet    Limit output of regular messages.  Will NOT disable error message output (see -s).
 
-  local verbose=false
-  local suppress=false
-  local quiet=false
+  local _verbose=false
+  local _suppress=false
+  local _quiet=false
 
   return 0
 }
@@ -295,8 +310,8 @@ function doc_examples_43-ParameterVariableTags {
   #@$1  The file we will use for <whatever>.
   #@$2  The maximum results to find before leaving.
 
-  local -r    INPUT_FILE="$1"  #@$  This will hold the contents of $1, mostly for readability later.
-  local -r -i MAX_RESULTS=$2   #@$  This will hold the value of $2, mostly for readability later.
+  local -r    _INPUT_FILE="$1"  #@$  This will hold the contents of $1, mostly for readability later.
+  local -r -i _MAX_RESULTS=$2   #@$  This will hold the value of $2, mostly for readability later.
 
   return 0
 }
@@ -309,15 +324,15 @@ function doc_examples_50-GetOptsTags {
   #@Description  This function will show a few ways to provide comments for the getopts loop.
   #@Usage        doc_examples_50-GetOptsTags <-b 'Book Name'> [-a]
 
-  local my_opt
-  local awesome_mode=false
-  local book_name='Plumbing Guide to Angling'
-  while getopts 'ab:' my_opt ; do
-    case "${my_opt}" in
+  local _my_opt
+  local _awesome_mode=false
+  local _book_name='Plumbing Guide to Angling'
+  while getopts 'ab:' _my_opt ; do
+    case "${_my_opt}" in
       'a' ) #@opt_ When specified, turns on AWESOME mode... yea.
-            awesome_mode=true     ;;
+            _awesome_mode=true     ;;
       'b' ) #@opt_ Override the default book name to use.
-            book_name="${OPTARG}" ;;
+            _book_name="${OPTARG}" ;;
       *   ) echo "Invalid option -${OPTARG}" >&2
             return 1
             ;;
@@ -332,13 +347,13 @@ function doc_examples_51-LineEndGetOptsTags {
   #@Description  This function will show a few ways to provide comments for the getopts loop.
   #@Usage        doc_examples_51-LineEndGetOptsTags <-b 'Book Name'> [-a]
 
-  local my_opt
-  local awesome_mode=false
-  local book_name='Plumbing Guide to Angling'
-  while getopts 'ab:' my_opt ; do
-    case "${my_opt}" in
-      'a' ) awesome_mode=true     ;;  #@opt_ When specified, turns on AWESOME mode... yea.
-      'b' ) book_name="${OPTARG}" ;;  #@opt_ Override the default book name to use.
+  local _my_opt
+  local _awesome_mode=false
+  local _book_name='Plumbing Guide to Angling'
+  while getopts 'ab:' _my_opt ; do
+    case "${_my_opt}" in
+      'a' ) _awesome_mode=true     ;;  #@opt_ When specified, turns on AWESOME mode... yea.
+      'b' ) _book_name="${OPTARG}" ;;  #@opt_ Override the default book name to use.
       *   ) echo "Invalid option -${OPTARG}" >&2
             return 1
             ;;
@@ -353,15 +368,15 @@ function doc_examples_52-LongOptsWithLineEndComments {
   #@Description  Long options and some line-end comments.
   #@Usage        doc_examples_52-LongOptsWithLineEndComments <-b --book 'Book Name'> [-a --awesome]
 
-  local my_opt
-  local awesome_mode=false
-  local book_name='Plumbing Guide to Angling'
+  local _my_opt
+  local _awesome_mode=false
+  local _book_name='Plumbing Guide to Angling'
   while getopts 'ab:' my_opt 'awesome,book:' ; do
-    case "${my_opt}" in
-      'a'       ) awesome_mode=true     ;;  #@opt_ When specified, turns on AWESOME mode... yea.
-      'b'       ) book_name="${OPTARG}" ;;  #@opt_ Override the default book name to use.
-      'awesome' ) awesome_mode=true     ;;  #@opt_ When specified, turns on AWESOME mode... yea.
-      'book'    ) book_name="${OPTARG}" ;;  #@opt_ Override the default book name to use.
+    case "${_my_opt}" in
+      'a'       ) _awesome_mode=true     ;;  #@opt_ When specified, turns on AWESOME mode... yea.
+      'b'       ) _book_name="${OPTARG}" ;;  #@opt_ Override the default book name to use.
+      'awesome' ) _awesome_mode=true     ;;  #@opt_ When specified, turns on AWESOME mode... yea.
+      'book'    ) _book_name="${OPTARG}" ;;  #@opt_ Override the default book name to use.
       *         ) echo "Invalid option -${OPTARG}" >&2
                   return 1
                   ;;
@@ -378,13 +393,13 @@ function doc_examples_53-FederatedGetOptsTags {
   #@opt_a When specified, turns on AWESOME mode... yea.
   #@opt_b Override the default book name to use.
 
-  local my_opt
-  local awesome_mode=false
-  local book_name='Plumbing Guide to Angling'
-  while getopts 'ab:' my_opt ; do
-    case "${my_opt}" in
-      'a' ) awesome_mode=true     ;;
-      'b' ) book_name="${OPTARG}" ;;
+  local _my_opt
+  local _awesome_mode=false
+  local _book_name='Plumbing Guide to Angling'
+  while getopts 'ab:' _my_opt ; do
+    case "${_my_opt}" in
+      'a' ) _awesome_mode=true     ;;
+      'b' ) _book_name="${OPTARG}" ;;
       *   ) echo "Invalid option -${OPTARG}" >&2
             return 1
             ;;
@@ -410,51 +425,53 @@ function doc_examples_98-ComplexZelda {
 
   # Variables
   #@$1 The first option (after shifting from getopts) will be a file name to operate on.
-  local       E_GENERIC=1            #@$E_GENERIC If we need to exit and don't have a better ERROR choice, use this.
-  local       E_BAD_INPUT=10         #@$ Send when file specified in $1 is invalid or when -D is blank.
-  local       verbose=false          #@$verbose Flag to decide if we should be chatty with our output.
-  local       temp='something'       #@$ A temp variable for our operations below.  (Note: Docker will record defaults.)
-  local    -r wife_is_hot=true       #@$ Pointless boolean flag, and it is now read only (and accurate).
-  local -a    index_array=( Zelda )  #@$ Index array with 1 element (element 0, value of Zelda)
-  local -A    assoc_array            #@$ Associative array (hash) to hold misc things as we read file.
-  local -i    i                      #@$ A counter variable, forced to be integer only.
-  final_value=''                     #@$ The final value to expose to the caller after we exit. (Note: Docker will flag as by-ref.)
+  local       E_GENERIC=1             #@$E_GENERIC If we need to exit and don't have a better ERROR choice, use this.
+  local       E_BAD_INPUT=10          #@$ Send when file specified in $1 is invalid or when -D is blank.
+  local       _verbose=false          #@$_verbose Flag to decide if we should be chatty with our output.
+  local       _temp='something'       #@$ A temp variable for our operations below.  (Note: Docker will record defaults.)
+  local    -r _WIFE_IS_HOT=true       #@$ Pointless boolean flag, and it is now read only (and accurate).
+  local -a    _index_array=( Zelda )  #@$ Index array with 1 element (element 0, value of Zelda)
+  local -A    _assoc_array            #@$ Associative array (hash) to hold misc things as we read file.
+  local -i    _i                      #@$ A counter variable, forced to be integer only.
+  local       _opt                    #@$ Localize opt for getopts processing.
+  local       _line                   #@$ Local temp variable for read loop.
+  final_value=''                      #@$ The final value to expose to the caller after we exit. (Note: Docker will flag as by-ref.)
 
   # Process options
-  while getopts ":D:hv" opt; do
-    case $opt in
+  while getopts ":D:hv" _opt; do
+    case "${_opt}" in
       D  ) #@opt_ Add bonus items to the index_array variable.
            #@opt_ Note, this option can be specified multiple times, so always concatenate the array.
-           index_array+=("${OPTARG}")
+           _index_array+=("${OPTARG}")
            ;;
       h  ) #@opt_ Display an error and return non-zero if the user tries to use -h for this function.
            echo 'No help exists for this function yet.' >&2
            return ${E_GENERIC}
            ;;
-      v  ) verbose=true ;; #@opt_ Change the verbose flag to true so we can send more output to the caller.
-      \? ) echo "Invalid option: -$OPTARG" >&2 ; return ${E_GENERIC} ;;
+      v  ) _verbose=true ;; #@opt_ Change the verbose flag to true so we can send more output to the caller.
+      *  ) echo "Invalid option: -${OPTARG}" >&2 ; return ${E_GENERIC} ;;
     esac
   done
 
   # Pre-flight Checks
-  if ! core_ToolExists 'grep'     ; then echo 'The required tools to run this function were not found.' >&2 ; return ${E_GENERIC}   ; fi
-  if [ ${#index_array[@]} -lt 2 ] ; then echo "You must provide at least 1 Hyrule item (via -D option)" >&2 ; return ${E_BAD_INPUT} ; fi
-  if [ ! -f ${1} ]                ; then echo "Cannot find specified file to read: ${1}"                >&2 ; return ${E_BAD_INPUT} ; fi
-  ${verbose} && echo "Verbosity enabled.  Done processing variables and cleared pre-flight checks."
+  if ! core__tool_exists 'grep'    ; then echo 'The required tools to run this function were not found.' >&2 ; return ${E_GENERIC}   ; fi
+  if [ ${#_index_array[@]} -lt 2 ] ; then echo "You must provide at least 1 Hyrule item (via -D option)" >&2 ; return ${E_BAD_INPUT} ; fi
+  if [ ! -f "${1}" ]               ; then echo "Cannot find specified file to read: ${1}"                >&2 ; return ${E_BAD_INPUT} ; fi
+  ${_verbose} && echo "Verbosity enabled.  Done processing variables and cleared pre-flight checks."
 
   # Main function logic
-  i=1
-  while read line ; do
-    # If the line matches a Hyrule keyword, store it in associative array.  Use grep, simply so we can add it to core_ToolExists check above.
-    for temp in ${index_array[@]} ; do
-      if echo "${line}" | grep -q -s ${temp} ; then assoc_array["${i}"]="${temp}" ; break ; fi
+  _i=1
+  while read _line ; do
+    # If the line matches a Hyrule keyword, store it in associative array.  Use grep, simply so we can add it to core__tool_exists check above.
+    for _temp in ${_index_array[@]} ; do
+      if echo "${_line}" | grep -q -s "${_temp}" ; then _assoc_array["${_i}"]="${_temp}" ; break ; fi
     done
     let i++
-  done <$1
+  done <"${1}"
 
   # Print results & leave
-  if [ ${#assoc_array[@]} -eq 0 ] ; then echo "No matches found." ; return 0 ; fi
-  for temp in ${!assoc_array[@]} ; do echo "Found match for keyword ${assoc_array[${temp}]} on line number ${temp}." ; done
+  if [ ${#_assoc_array[@]} -eq 0 ] ; then echo "No matches found." ; return 0 ; fi
+  for _temp in ${!_assoc_array[@]} ; do echo "Found match for keyword ${_assoc_array[${_temp}]} on line number ${_temp}." ; done
   return 0
 }
 
@@ -471,49 +488,51 @@ function doc_examples_99-ComplexZeldaLongOpts {
 
   # Variables
   #@$1 The first option (after shifting from getopts) will be a file name to operate on.
-  local    -r E_GENERIC=1            #@$E_GENERIC If we need to exit and don't have a better ERROR choice, use this.
-  local    -r E_BAD_INPUT=10         #@$ Send when file specified in $1 is invalid or when -D is blank.
-  local       verbose=false          #@$verbose Flag to decide if we should be chatty with our output.
-  local       temp='something'       #@$ A temp variable for our operations below.  (Note: Docker will record defaults.)
-  local    -r wife_is_hot=true       #@$ Pointless boolean flag, and it is now read only (and accurate).
-  local -a    index_array=( Zelda )  #@$ Index array with 1 element (element 0, value of Zelda)
-  local -A    assoc_array            #@$ Associative array (hash) to hold misc things as we read file.
-  local -i    i                      #@$ A counter variable, forced to be integer only.
-  final_value=''                     #@$ The final value to expose to the caller after we exit. (Note: Docker will flag as by-ref.)
+  local    -r E_GENERIC=1             #@$E_GENERIC If we need to exit and don't have a better ERROR choice, use this.
+  local    -r E_BAD_INPUT=10          #@$ Send when file specified in $1 is invalid or when -D is blank.
+  local       _verbose=false          #@$_verbose Flag to decide if we should be chatty with our output.
+  local       _temp='something'       #@$ A temp variable for our operations below.  (Note: Docker will record defaults.)
+  local    -r _WIFE_IS_HOT=true       #@$ Pointless boolean flag, and it is now read only (and accurate).
+  local -a    _index_array=( Zelda )  #@$ Index array with 1 element (element 0, value of Zelda)
+  local -A    _assoc_array            #@$ Associative array (hash) to hold misc things as we read file.
+  local -i    _i                      #@$ A counter variable, forced to be integer only.
+  local       _opt                    #@$ Localize opt for getopts processing.
+  local       _line                   #@$ Local temp variable for read loop.
+  final_value=''                      #@$ The final value to expose to the caller after we exit. (Note: Docker will flag as by-ref.)
 
   # Process options
-  while core_getopts ":D:hv" opt 'help,verbose'; do
-    case $opt in
+  while core__getopts ":D:hv" _opt 'help,verbose'; do
+    case "${_opt}" in
       D           ) #@opt_  Add bonus items to the index_array variable.
-                    index_array+=("${OPTARG}")
+                    _index_array+=("${OPTARG}")
                     ;;
       h|help      ) #@opt_  Display an error and return non-zero if the user tries to use -h for this function.
                     echo 'No help exists for this function yet.' >&2
                     return ${E_GENERIC}
                     ;;
-      v | verbose ) verbose=true ;; #@opt_  Change the verbose flag to true so we can send more output to the caller.
-      \?          ) echo "Invalid option: -$OPTARG" >&2 ; return ${E_GENERIC} ;;
+      v | verbose ) _verbose=true ;; #@opt_  Change the verbose flag to true so we can send more output to the caller.
+      *           ) echo "Invalid option: -${OPTARG}" >&2 ; return ${E_GENERIC} ;;
     esac
   done
 
   # Pre-flight Checks
-  if ! core_ToolExists 'grep'     ; then echo 'The required tools to run this function were not found.' >&2 ; return ${E_GENERIC}   ; fi
-  if [ ${#index_array[@]} -lt 2 ] ; then echo "You must provide at least 1 Hyrule item (via -D option)" >&2 ; return ${E_BAD_INPUT} ; fi
-  if [ ! -f ${1} ]                ; then echo "Cannot find specified file to read: ${1}"                >&2 ; return ${E_BAD_INPUT} ; fi
-  ${VERBOSE} && echo "Verbosity enabled.  Done processing variables and cleared pre-flight checks."
+  if ! core__tool_exists 'grep'    ; then echo 'The required tools to run this function were not found.' >&2 ; return ${E_GENERIC}   ; fi
+  if [ ${#_index_array[@]} -lt 2 ] ; then echo "You must provide at least 1 Hyrule item (via -D option)" >&2 ; return ${E_BAD_INPUT} ; fi
+  if [ ! -f "${1}" ]               ; then echo "Cannot find specified file to read: ${1}"                >&2 ; return ${E_BAD_INPUT} ; fi
+  ${_verbose} && echo "Verbosity enabled.  Done processing variables and cleared pre-flight checks."
 
   # Main function logic
-  i=1
-  while read line ; do
-    # If the line matches a Hyrule keyword, store it in associative array.  Use grep, simply so we can add it to core_ToolExists check above.
-    for temp in ${index_array[@]} ; do
-      if echo "${line}" | grep -q -s ${temp} ; then assoc_array["${i}"]="${temp}" ; break ; fi
+  _i=1
+  while read _line ; do
+    # If the line matches a Hyrule keyword, store it in associative array.  Use grep, simply so we can add it to core__tool_exists check above.
+    for _temp in ${_index_array[@]} ; do
+      if echo "${_line}" | grep -q -s "${_temp}" ; then _assoc_array["${_i}"]="${_temp}" ; break ; fi
     done
-    let i++
-  done <$1
+    let _i++
+  done <"${1}"
 
   # Print results & leave
-  if [ ${#assoc_array[@]} -eq 0 ] ; then echo "No matches found." ; return 0 ; fi
-  for temp in ${!assoc_array[@]} ; do echo "Found match for keyword ${assoc_array[${temp}]} on line number ${temp}." ; done
+  if [ ${#_assoc_array[@]} -eq 0 ] ; then echo "No matches found." ; return 0 ; fi
+  for _temp in ${!_assoc_array[@]} ; do echo "Found match for keyword ${_assoc_array[${_temp}]} on line number ${_temp}." ; done
   return 0
 }

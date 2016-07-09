@@ -15,16 +15,16 @@ if [ "${1}" == 'performance' ] ; then iteration=1 ; START="$(date '+%s%N')" ; el
 
 # Testing loop
 while [ ${iteration} -le ${MAX_ITERATIONS} ] ; do
-  # -- 1 -- Support case toggling items
-  new_test "Sending multiple items for toggling case (e.g.: I am FUn == i AM fuN): "
-  [ "$( string_ToggleCase $'Hello\nthere ' $'Joe\tSchmoe '  'RAWR'  )" == $'hELLO\nTHERE jOE\tsCHMOE rawr' ]   || fail 1
+  # -- 1 -- Simple invocation with 1 argument
+  new_test "Sending a single argument for upper casing: "
+  [ "$( string__to_upper 'rawr' )" == 'RAWR' ]   || fail 1
   pass
 
-  # -- 2 -- Options sent to this should go to string_FormatCase
-  new_test "Sending options supported by the back-end function string_FormatCase (like -R): "
+  # -- 2 -- Options sent to this should go to string__format_case
+  new_test "Sending options supported by the back-end function string__format_case (like -R): "
   rv=''
-  string_ToggleCase -R rv 'RAwr' || fail 1
-  [ "${rv}" == "raWR" ]          || fail 2
+  string__to_upper -R rv 'rawr' || fail 1
+  [ "${rv}" == "RAWR" ]         || fail 2
   pass
 
   let iteration++

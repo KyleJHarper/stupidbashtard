@@ -17,31 +17,26 @@ if [ "${1}" == 'performance' ] ; then iteration=1 ; START="$(date '+%s%N')" ; el
 while [ ${iteration} -le ${MAX_ITERATIONS} ] ; do
   # -- 1 -- Simple invocation with expected parameters
   new_test "Sending expected arguments for a normal usage: "
-  [ "$(string_Insert -s 'am a ' -i '2' 'I hero')" == 'I am a hero' ]  || fail 1
+  [ "$(string__trim_left -c '_' '_______some string')" == 'some string' ]  || fail 1
   pass
 
-  # -- 2 -- Negative index should work as expected
-  new_test "Sending expected arguments for a normal usage: "
-  [ "$(string_Insert -s 'am a ' -i '-2' 'I hero')" == 'I heam a ro' ]  || fail 1
-  pass
-
-  # -- 3 -- Saving results in reference variable
+  # -- 2 -- Saving results in reference variable
   new_test "Storing results in reference variable: "
   rv=''
-  string_Insert -s 'am a ' -i '2' 'I hero' -R 'rv'
-  [ "${rv}" == 'I am a hero' ] || fail 1
+  string__trim_left -c '+' '++++some_string+++' -R 'rv'
+  [ "${rv}" == 'some_string+++' ] || fail 1
   pass
 
-  # -- 4 -- Reading from a file for kicks.
+  # -- 3 -- Reading from a file for kicks.
   new_test "Reading data from a file just because: "
-  echo 'I hero' >/tmp/string_Insert.tmp
-  [ "$(string_Insert -s 'am a ' -i '2' 'I hero' -f '/tmp/string_Insert.tmp')" == 'I am a hero' ]  || fail 1
+  echo '++++some_string++++' >/tmp/string__trim_left.tmp
+  [ "$(string__trim_left -c '+' -f '/tmp/string__trim_left.tmp')" == 'some_string++++' ]  || fail 1
   pass
-  rm /tmp/string_Insert.tmp
+  rm /tmp/string__trim_left.tmp
 
-  # -- 5 -- Defaults shouldn't change
+  # -- 4 -- Defaults shouldn't change
   new_test "Trim's character and direction have defaults, ensuring they persist: "
-  [ "$(string_Insert -s 'am a ' 'I hero')" == 'am a I hero' ]  || fail 1
+  [ "$(string__trim_left '   some_string   ')" == 'some_string   ' ]  || fail 1
   pass
 
   let iteration++
@@ -52,5 +47,6 @@ done
 if [ "${1}" == 'performance' ] ; then
   END="$(date '+%s%N')"
   let "TOTAL = (${END} - ${START}) / 1000000"
+  let "TPS   = ${test_number} / (${TOTAL} / 1000)"
   printf "  %'.0f tests in %'.0f ms (%s tests/sec)\n" "${test_number}" "${TOTAL}" "$(bc <<< "scale = 3; ${test_number} / (${TOTAL} / 1000)")" >&2
 fi

@@ -18,40 +18,40 @@ while [ ${iteration} -le ${MAX_ITERATIONS} ] ; do
   # -- 1 -- Simple test for the length calculation
   new_test "Sending the basics to get a length: "
   temp=('one' 'two' 'three' 'four elements' $'fifth\nelement')
-  [ $( array_Length -a 'temp' ) -eq 5 ]   || fail 1
+  [ $( array__length -a 'temp' ) -eq 5 ]   || fail 1
   pass
 
   # -- 2 -- Sending value back by reference instead
   new_test "Sending value back by reference: "
   temp=('one' 'two' 'three' 'four elements' $'fifth\nelement')
   count=0
-  array_Length -a 'temp' -R 'count'       || fail 1
+  array__length -a 'temp' -R 'count'       || fail 1
   [ ${count} -eq 5 ]                      || fail 2
   pass
 
   # -- 3 -- Purposely trying to fail
   new_test "Failing to send array name on purpose: "
   temp=('one' 'two' 'three' 'four elements' $'fifth\nelement')
-  array_Length 2>/dev/null                && fail 1
+  array__length 2>/dev/null                && fail 1
   pass
 
   # -- 4 -- Specifying -R without a name
   new_test "Sending -R but leaving arguement blank, should fail: "
   temp=('one' 'two' 'three' 'four elements' $'fifth\nelement')
-  array_Length -a 'temp' -R 2>/dev/null   && fail 1
+  array__length -a 'temp' -R 2>/dev/null   && fail 1
   pass
 
   # -- 5 -- Long opts should work
   new_test "Using long option (--array) instead of -a: "
   temp=('one' 'two' 'three' 'four elements' $'fifth\nelement')
-  [ $( array_Length --array 'temp' ) -eq 5 ]  || fail 1
+  [ $( array__length --array 'temp' ) -eq 5 ]  || fail 1
   pass
 
   # -- 6 -- Associative arrays should work
   new_test "Using an associative array should be fine: "
   declare -A tempA
   tempA=([key1]='one' [key2]='two' [key3]='three' [key4]='four elements' [key5]=$'fifth\nelement')
-  [ $( array_Length --array 'tempA' ) -eq 5 ]  || fail 1
+  [ $( array__length --array 'tempA' ) -eq 5 ]  || fail 1
   pass
 
 

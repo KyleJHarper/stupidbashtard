@@ -3,10 +3,9 @@
 # Copyright 2013 Kyle Harper
 # Licensed per the details in the LICENSE file in this package.
 
-# Source shared, core, and namespace.
+# Source shared
 . "$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )/../__shared.inc.sh"
 . "$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )/../../sbt/core.sh"
-. "$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )/../../sbt/string.sh"
 
 
 # Performance check
@@ -15,16 +14,25 @@ if [ "${1}" == 'performance' ] ; then iteration=1 ; START="$(date '+%s%N')" ; el
 
 # Testing loop
 while [ ${iteration} -le ${MAX_ITERATIONS} ] ; do
-  # -- 1 -- Simple invocation with 1 argument
-  new_test "Sending a single argument for lower casing: "
-  [ "$( string_ToLower 'RAWR' )" == 'rawr' ]   || fail 1
+  # -- 1 -- Try a normal byref assignment
+  new_test "Storing the value 'whee' to the variable 'temp': "
+  REF='temp'
+  temp='nope'
+  core__store_by_ref "${REF}" "whee" || fail 1
+  [[ "${temp}" == "whee" ]] || fail 2
   pass
 
-  # -- 2 -- Options sent to this should go to string_FormatCase
-  new_test "Sending options supported by the back-end function string_FormatCase (like -R): "
-  rv=''
-  string_ToLower -R rv 'RaWR' || fail 1
-  [ "${rv}" == "rawr" ]       || fail 2
+  # -- 2 -- Send something to byref, but we aren't doing byref so it should go to stdout
+  new_test "Calling again, but not intending to store by-ref.  Should go to stdout: "
+  REF=''
+  temp='nope'
+  [[ $(core__store_by_ref "${REF}" "whee" || echo "whee") == "whee" ]] || fail 1
+  pass
+
+  # -- 3 -- Calling it without any parameters should fail
+  new_test "Calling without any parameters.  This should fail:  "
+  core__store_by_ref 2>/dev/null && fail 1
+  [ $(core__store_by_ref 2>&1 | wc -l) -gt 0 ] || fail 2
   pass
 
   let iteration++
@@ -37,3 +45,4 @@ if [ "${1}" == 'performance' ] ; then
   let "TOTAL = (${END} - ${START}) / 1000000"
   printf "  %'.0f tests in %'.0f ms (%s tests/sec)\n" "${test_number}" "${TOTAL}" "$(bc <<< "scale = 3; ${test_number} / (${TOTAL} / 1000)")" >&2
 fi
+

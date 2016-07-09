@@ -1,3 +1,7 @@
+
+
+#!!!!!!!!!!!!!!!!!!!!!WORK IN PROGRESS
+
 # Copyright 2013 Kyle Harper
 # Licensed per the details in the LICENSE file in this package.
 
@@ -33,42 +37,44 @@ function mt_InitializePool {
   #@Usage  mt_InitializePool [-n --name 'pool_name'] [-s --size '#']
   #@Date   2013.11.07
 
-  core_LogVerbose "Entering function."
-  local    _pool="default"                          #@$ The pool name to use when creating directories.
-  local -i _size="4"                                #@$ The size of the pool (number of workers)
-  local -r _my_dir="${__SBT_MT_BASE_DIR}/${_pool}"  #@$ This instances directory to work with.  For convenience mostly.
-  local -i OPTIND=1                                 #@$ Localizing OPTIND to avoid scoping issues.
-  local    _opt                                     #@$ For getopts loop
+  core__log_verbose "Entering function."
+  local       _pool="default"                          #@$ The pool name to use when creating directories.
+  local -i    _size="4"                                #@$ The size of the pool (number of workers)
+  local    -r _my_dir="${__SBT_MT_BASE_DIR}/${_pool}"  #@$ This instances directory to work with.  For convenience mostly.
+  local -i    OPTIND=1                                 #@$ Localizing OPTIND to avoid scoping issues.
+  local       _opt                                     #@$ For getopts loop
 
-  core_LogVerbose "Getting options, if any, and overriding defaults."
-  while core_getopts ':n:s:' _opt ':name:,size:' "$@" ; do
+  core__log_verbose "Getting options, if any, and overriding defaults."
+  while true ; do
+    core__getopts ':n:s:' _opt ':name:,size:' "$@"
+    case $? in  2 ) core__log_error "Getopts failed.  Aborting function." ; return 1 ;;  1 ) break ;; esac
     case "${_opt}" in
       'n' | 'name' ) _pool="${OPTARG}"   ;;  #@opt_  The name to store in _pool for referencing this pool.
       's' | 'size' ) _size="${OPTARG}"   ;;  #@opt_  The size of the pool, representing the number of workers to execute simultaneously.
-      *            ) core_LogError "Invalid option sent to me: ${_opt}  (aborting)" ; return 1 ;;
+      *            ) core__log_error "Invalid option sent to me: ${_opt}  (aborting)" ; return 1 ;;
     esac
   done
-  local -r _my_dir="${__SBT_MT_BASE_DIR}/${_pool}"  #@$ This instances directory to work with.  For convenience mostly.
+  #??????????local -r _my_dir="${__SBT_MT_BASE_DIR}/${_pool}"  #@$ This instances directory to work with.  For convenience mostly.
 
-  core_LogVerbose "Doing preflight checks."
-  if [ ! -w "${__SBT_MT_BASE_DIR}" ] ; then core_LogError "Cannot write to MT Base directory '${__SBT_MT_BASE_DIR}'  (aborting)" ; return 1 ; fi
-  if [[ ! "${_size}" =~ ^[0-9]+$ ]]  ; then core_LogError "Size (${_size}) must be a number.  (aborting)"                        ; return 1 ; fi
-  if [ -z "${_pool}" ]               ; then core_LogError "Pool name (-n) cannot be blank."                                      ; return 1 ; fi
-  if [ "${_pool}" == '__ALL' ]       ; then core_LogError "Pool cannot be named '__ALL', that name is reserved.  (aborting)"     ; return 1 ; fi
-  if [ -d "${_my_dir}" ]             ; then core_LogVerbose "Pool directory already exists: '${_my_dir}."                        ; return 0 ; fi
-  core_ToolExists 'mkdir' || return 1
+  core__log_verbose "Doing preflight checks."
+  if [ ! -w "${__SBT_MT_BASE_DIR}" ] ; then core__log_error "Cannot write to MT Base directory '${__SBT_MT_BASE_DIR}'  (aborting)" ; return 1 ; fi
+  if [[ ! "${_size}" =~ ^[0-9]+$ ]]  ; then core__log_error "Size (${_size}) must be a number.  (aborting)"                        ; return 1 ; fi
+  if [ -z "${_pool}" ]               ; then core__log_error "Pool name (-n) cannot be blank."                                      ; return 1 ; fi
+  if [ "${_pool}" == '__ALL' ]       ; then core__log_error "Pool cannot be named '__ALL', that name is reserved.  (aborting)"     ; return 1 ; fi
+  if [ -d "${_my_dir}" ]             ; then core__log_verbose "Pool directory already exists: '${_my_dir}."                        ; return 0 ; fi
+  core__tool_exists 'mkdir' || return 1
 
-  core_LogVerbose "Creating directories."
+  core__log_verbose "Creating directories."
   if ! mkdir -p "${_my_dir}/{workers,tasks,flags}" ; then
-    core_LogError "Failed to create one or more of the directories with: mkdir -p \"${_my_dir}/{workers,tasks,flags}\".  (aborting)"
+    core__log_error "Failed to create one or more of the directories with: mkdir -p \"${_my_dir}/{workers,tasks,flags}\".  (aborting)"
     return 1
   fi
 
-  core_LogVerbose "Automatically assigning a dispatcher to the new pool."
-  if ! mt_Dispatcher -a 'start' -p "${_pool}" -s "${size}" ; then core_LogError "Failed to start the dispatcher.  (aborting)" ; return 1 ; fi
+  core__log_verbose "Automatically assigning a dispatcher to the new pool."
+  if ! mt_Dispatcher -a 'start' -p "${_pool}" -s "${_size}" ; then core__log_error "Failed to start the dispatcher.  (aborting)" ; return 1 ; fi
 
-  core_LogVerbose "Pool successfully created, registering pool shutdown function with trap, if not already there."
-#TODO  core_RegisterForShutdown "mt_DestroyPool __ALL"
+  core__log_verbose "Pool successfully created, registering pool shutdown function with trap, if not already there."
+#TODO  core__register_for_shutdown "mt_DestroyPool __ALL"
   return 0
 }
 
@@ -93,68 +99,68 @@ function mt_Dispatcher {
   #@Usage  mt_Dispatcher <-a --action 'start or stop'> <-n --name 'pool_name'>
   #@Date   2013.11.29
 
-  core_LogVerbose "Entering function."
+  core__log_verbose "Entering function."
   local _action      #@$ The action we want to take.
   local _pool        #@$ The pool we want to perform an action against
   local -i OPTIND=1  #@$ Localizing OPTIND to avoid scoping issues.
   local _opt         #@$ For getopts loop
 
-  core_LogVerbose "Getting options, if any."
-  while core_getopts ':a:n:' _opt ':action:,name:' "$@" ; do
+  core__log_verbose "Getting options, if any."
+  while core__getopts ':a:n:' _opt ':action:,name:' "$@" ; do
     case "${_opt}" in
       'a' | 'action' ) _action="${OPTARG}"   ;;  #@opt_  Action to take.
       'n' | 'name'   ) _pool="${OPTARG}"     ;;  #@opt_  The name to store in _pool for referencing this pool.
-      *              ) core_LogError "Invalid option sent to me: ${_opt}  (aborting)" ; return 1 ;;
+      *              ) core__log_error "Invalid option sent to me: ${_opt}  (aborting)" ; return 1 ;;
     esac
   done
   local -r _my_dir="${__SBT_MT_BASE_DIR}/${_pool}"  #@$ This instances directory to work with.  For convenience mostly.
   local -r _my_dispatcher="${_my_dir}/dispatcher/pid"
 
-  core_LogVerbose "Doing preflight checks."
-  if [ -z "${_pool}" ]     ; then core_LogError "Pool name (-n) cannot be blank."            ; return 1 ; fi
-  if [ ! -d "${_my_dir}" ] ; then core_LogVerbose "Pool directory not found: '${_my_dir}."   ; return 1 ; fi
-  core_ToolExists 'sleep' 'ps' 'cat' 'rm' || return 1
+  core__log_verbose "Doing preflight checks."
+  if [ -z "${_pool}" ]     ; then core__log_error "Pool name (-n) cannot be blank."            ; return 1 ; fi
+  if [ ! -d "${_my_dir}" ] ; then core__log_verbose "Pool directory not found: '${_my_dir}."   ; return 1 ; fi
+  core__tool_exists 'sleep' 'ps' 'cat' 'rm' || return 1
 
-  core_LogVerbose "Attempting to to execute the action '${_action}' on the dispatcher for pool '${_pool}'."
+  core__log_verbose "Attempting to to execute the action '${_action}' on the dispatcher for pool '${_pool}'."
   case "${_action}" in
     'start' )
               if [ -f "${_my_dispatcher}" ] ; then
-                core_LogVerbose "This pool (${_pool}) already has a dispatcher running.  Leaving with code 0 (ok)."
+                core__log_verbose "This pool (${_pool}) already has a dispatcher running.  Leaving with code 0 (ok)."
                 return 0
               fi
               if ! (set -o noclobber ; exec 2&>/dev/null ; > "${_my_dispatcher}") ; then
-                core_LogError "Unable to create the dispatcher pid file for this pool.  Aborting."
+                core__log_error "Unable to create the dispatcher pid file for this pool.  Aborting."
                 return 1
               fi
-              core_LogVerbose "Starting the dispatcher asynchronously."
+              core__log_verbose "Starting the dispatcher asynchronously."
               mt_RunDispatcher &
               ;;
     'stop'  )
               if [ ! -f "${_my_dispatcher}" ] ; then
-                core_LogError "The dispatcher pid file is missing: ${_my_dispatcher}  (aborting)"
+                core__log_error "The dispatcher pid file is missing: ${_my_dispatcher}  (aborting)"
                 return 1
               fi
               local -r -i _dispatcher_pid=$(cat "${_my_dispatcher}")  #@$ Stores the pid number of the dispatcher we're stopping.
               local    -i _i=0                                        #@$ Counter to increment while we wait for dispatcher pid to evaporate.
               if [[ ! ${_dispatcher_pid} =~ ^[0-9}+$ ]] ; then
-                core_LogError "PID for dispatcher came back blank or not-a-number: '${_dispatcher_pid}'  (aborting)"
+                core__log_error "PID for dispatcher came back blank or not-a-number: '${_dispatcher_pid}'  (aborting)"
                 return 1
               fi
               if ! rm "${_my_dispatcher}" ; then
-                core_LogError "Unable to remove the dispatcher PID file for this pool.  Returning failure."
+                core__log_error "Unable to remove the dispatcher PID file for this pool.  Returning failure."
                 return 1
               fi
               while [ ${i} -lt 5 ] && ps ${_dispatcher_pid} 1>/dev/null ; do sleep 1 ; let i++ ; done
-              [ ${i} -ge 5 ] && core_LogVerbose "Dispatcher's PID didn't die after ${i} seconds.  Could be due to long timeouts.  Continuing."
-              core_LogVerbose "'Stop' operation finished, be aware tasks started by the dispatcher are still alive if they haven't finished."
+              [ ${i} -ge 5 ] && core__log_verbose "Dispatcher's PID didn't die after ${i} seconds.  Could be due to long timeouts.  Continuing."
+              core__log_verbose "'Stop' operation finished, be aware tasks started by the dispatcher are still alive if they haven't finished."
               ;;
     *       )
-              core_LogError "Action specified must be 'start' or 'stop', not '${_action}'.  (aborting)"
+              core__log_error "Action specified must be 'start' or 'stop', not '${_action}'.  (aborting)"
               return 1
               ;;
   esac
 
-  core_LogVerbose "Finished the '${_action}' action for the pool '${_pool}'."
+  core__log_verbose "Finished the '${_action}' action for the pool '${_pool}'."
   return 0
 }
 
@@ -168,13 +174,13 @@ function mt_RunDispatcher {
   #@$_pool    The name of the pool to work with.  This must be provided by the parent (caller).
   #@$_my_dir  The root directory of the pool.  This must be provided by the parent (caller).
   if getconf INT_MAX >/dev/null 2>&1 ; then
-    core_LogVerbose "Found the 'getconf' command, using it to capture INT_MAX to override the _MAX_TASK_ID safety variable."
+    core__log_verbose "Found the 'getconf' command, using it to capture INT_MAX to override the _MAX_TASK_ID safety variable."
     _MAX_TASK_ID="$(getconf INT_MAX)"
   fi
-#OVERRIDE LOG FILE LOCATION FOR core_LogVerbose and core_LogError:  _my_log_file="${_my_dir}/dispatcher/output.log"
-  core_LogVerbose "Doing pre-flight checks."
+#OVERRIDE LOG FILE LOCATION FOR core__log_verbose and core__log_error:  _my_log_file="${_my_dir}/dispatcher/output.log"
+  core__log_verbose "Doing pre-flight checks."
   if [ ${BASHPID} -eq $$ ] ; then
-    core_LogError 'The dispatcher must run asynchronously.  Currently BASHPID matches $$.  (aborting)'
+    core__log_error 'The dispatcher must run asynchronously.  Currently BASHPID matches $$.  (aborting)'
     mt_DestroyPool -p "${_pool}"
   fi
   # MUST BE CALLED ASYNCHRONOUSLY!!!  _pool PROVIDED BY CALLER.
@@ -238,50 +244,50 @@ function mt_TODO {
   #@Description  Returns a count of the times characters/strings are found in the passed values.  Uses PCRE (perl) in pattern.
   #@Description  -
   #@Description  If count is zero, exit value will still be 0 for success.
-  #@Usage  string_CountOf [-a --all] <-p --pattern 'PCRE regex' > [-R 'ref_var_name'] <'values' or -f --file 'FILE' or STDIN>
+  #@Usage  string__count_of [-a --all] <-p --pattern 'PCRE regex' > [-R 'ref_var_name'] <'values' or -f --file 'FILE' or STDIN>
   #@Date   2013.10.21
 
-  core_LogVerbose 'Entering function.'
+  core__log_verbose 'Entering function.'
   # Variables
-  local -a __SBT_NONOPT_ARGS  #@$ Local instance for the core_getopts processing below since this will never need exposed to parents.
+  local -a __SBT_NONOPT_ARGS  #@$ Local instance for the core__getopts processing below since this will never need exposed to parents.
   local -a _files             #@$ List of files to count occurrence in.
   local    _pattern=''        #@$ Holds the pattern to search for.  PCRE (as in, real perl, not grep -P).
   local -i OPTIND=1           #@$ Localizing OPTIND to avoid scoping issues.
-  local    _opt=''            #@$ Temporary variable for core_getopts, brought to local scope.
+  local    _opt=''            #@$ Temporary variable for core__getopts, brought to local scope.
   local    _REFERENCE=''      #@$ Will hold the name of the var to use for indirect referencing later, if -R used.
   local    _DATA=''           #@$ Holds all items to search within, mostly to help with the -a/--all items.
   local    _temp=''           #@$ Garbage variable for looping.
 
-  # Use core_getopts to not only handle options elegantly, but to put nonopts in __SBT_NONOPT_ARGS
-  core_LogVerbose 'Processing options.'
-  while core_getopts ':af:p:R:' _opt ':all,file:,pattern:' "$@" ; do
+  # Use core__getopts to not only handle options elegantly, but to put nonopts in __SBT_NONOPT_ARGS
+  core__log_verbose 'Processing options.'
+  while core__getopts ':af:p:R:' _opt ':all,file:,pattern:' "$@" ; do
     case "${_opt}" in
       'a' | 'all'     ) _pattern='[\s\S]'      ;;  #@opt_  Count all characters in data.  A niceness.
       'f' | 'file'    ) _files+=("${OPTARG}")  ;;  #@opt_  File(s) to slurp for input.  The -f and --file can be specified multiple times.
       'p' | 'pattern' ) _pattern="${OPTARG}"   ;;  #@opt_  The PCRE pattern to match against for counting.
       'R'             ) _REFERENCE="${OPTARG}" ;;  #@opt_  Reference variable to assign resultant data to.
-      *               ) core_LogError "Invalid option sent to me: ${_opt}  (aborting)" ; return 1 ;;
+      *               ) core__log_error "Invalid option sent to me: ${_opt}  (aborting)" ; return 1 ;;
     esac
   done
 
   # Preflight checks
-  core_LogVerbose "Checking a few requirements before proceeding."
-  core_ToolExists 'perl' || return 1
+  core__log_verbose "Checking a few requirements before proceeding."
+  core__tool_exists 'perl' || return 1
   for _temp in "${__SBT_NONOPT_ARGS[@]}" ; do _DATA+="${_temp}" ; done
-  core_ReadDATA "${_files[@]}" || return 1
+  core__read_data "${_files[@]}" || return 1
   if [ -z "${_pattern}" ] ; then
-    core_LogError "No pattern was specified to find and we weren't told to find 'all'.  (aborting)"
+    core__log_error "No pattern was specified to find and we weren't told to find 'all'.  (aborting)"
     return 1
   fi
 
   # Time to count some things
-  core_LogVerbose "Attempting to count occurrences."
-  _temp="$(perl "${__SBT_EXT_DIR}/string_CountOf.pl" -p "${_pattern}" <<<"${_DATA}")"
+  core__log_verbose "Attempting to count occurrences."
+  _temp="$(perl "${__SBT_EXT_DIR}/string__count_of.pl" -p "${_pattern}" <<<"${_DATA}")"
   if [ $? -ne 0 ] ; then
-    core_LogError "Perl returned an error code, counting failed.  (aborting)."
+    core__log_error "Perl returned an error code, counting failed.  (aborting)."
     return 1
   fi
-  core_StoreByRef "${_REFERENCE}" "${_temp}" || echo -e "${_temp}"
+  core__store_by_ref "${_REFERENCE}" "${_temp}" || echo -e "${_temp}"
 
   return 0
 }
