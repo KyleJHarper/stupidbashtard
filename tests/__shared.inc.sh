@@ -45,4 +45,13 @@ iteration=${MAX_ITERATIONS}
 
 PATH="$(here)/../lib/tools:${PATH}"
 
+# Common data sets that multiple tests will use.
+# -- Arrays
+declare -a implied_newlines=('one' 'two\nhas\nnewlines' 'three' '\nfour' 'five\n')
+declare -a explicit_newlines=('one' $'two\nhas\nnewlines' 'three' $'\nfour' $'five\n')
+declare -a single_quotes=("I'm here" "you're not")
+declare -a double_quotes=('You "complete" me' 'Ninjas move "quickly"' '"I like quoting everything"' "I am a \"nested\" double quote")
+declare -a special_characters=('This is not working?!@#$%^&*()=+-_][}{|;:' "Neither is this!@#$%^&*()=+-_][}{|;:")
+
+
 echo -n "--> $(basename $0):"

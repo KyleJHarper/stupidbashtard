@@ -143,7 +143,7 @@ function array__keys {
   local -i OPTIND=1           #@$ Localizing OPTIND to avoid scoping issues.
   local    _opt               #@$ Localizing _opt for use in getopts below.
   local    _array=''          #@$ Name of the array we wil be working with.
-  local    _reference         #@$ Hold a list of all keys found.
+  local    _reference_        #@$ Hold a list of all keys found.
 
   # Grab options
   while true ; do
@@ -151,25 +151,25 @@ function array__keys {
     case $? in  2 ) core__log_error "Getopts failed.  Aborting function." ; return 1 ;;  1 ) break ;; esac
     case "${_opt}" in
       'a' | 'array'  ) _array="${OPTARG}"                                              ;;  #@opt_  Name of the array to work with.
-      'R'            ) _reference="${OPTARG}"                                          ;;  #@opt_  Reference variable name to put results in.  MUST be an array.
+      'R'            ) _reference_="${OPTARG}"                                         ;;  #@opt_  Reference variable name to put results in.  MUST be an array.
       *              ) core__log_error "Invalid option: ${_opt}  (failing)" ; return 1 ;;
     esac
   done
 
   # Preflight checks
-  if [ -z "${_array}" ]     ; then core__log_error "The _array variable is empty, you must send the array name with -a/--array."    ; return 1 ; fi
-  if [ -z "${_reference}" ] ; then core__log_error "The _REFERENCE variable is empty, you must specify an array name here with -R." ; return 1 ; fi
+  if [ -z "${_array}" ]      ; then core__log_error "The _array variable is empty, you must send the array name with -a/--array."     ; return 1 ; fi
+  if [ -z "${_reference_}" ] ; then core__log_error "The _reference_ variable is empty, you must specify an array name here with -R." ; return 1 ; fi
 
   # Main logic
-  core__log_verbose "Assigning keys to the variable '${_reference}' from the array named '${_array}' with a nasty eval."
-  eval ${_reference}=\(\"\${!${_array}[@]}\"\)
+  core__log_verbose "Assigning keys to the variable '${_reference_}' from the array named '${_array}' with a nasty eval."
+  eval ${_reference_}=\(\"\${!${_array}[@]}\"\)
   return 0
 }
 
 
-function array__key_exists {
+function array__keys_exist {
   #@Description  Returns true (code 0) if the key(s) specified exist in the array specified.  A switch is available to return true (code 0) if any key matches.
-  #@Usage        array__key_exists <-a --array 'name_of_array'> [--any] <'key1' ['key2'...]>
+  #@Usage        array__keys_exist <-a --array 'name_of_array'> [--any] <'key1' ['key2'...]>
 
   core__log_verbose "Entering function."
   local -a __SBT_NONOPT_ARGS  #@$ Localizing to store the keys we'll use later.
@@ -185,7 +185,7 @@ function array__key_exists {
 
   # Grab options
   while true ; do
-    core__getopts ':a:p:' _opt ':any,array:,pattern:' "$@"
+    core__getopts ':a:' _opt ':any,array:' "$@"
     case $? in  2 ) core__log_error "Getopts failed.  Aborting function." ; return ${E_GENERIC} ;;  1 ) break ;; esac
     case "${_opt}" in
             'any'   ) _any=true                                                                  ;;  #@opt_  Toggles the flag to quit early when checking multiple keys and one is found.
@@ -198,17 +198,17 @@ function array__key_exists {
   if [ -z "${_array}" ] ; then core__log_error "The _array variable is empty, you must send the array name with -a/--array." ; return ${E_GENERIC} ; fi
 
   # Main logic
-  core__log_verbose "Beginning double-loop structure to find matching keys."
+  core__log_verbose "Beginning double-loop structure to find matching keys.  Keys are: ${__SBT_NONOPT_ARGS[@]}"
   while read -r _temp ; do
     for _key in "${__SBT_NONOPT_ARGS[@]}" ; do
       if [ "${_temp}" = "${_key}" ] ; then
         core__log_verbose "Found key: ${_key}"
-        ${_any} && return 0
+        ${_any} && core__log_verbose "The any flag was set, leaving." && return 0
         let _found++
         continue 2
       fi
     done
-  done < <(eval printf \"%s\\n\" \"\${${_array}[@]}\")
+  done < <(eval printf \"%s\\n\" \"\${!${_array}[@]}\")
   if [ ${_found} -eq ${#__SBT_NONOPT_ARGS[@]} ] ; then
     core__log_verbose "Found all keys.  Returning success."
     return 0

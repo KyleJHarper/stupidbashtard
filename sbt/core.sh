@@ -280,7 +280,7 @@ function core__log_error {
   #@Usage        core__log_error [-e] [-n]  <'text to send' [...]>
 
   # Check for __SBT_WARNING first.
-  ${__SBT_WARNING} || return 1
+  ${__SBT_WARNING} || return 0
 
   # Setup variables
   local       _switches=''                             #@$ Keep track of the switches to send to echo.  This function accepts them the same as echo builtin does.  Sorry printf.
@@ -303,7 +303,7 @@ function core__log_verbose {
   #@Usage  core__log_verbose [-e] [-n] <'text to send' [...]>
 
   # Check for __SBT_VERBOSE first.  Save a lot of time if verbosity isn't enabled.
-  ${__SBT_VERBOSE} || return 1
+  ${__SBT_VERBOSE} || return 0
 
   # Setup variables
   local       _switches=''                             #@$ Keep track of the switches to send to echo.  This function accepts them the same as echo builtin does.  Sorry printf

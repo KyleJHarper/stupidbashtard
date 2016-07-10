@@ -35,15 +35,34 @@ while [ ${iteration} -le ${MAX_ITERATIONS} ] ; do
   new_test "Trying to remove keys from an associative array by specifying them manually: "
   array__remove -a 'myAssoc' 'one' 'two' 'fourth element'   || fail 1
   for token in "${!myAssoc[@]}" ; do
-    [ "${token}" = 'three' ] || [ "${token}" = 'five' ]     || fail 2
+    [ "${token}" == 'three' ] && continue
+    [ "${token}" = 'five' ] && continue
+    fail 2
   done
   [ ${#myAssoc[@]} -eq 2 ]                                  || fail 3
   for token in "${myAssoc[@]}" ; do
-    [ "${token}" = 'grapes' ] || [ "${token}" = 'hooray' ]  || fail 4
+    [ "${token}" = 'grapes' ] && continue
+    [ "${token}" = 'hooray' ] && continue
+    fail 4
   done
   pass
 
-  # -- 3 -- Not sending an array name should fail.
+  # -- 3 -- Leaving keys with spaces should still work since they're allowed by bash.
+  unset -v 'myArray'
+  unset -v 'myAssoc'
+  declare -a myArray=('zero' 'one' 'two has spaces' 'three' 'four' 'five space' 'six' 'seven')
+  declare -A myAssoc=(['one']='orange' ['two']='apple seeds' ['three']='grapes' ['fourth element']='ok now' ['five']='hooray')
+  new_test "The function should allow key names with spaces because bash allows them: "
+  array__remove -a 'myAssoc' 'one' 'two' || fail 1
+  for token in "${!myAssoc[@]}" ; do
+    [ "${token}" == 'three' ] && continue
+    [ "${token}" == 'fourth element' ] && continue
+    [ "${token}" == 'five' ] && continue
+    fail 2
+  done
+  pass
+
+  # -- 4 -- Not sending an array name should fail.
   unset -v 'myArray'
   unset -v 'myAssoc'
   declare -a myArray=('zero' 'one' 'two has spaces' 'three' 'four' 'five space' 'six' 'seven')
@@ -52,7 +71,7 @@ while [ ${iteration} -le ${MAX_ITERATIONS} ] ; do
   array__remove 'one' 'two' 2>/dev/null   && fail 1
   pass
 
-  # -- 4 -- Not sending any keys, patterns, or N-th should fail.
+  # -- 5 -- Not sending any keys, patterns, or N-th should fail.
   unset -v 'myArray'
   unset -v 'myAssoc'
   declare -a myArray=('zero' 'one' 'two has spaces' 'three' 'four' 'five space' 'six' 'seven')
@@ -61,7 +80,7 @@ while [ ${iteration} -le ${MAX_ITERATIONS} ] ; do
   array__remove -a 'myArray' 2>/dev/null   && fail 1
   pass
 
-  # -- 5 -- Pattern removals
+  # -- 6 -- Pattern removals
   unset -v 'myArray'
   unset -v 'myAssoc'
   declare -a myArray=('zero' 'one' 'two has spaces' 'three' 'four' 'five space' 'six' 'seven')
@@ -77,7 +96,7 @@ while [ ${iteration} -le ${MAX_ITERATIONS} ] ; do
   done
   pass
 
-  # -- 6 -- Pattern removal with an associative array
+  # -- 7 -- Pattern removal with an associative array
   unset -v 'myArray'
   unset -v 'myAssoc'
   declare -a myArray=('zero' 'one' 'two has spaces' 'three' 'four' 'five space' 'six' 'seven')
@@ -93,7 +112,7 @@ while [ ${iteration} -le ${MAX_ITERATIONS} ] ; do
   done
   pass
 
-  # -- 7 -- N-th Removals
+  # -- 8 -- N-th Removals
   unset -v 'myArray'
   unset -v 'myAssoc'
   declare -a myArray=('zero' 'one' 'two has spaces' 'three' 'four' 'five space' 'six' 'seven')
@@ -109,7 +128,7 @@ while [ ${iteration} -le ${MAX_ITERATIONS} ] ; do
   done
   pass
 
-  # -- 8 -- N-th Removals for an associative array
+  # -- 9 -- N-th Removals for an associative array
   unset -v 'myArray'
   unset -v 'myAssoc'
   declare -a myArray=('zero' 'one' 'two has spaces' 'three' 'four' 'five space' 'six' 'seven')
@@ -119,7 +138,7 @@ while [ ${iteration} -le ${MAX_ITERATIONS} ] ; do
   [ ${#myAssoc[@]} -eq 3 ]           || fail 2
   pass
 
-  # -- 9 -- Order of or removal should work
+  # -- 10 -- Order of or removal should work
   unset -v 'myArray'
   unset -v 'myAssoc'
   declare -a myArray=('zero' 'one' 'two has spaces' 'three' 'four' 'five space' 'six' 'seven')
@@ -131,7 +150,7 @@ while [ ${iteration} -le ${MAX_ITERATIONS} ] ; do
   [ "${!myArray[@]}" = '4' ]                        || fail 4
   pass
 
-  # -- 10 -- Long options should work
+  # -- 11 -- Long options should work
   unset -v 'myArray'
   unset -v 'myAssoc'
   declare -a myArray=('zero' 'one' 'two has spaces' 'three' 'four' 'five space' 'six' 'seven')

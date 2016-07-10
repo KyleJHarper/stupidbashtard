@@ -32,6 +32,12 @@ while [ ${iteration} -le ${MAX_ITERATIONS} ] ; do
   new_test "Trying to get keys from an associative array: "
   array__keys -a 'myAssoc' -R 'output'
   [ ${#output[@]} -eq 4 ]    || fail 1
+  for token in ${output[@]} ; do
+    for member in ${!myAssoc[@]} ; do
+      [ "${member}" = "${token}" ] && continue 2
+    done
+    fail 2
+  done
   pass
 
   # -- 3 -- Long option should work
@@ -55,6 +61,47 @@ while [ ${iteration} -le ${MAX_ITERATIONS} ] ; do
   declare -a output
   new_test "Failure to send an output array to store results in should fail: "
   array__keys -a 'myArray'   2>/dev/null   && fail 1
+  pass
+
+  # -- 6 -- Special characters and quotes.
+  unset output
+  declare -a output
+  new_test "Special characters, sequences, and single/double quotes should still work: "
+  array__keys -a 'implied_newlines' -R 'output' || fail 1
+  [ "${output[0]}" == 0 ]  || fail 2
+  [ "${output[1]}" == 1 ]  || fail 3
+  [ "${output[2]}" == 2 ]  || fail 4
+  [ "${output[3]}" == 3 ]  || fail 5
+  [ "${output[4]}" == 4 ]  || fail 6
+  [ ${#output[@]} -eq 5 ]  || fail 7
+  unset output
+  declare -a output
+  array__keys -a 'explicit_newlines' -R 'output' || fail 8
+  [ "${output[0]}" == 0 ]  || fail 9
+  [ "${output[1]}" == 1 ]  || fail 10
+  [ "${output[2]}" == 2 ]  || fail 11
+  [ "${output[3]}" == 3 ]  || fail 12
+  [ "${output[4]}" == 4 ]  || fail 13
+  [ ${#output[@]} -eq 5 ]  || fail 14
+  unset output
+  declare -a output
+  array__keys -a 'single_quotes' -R 'output' || fail 15
+  [ "${output[0]}" == 0 ]  || fail 16
+  [ "${output[1]}" == 1 ]  || fail 17
+  [ ${#output[@]} -eq 2 ]  || fail 18
+  unset output
+  declare -a output
+  array__keys -a 'double_quotes' -R 'output' || fail 19
+  [ "${output[0]}" == 0 ]  || fail 20
+  [ "${output[1]}" == 1 ]  || fail 21
+  [ "${output[2]}" == 2 ]  || fail 22
+  [ "${output[3]}" == 3 ]  || fail 23
+  [ ${#output[@]} -eq 4 ]  || fail 24
+  unset output
+  declare -a output
+  array__keys -a 'special_characters' -R 'output' || fail 25
+  [ "${output[0]}" == 0 ]  || fail 26
+  [ "${output[1]}" == 1 ]  || fail 27
   pass
 
 
