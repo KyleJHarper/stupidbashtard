@@ -69,6 +69,13 @@
 # -- Function Declarations
 # You do NOT need to use special comments and tags declare a function.  You ONLY need to write the function using valid bash syntax.  The documentation tool will read everything after it.  The braces for the function simply need to comply with bash rules.  The opening is on the same line or directly after.  The closing must be on it's own line, or preceeded by a semicolon.  Again, whatever bash allows.
 #
+# A few things to remember:
+#   1. Bash treats functions as code marcos.  A function is fully capable of affecting parent-scope variables.
+#   2. Anonymous functions (lambdas) are not supported in Bash.
+#   3. Despite being able to declare a function inside a function, there's no actual scoping or encapsulation.  Honestly, Bash should just fail; declaring a function inside a function is stupid.
+#   4. Functions have no return type besides integer (specifically, 0-255 usually).  You can't return a string, array, etc.  You shouldn't even be returning an integer via the function's return value.
+#   ...a lot more sadness :(
+#
 # Please note, Docker does not support function declarations inside other functions.  This is almost never useful and should be avoided.
 
 # -- Parameters
