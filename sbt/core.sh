@@ -23,17 +23,18 @@ fi
 #
 # -- Initialize Globals for this Namespace
 #
-
 declare -a __SBT_NONOPT_ARGS         #@$ Holds all arguments sent to getopts that are not part of the switch syntax.  Unique to SBT.  Similar to BASH_ARGV, only better.  Can store unlimited options, BASH_ARGV stores a max of 10, and in reverse order which is unintuitive when processing as-passed-in.
 declare -i __SBT_SHORT_OPTIND=1      #@$ Tracks the position of the short option if they're side by side -abcd etc.  Unique to SBT.
 declare -A __SBT_TOOL_LIST           #@$ List of all tools asked for by SBT.  Prevent expensive lookups with recurring calls.
 declare    __SBT_NO_MORE_OPTS=false  #@$ If a double hypen (--) is passed, we put all future items into __SBT_NONOPT_ARGS.
 declare    __SBT_VERBOSE=false       #@$ Enable or disable verbose messages for debugging.
 declare    __SBT_WARNING=true        #@$ Enable or disable warning messages.
-declare -r __SBT_UUID=$(uuidgen)     #@$ Unique identifier for the invocation of SBT globally.  It's relatively safe to use if you want to, but it's mostly for internal purposes.  The uuidgen program is part of util-linux, which is an SBT requirement.
+declare -r __SBT_UUID="$(uuidgen)"   #@$ Unique identifier for the invocation of SBT globally.  It's relatively safe to use if you want to, but it's mostly for internal purposes.  The uuidgen program is part of util-linux, which is an SBT requirement.
 declare -r __SBT_ROOT_DIR="$(cd "$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")/.." ; pwd)"   #@$ Root directory for the SBT system when sourced properly
 declare -r __SBT_EXT_DIR="${__SBT_ROOT_DIR}/sbt/ext"                                           #@$ Extension directory for non-bash functions
 declare -A __SBT_NAMESPACES_LOADED=([core]='loaded')                                           #@$ Tracks sources which have already been loaded.
+declare    __SBT_TMP_DIR="/tmp/sbt/${__SBT_UUID}"                                              #@$ Global temp directory for misc stuff.
+declare    __SBT_LOG_FILE=''         #@$ Location of the log file for core__log_verbose and core__log_error.  When set to an empty string, no file logging is done.  Cannot be a relative path.
            OPTIND=1                  #@$ Tracks the position of the argument we're reading.  Bash internal.
            OPTARG=''                 #@$ Holds either the switch active in getopts, or the value sent to the switch if it's compulsory.  Bash internal.
            OPTERR=1                  #@$ Flag to determine if getopts should report invalid switches itself or rely in case statement in caller.  Bash internal.
@@ -281,7 +282,30 @@ function core__easy_getopts {
 
 
 function core__initialize {
-  #@Description  Placeholder for logic required to initialize all functions in this namespace.  Globals are still external, meh.  Not sure this will ever be used.
+  #@Description  Creates a few necessary items.  For core, mostly directories for temp files that might get used by logging.
+  #@Description  -
+  #@Description  This should be called any time __SBT_TMP_DIR is changed.
+  #@Date         2016.07.09
+  #@Usage        core__initialize
+
+  # Variables
+  local -i -r E_GENERIC=1    #@$ Generic error.
+  local -i -r E_BAD_PATH=11  #@$ Exit code when a path is wrong or somehow nonsensical.
+
+  # We need to make sure the temp directory exists.
+  core__log_verbose "Attempting to set up required directories for SBT internals; mostly logging related."
+  if [ "${__SBT_TMP_DIR:0:1}" != '/' ] ; then
+    core__log_error "The __SBT_TMP_DIR is set to a relative path (i.e.: it doesn't start with a forward slash):  ${__SBT_TMP_DIR}"
+    return ${E_BAD_PATH}
+  fi
+  if [ ! -d "${__SBT_TMP_DIR}" ] ; then
+    core__log_verbose "The __SBT_TMP_DIR doesn't exist.  Creating it."
+    if ! mkdir -p "${__SBT_TMP_DIR}" ; then
+      core__log_error "Failed to create the directory (and its parents) for the tmp/uuid directories:  ${__SBT_TMP_DIR}"
+      return ${E_GENERIC}
+    fi
+  fi
+
   return 0
 }
 
@@ -289,45 +313,69 @@ function core__initialize {
 function core__log_error {
   #@Description  Mostly for internal use.  Sends info to std err if warnings are enabled.  No calls to other SBT functions allowed to prevent infinite loops.
   #@Date         2013.07.14
-  #@Usage        core__log_error [-e] [-n]  <'text to send' [...]>
+  #@Usage        core__log_error [-e] [-n] <'text to send' [...]>
 
+  #@opt_e  Passes -e to echo for interpretation.
+  #@opt_n  Passes -n to echo for interpretation.
   # Check for __SBT_WARNING first.
   ${__SBT_WARNING} || return 0
 
-  # Setup variables
-  local       _switches=''                             #@$ Keep track of the switches to send to echo.  This function accepts them the same as echo builtin does.  Sorry printf.
-  local -i -r _SPACES=$(( (${#FUNCNAME[@]} - 2) * 2))  #@$ Track the number of spaces to send.
+  # Send all the work to core__log_verbose, along with -W to indicate this is a warning/error message.
+  core__log_verbose -W "${@}"
 
-  while true ; do
-    if [ "${1:0:1}" == '-' ] ; then switches+=" ${1}" ; shift ; continue ; fi
-    break
-  done
-
-  printf "%${_SPACES}s" >&2
-  echo ${switches} "(error in ${FUNCNAME[1]}: line ${BASH_LINENO[0]})  $@" >&2
-  return 0
+  return $?
 }
 
 
 function core__log_verbose {
   #@Description  Mostly for internal use.  Sends info to std err if verbosity is enabled.  No calls to other SBT functions allowed to prevent infinite loops.
   #@Date   2013.07.14
-  #@Usage  core__log_verbose [-e] [-n] <'text to send' [...]>
+  #@Usage  core__log_verbose [-e] [-n] [-W] <'text to send' [...]>
+
+  #@opt_e  Passes -e to echo for interpretation.
+  #@opt_n  Passes -n to echo for interpretation.
+  #@opt_W  Tells us that the invocation came from core__log_error so we can log it specially.  MUST be the first positional ($1).
 
   # Check for __SBT_VERBOSE first.  Save a lot of time if verbosity isn't enabled.
-  ${__SBT_VERBOSE} || return 0
+  if ! ${__SBT_VERBOSE} ; then
+    # If $1 is -W and __SBT_WARNING is true, we need to log because we came from core__log_error.
+    [ "${1}" == '-W' ] || return 0
+    ${__SBT_WARNING}   || return 0
+  fi
 
   # Setup variables
+  local -i -r E_BAD_PATH=12                            #@$ Exit code for bad paths and permission issues.
   local       _switches=''                             #@$ Keep track of the switches to send to echo.  This function accepts them the same as echo builtin does.  Sorry printf
   local -i -r _SPACES=$(( (${#FUNCNAME[@]} - 2) * 2))  #@$ Track the number of spaces to send
+  local       _error_string=''                         #@$ The string to use if the log statement came from core__log_error.
 
+  # Process options.  Can't use core__getopts or similar because a loop would occur.
   while true ; do
-    if [ "${1:0:1}" == '-' ] ; then _switches+=" ${1}" ; shift ; continue ; fi
+    if [ "${1}" == '-W' ]    ; then _error_string='error in ' ; shift ; continue ; fi
+    if [ "${1:0:1}" == '-' ] ; then _switches+=" ${1}"        ; shift ; continue ; fi
     break
   done
 
-  printf "%${_SPACES}s" >&2
-  echo ${_switches} "(${FUNCNAME[1]}: ${BASH_LINENO[0]})  $@" >&2
+  # Print to stderr and file, if desired.
+  printf "%${_SPACES}s" '' >&2
+  echo ${_switches} "(${_error_string}${FUNCNAME[1]}: ${BASH_LINENO[0]})  $@" >&2
+  # If file logging is enabled, log.
+  if [ ! -z "${__SBT_LOG_FILE}" ] ; then
+    # If the __SBT_LOG_FILE isn't fully qualified, we have a problem.
+    if [ "${__SBT_LOG_FILE:0:1}" != '/' ] ; then
+      echo "The __SBT_LOG_FILE variable isn't set to a fully qualified path, this is a no-no:  ${__SBT_LOG_FILE}" >&2
+      return ${E_BAD_PATH}
+    fi
+    # Try to touch the file to ensure we can write to it.
+    if ! touch "${__SBT_LOG_FILE}" 2>/dev/null ; then
+      echo "Cannot touch the __SBT_LOG_FILE.  Directory missing or permissions wrong:  ${__SBT_LOG_FILE}" >&2
+      return ${E_BAD_PATH}
+    fi
+    # For now we will log directly to the file.  Future synchronization mechnisms might be necessary.
+    printf "%${_SPACES}s" '' >>"${__SBT_LOG_FILE}"
+    echo ${_switches} "(${_error_string}${FUNCNAME[1]}: ${BASH_LINENO[0]})  $@" >>"${__SBT_LOG_FILE}"
+  fi
+
   return 0
 }
 
@@ -530,3 +578,10 @@ function core__read_data {
   [ -z "${_data}" ] && core__log_verbose "Reached the end and _data is still empty, not sure how though.  Continuing."
   return 0
 }
+
+
+
+#
+# Run initializer to set a few things up.
+#
+if ! core__initialize ; then core__log_error "Failed to run first initialization.  This is fatal." ; exit 1 ; fi

@@ -25,7 +25,7 @@ if [ "${1}" == 'performance' ] ; then iteration=1 ; START="$(date '+%s%N')" ; el
 echo 'this is a test 1' > /tmp/core__slurp_files--test1
 echo 'this is a test 2' > /tmp/core__slurp_files--test2
 echo 'this is a test 3' > /tmp/core__slurp_files--test3
-echo 'this is a test 4' > "/tmp/core SlurpFiles with spaces"
+echo 'this is a test 4' > "/tmp/core__slurp_files with spaces"
 while [ ${iteration} -le ${MAX_ITERATIONS} ] ; do
   # -- 1 -- Try reading a single file
   new_test 'Trying to read a single file: '
@@ -39,7 +39,7 @@ while [ ${iteration} -le ${MAX_ITERATIONS} ] ; do
 
   # -- 3 -- Files with spaces should be ok
   new_test "Files with spaces shouldn't be a problem: "
-  [ "$(dummy '/tmp/core__slurp_files--test1' '/tmp/core SlurpFiles with spaces')" = $'this is a test 1\nthis is a test 4' ] || fail 1
+  [ "$(dummy '/tmp/core__slurp_files--test1' '/tmp/core__slurp_files with spaces')" = $'this is a test 1\nthis is a test 4' ] || fail 1
   pass
 
 
@@ -48,6 +48,7 @@ done
 rm /tmp/core__slurp_files--test1
 rm /tmp/core__slurp_files--test2
 rm /tmp/core__slurp_files--test3
+rm "/tmp/core__slurp_files with spaces"
 
 
 # Send final data

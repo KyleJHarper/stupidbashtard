@@ -45,6 +45,33 @@ while [ ${iteration} -le ${MAX_ITERATIONS} ] ; do
   [ $( core__log_verbose -n -e 'rawr\n' 'hello\n' 'whee\n\n' 2>&1 | wc -l ) -eq 4 ]  || fail 1
   pass
 
+  # -- 7 -- The function should support -W to signify error event.
+  new_test "Sending the -W switch which should make it report as an error: "
+  [[ "$(core__log_verbose -W -n -e $'rawr\n' 2>&1)" =~ 'error in main:' ]] || fail 1
+  pass
+
+  # -- 8 -- Log file writing must be a real path.
+  new_test "Specifying a log file with a bad path should result in an error (code 12): "
+  __SBT_LOG_FILE='/this/is/not/real'
+  core__log_verbose "Wheeeee data" 2>/dev/null && fail 1
+  [ $? -eq 12 ]                                || fail 2
+  pass
+
+  # -- 9 -- Log file writing can't use a relative path.
+  new_test "Log file must be a fully qualified path, not relative: "
+  __SBT_LOG_FILE='relative.log'
+  core__log_verbose "Wheeeee data" 2>/dev/null && fail 1
+  [ $? -eq 12 ]                                || fail 2
+
+  # -- 10 -- Log file should write properly.
+  __SBT_LOG_FILE='/tmp/core__log_verbose__test_8.tmp'
+  [ -f "${__SBT_LOG_FILE}" ] && rm "${__SBT_LOG_FILE}"
+  core__log_verbose "Wheeeee data"  2>/dev/null                          || fail 1
+  core__log_verbose -W "Error data" 2>/dev/null                          || fail 2
+  grep -qP '^\(main: [0-9]+\)  Wheeeee data$' "${__SBT_LOG_FILE}"        || fail 3
+  grep -qP '^\(error in main: [0-9]+\)  Error data$' "${__SBT_LOG_FILE}" || fail 4
+  pass
+
   let iteration++
 done
 __SBT_VERBOSE=false
