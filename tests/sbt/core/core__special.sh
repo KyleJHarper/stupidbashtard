@@ -19,6 +19,10 @@ while [ ${iteration} -le ${MAX_ITERATIONS} ] ; do
   [ "${__SBT_NAMESPACES_LOADED[core]}" == 'loaded' ] || fail 1
   pass
 
+  # -- 2 -- UUID check.
+  new_test "Core should create a UUID inside __SBT_UUID: "
+  [ -z "${__SBT_UUID}" ] && fail 1
+  pass
 
   let iteration++
 done
