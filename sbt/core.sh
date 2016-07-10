@@ -27,9 +27,10 @@ fi
 declare -a __SBT_NONOPT_ARGS         #@$ Holds all arguments sent to getopts that are not part of the switch syntax.  Unique to SBT.  Similar to BASH_ARGV, only better.  Can store unlimited options, BASH_ARGV stores a max of 10, and in reverse order which is unintuitive when processing as-passed-in.
 declare -i __SBT_SHORT_OPTIND=1      #@$ Tracks the position of the short option if they're side by side -abcd etc.  Unique to SBT.
 declare -A __SBT_TOOL_LIST           #@$ List of all tools asked for by SBT.  Prevent expensive lookups with recurring calls.
-           __SBT_NO_MORE_OPTS=false  #@$ If a double hypen (--) is passed, we put all future items into __SBT_NONOPT_ARGS.
-           __SBT_VERBOSE=false       #@$ Enable or disable verbose messages for debugging.
-           __SBT_WARNING=true        #@$ Enable or disable warning messages.
+declare    __SBT_NO_MORE_OPTS=false  #@$ If a double hypen (--) is passed, we put all future items into __SBT_NONOPT_ARGS.
+declare    __SBT_VERBOSE=false       #@$ Enable or disable verbose messages for debugging.
+declare    __SBT_WARNING=true        #@$ Enable or disable warning messages.
+declare -r __SBT_UUID=$(uuidgen)     #@$ Unique identifier for the invocation of SBT globally.  It's relatively safe to use if you want to, but it's mostly for internal purposes.  The uuidgen program is part of util-linux, which is an SBT requirement.
 declare -r __SBT_ROOT_DIR="$(cd "$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")/.." ; pwd)"   #@$ Root directory for the SBT system when sourced properly
 declare -r __SBT_EXT_DIR="${__SBT_ROOT_DIR}/sbt/ext"                                           #@$ Extension directory for non-bash functions
 declare -A __SBT_NAMESPACES_LOADED=([core]='loaded')                                           #@$ Tracks sources which have already been loaded.
