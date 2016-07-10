@@ -6,6 +6,9 @@
   3.  Are there any universal options in SBT functions?
   4.  What keywords are reserved by SBT?
   5.  Why do SBT functions seem to fail when piping to loops?
+  6.  Does SBT support Bash 2.x or 3.x?
+  7.  How portable is SBT to other platforms and shells?
+  8.  What are SBT's dependencies?  Is SBT a PURE shell/bash system?
 xxx.
 100.  How should functions and variables be named?
 
@@ -51,6 +54,15 @@ xxx.
         merged=''
         mydata="$(someFunction)"
         while IFS=$'\n' read -r line ; do merged+="${line}" ; done <<<"${mydata}"
+  6.  Does SBT support Bash 2.x or 3.x?
+      No, and it never will.  SBT relies on associative arrays (declare -A) which only exist in 4.x+.
+  7.  How portable is SBT to other platforms, shells, and versions?
+      As long as Bash compiles and runs on a platform, SBT should work.  Make sure to read the dependencies in item #8 below.
+      Currently, testing of all known versions of Bash 4.x is NOT being done.  Assuming no bugs exist in the version you're running, SBT should work.
+      Officially, Bash is the only shell supported.  However, ksh will probably be able to source and use SBT.  Future tests might be built to add official support for other shells.
+  8.  What are SBT's dependencies?  Is SBT a PURE shell/bash system?
+      No, SBT is not a pure shell solution because shell isn't always a reasonable tool for a given job.
+      See README for the full list of dependencies.
 
 100.  How should functions and variables be named inside SBT.
       Functions should be all lower case and led with 'namespace__'.
