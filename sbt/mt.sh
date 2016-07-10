@@ -18,6 +18,20 @@
 #@Description  Be sure your operations are atomic!  Be sure you aren't relying on any shared resources!  Be aware there is no such thing as a delegate; every forked action is its little world!
 
 
+#
+# [Header Guard]
+#
+if [ -z "${__SBT_NAMESPACES_LOADED[core]}" ] ; then
+  echo "The 'core' namespace hasn't been loaded.  It is required before this one can be.  Exiting for safety." >&2
+  exit 1
+fi
+if [ ! -z "${__SBT_NAMESPACES_LOADED[mt]}" ] ; then
+  echo "The 'mt' namespace has already been loaded.  You shouldn't have included it again.  Exiting for safety." >&2
+  exit 1
+fi
+__SBT_NAMESPACES_LOADED[mt]='loaded'
+
+
 
 #
 # -- Initialize Globals for this Namespace

@@ -13,6 +13,20 @@
 
 
 #
+# [Header Guard]
+#
+if [ -z "${__SBT_NAMESPACES_LOADED[core]}" ] ; then
+  echo "The 'core' namespace hasn't been loaded.  It is required before this one can be.  Exiting for safety." >&2
+  exit 1
+fi
+if [ ! -z "${__SBT_NAMESPACES_LOADED[array]}" ] ; then
+  echo "The 'array' namespace has already been loaded.  You shouldn't have included it again.  Exiting for safety." >&2
+  exit 1
+fi
+__SBT_NAMESPACES_LOADED[array]='loaded'
+
+
+#
 # -- Initialize Globals for this Namespace
 #
 

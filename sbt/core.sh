@@ -9,6 +9,16 @@
 
 #@Description  These functions serve as some of the primative tools and requirements for all of SBT.  This will likely become a large namespace, but attempts should be made to keep it as small as possible.  ALL modules require this namespace.  No other namespace should be a wide-spread requirement like this.
 
+#
+# [Header Guard]
+#
+# We don't check for core because we are core... duh.
+if [ ! -z "${__SBT_NAMESPACES_LOADED[core]}" ] ; then
+  echo "The 'core' namespace has already been loaded.  You shouldn't have included it again.  Exiting for safety." >&2
+  exit 1
+fi
+# We will load 'core' implicitly below due to a chicken-egg situation.
+
 
 #
 # -- Initialize Globals for this Namespace
@@ -22,6 +32,7 @@ declare -A __SBT_TOOL_LIST           #@$ List of all tools asked for by SBT.  Pr
            __SBT_WARNING=true        #@$ Enable or disable warning messages.
 declare -r __SBT_ROOT_DIR="$(cd "$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")/.." ; pwd)"   #@$ Root directory for the SBT system when sourced properly
 declare -r __SBT_EXT_DIR="${__SBT_ROOT_DIR}/sbt/ext"                                           #@$ Extension directory for non-bash functions
+declare -A __SBT_NAMESPACES_LOADED=([core]='loaded')                                           #@$ Tracks sources which have already been loaded.
            OPTIND=1                  #@$ Tracks the position of the argument we're reading.  Bash internal.
            OPTARG=''                 #@$ Holds either the switch active in getopts, or the value sent to the switch if it's compulsory.  Bash internal.
            OPTERR=1                  #@$ Flag to determine if getopts should report invalid switches itself or rely in case statement in caller.  Bash internal.

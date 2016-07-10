@@ -10,6 +10,22 @@
 #@Description Bash has some built-in string handling functionality, but it's far from complete.  This helps extend that.  In many cases, it simply provides a nice name to do things that the bash syntax for is convoluted.  Like lowercase: ${var,,}
 
 
+#
+# [Header Guard]
+#
+if [ -z "${__SBT_NAMESPACES_LOADED[core]}" ] ; then
+  echo "The 'core' namespace hasn't been loaded.  It is required before this one can be.  Exiting for safety." >&2
+  exit 1
+fi
+if [ ! -z "${__SBT_NAMESPACES_LOADED[string]}" ] ; then
+  echo "The 'string' namespace has already been loaded.  You shouldn't have included it again.  Exiting for safety." >&2
+  exit 1
+fi
+__SBT_NAMESPACES_LOADED[string]='loaded'
+
+
+
+
 function string__to_upper {
   #@Description  Takes all positional arguments and returns them in upper case format.
   #@Description  -
