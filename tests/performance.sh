@@ -5,10 +5,10 @@
 
 # Run each test.  Pass flag to do a performance test.
 for ns in "$@" ; do
-  if [ ! -d ${ns} ] ; then echo "Namespace specified doesn't exist: '${ns}'" >&2 ; exit 1 ; fi
+  if [ ! -d sbt/${ns} ] ; then echo "Namespace specified doesn't exist: '${ns}'" >&2 ; exit 1 ; fi
   echo
   echo "Namespace '${ns}'"
-  for file in ${ns}/* ; do
+  for file in sbt/${ns}/* ; do
     echo -n "--> $(basename ${file})"
     ./${file} 'performance' >/dev/null
   done

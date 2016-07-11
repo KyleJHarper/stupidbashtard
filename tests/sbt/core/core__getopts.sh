@@ -104,7 +104,7 @@ function opts_sbt {
       longD       ) [ -z "${OPTARG}" ] && echo 'grr' && return 1 ; myLongD="${OPTARG}" ;;
       e           ) myLongE="${E_TEXT}" ;;  # Only exists for testing --e
       long-hyphen ) [ -z "${OPTARG}" ] && echo 'grr' && return 1 ; myLongH="${OPTARG}" ;;  # Only exists for testing hyphenated
-      * ) echo "Bad option -${OPTARG} (${opt})" >&2 ;;
+      *           ) echo "Bad option -${OPTARG} (${opt})" >&2 ;;
     esac
   done
   return 0
@@ -310,6 +310,37 @@ while [ ${iteration} -le ${MAX_ITERATIONS} ] ; do
   opts_sbt "" "${LONG_OPTS}" --longA --longB  2>/dev/null && fail 1
   [ ${OPTIND} -eq 1 ]                                     || fail 2
   pass
+
+  # -- 26 -- Failure to send any options in positional 4 should be code 1, never code 2.
+  new_test "When no positionals are sent in 4+ it should be code 1, not code 2: "
+  core__getopts ':abc' opt ''  && fail 1
+  [ $? -eq 1 ]                 || fail 2
+  pass
+
+  # -- 27 -- Blank options should end up in __SBT_NONOPT_ARGS.
+  new_test "Blank positionals should be ok: "
+  unset __SBT_NONOPT_ARGS
+  declare -a __SBT_NONOPT_ARGS=()
+  core__getopts ':abc' opt ':long' 'not blank' '' 'not blank either' ''
+  [ ${#__SBT_NONOPT_ARGS[@]} -eq 4 ]                  || fail 1
+  [ "${__SBT_NONOPT_ARGS[0]}" == 'not blank' ]        || fail 2
+  [ "${__SBT_NONOPT_ARGS[1]}" == '' ]                 || fail 3
+  [ "${__SBT_NONOPT_ARGS[2]}" == 'not blank either' ] || fail 4
+  [ "${__SBT_NONOPT_ARGS[3]}" == '' ]                 || fail 5
+  unset __SBT_NONOPT_ARGS
+  declare -a __SBT_NONOPT_ARGS=()
+  pass
+
+  # -- 28 -- Sending only a blank option.
+  new_test "Sending only a single blank positional should still get stored: "
+  unset __SBT_NONOPT_ARGS
+  declare -a __SBT_NONOPT_ARGS=()
+  core__getopts ':abc' opt ':long' ''    && fail 1
+  [ $? -eq 1 ]                           || fail 2
+  [ ${#__SBT_NONOPT_ARGS[@]} -eq 1 ]     || fail 3
+  [ "${__SBT_NONOPT_ARGS[0]}" == '' ]    || fail 4
+  pass
+
 
   let iteration++
 done

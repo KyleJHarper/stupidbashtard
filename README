@@ -17,7 +17,7 @@ A static analysis tool is used to read functions and put information about them 
 I am not God's gift to scripting.  I fully expect, and hope, others will provide support and feedback to make SBT as optimized as possible.  Ultimately leading to the most effective, performant, and portable Bash library around, all based on open-source tools.
 
 -- Dependencies
-SBT requires a few basic tools (rm, cp, ...) which are generally provided by util-linux or similar.  It also leans heavily GNU coreutils and GNU grep (your grep must support -P).  Finally, some function use awk (any modern flavor) and perl (5+).
+SBT requires a few basic tools (rm, cp, ...) which are generally provided by util-linux or similar.  It also leans heavily GNU coreutils and GNU grep (your grep must support -P).  Finally, some functions use awk (any modern flavor) and perl (5+).
 
 MORE INFO
 More details about SBT and Docker are available in the SBT namespace 'doc_examples.sh'.

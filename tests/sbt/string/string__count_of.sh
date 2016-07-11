@@ -61,6 +61,8 @@ while [ ${iteration} -le ${MAX_ITERATIONS} ] ; do
   pass
 
 
+  [ -f "${myuuid}" ]  && rm "${myuuid}"
+  [ -f "${myuuid2}" ] && rm "${myuuid2}"
   let iteration++
 done
 

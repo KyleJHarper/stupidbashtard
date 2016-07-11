@@ -23,21 +23,25 @@ fi
 #
 # -- Initialize Globals for this Namespace
 #
-declare -a __SBT_NONOPT_ARGS         #@$ Holds all arguments sent to getopts that are not part of the switch syntax.  Unique to SBT.  Similar to BASH_ARGV, only better.  Can store unlimited options, BASH_ARGV stores a max of 10, and in reverse order which is unintuitive when processing as-passed-in.
-declare -i __SBT_SHORT_OPTIND=1      #@$ Tracks the position of the short option if they're side by side -abcd etc.  Unique to SBT.
-declare -A __SBT_TOOL_LIST           #@$ List of all tools asked for by SBT.  Prevent expensive lookups with recurring calls.
-declare    __SBT_NO_MORE_OPTS=false  #@$ If a double hypen (--) is passed, we put all future items into __SBT_NONOPT_ARGS.
-declare    __SBT_VERBOSE=false       #@$ Enable or disable verbose messages for debugging.
-declare    __SBT_WARNING=true        #@$ Enable or disable warning messages.
-declare -r __SBT_UUID="$(uuidgen)"   #@$ Unique identifier for the invocation of SBT globally.  It's relatively safe to use if you want to, but it's mostly for internal purposes.  The uuidgen program is part of util-linux, which is an SBT requirement.
+# First Order
+declare -a __SBT_NONOPT_ARGS                                                                   #@$ Holds all arguments sent to getopts that are not part of the switch syntax.  Unique to SBT.  Similar to BASH_ARGV, only better.  Can store unlimited options, BASH_ARGV stores a max of 10, and in reverse order which is unintuitive when processing as-passed-in.
+declare -i __SBT_SHORT_OPTIND=1                                                                #@$ Tracks the position of the short option if they're side by side -abcd etc.  Unique to SBT.
+declare -A __SBT_TOOL_LIST                                                                     #@$ List of all tools asked for by SBT.  Prevent expensive lookups with recurring calls.
+declare    __SBT_NO_MORE_OPTS=false                                                            #@$ If a double hypen (--) is passed, we put all future items into __SBT_NONOPT_ARGS.
+declare    __SBT_VERBOSE=false                                                                 #@$ Enable or disable verbose messages for debugging.
+declare    __SBT_WARNING=true                                                                  #@$ Enable or disable warning messages.
+declare -r __SBT_UUID="$(uuidgen)"                                                             #@$ Unique identifier for the invocation of SBT globally.  It's relatively safe to use if you want to, but it's mostly for internal purposes.  The uuidgen program is part of util-linux, which is an SBT requirement.
 declare -r __SBT_ROOT_DIR="$(cd "$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")/.." ; pwd)"   #@$ Root directory for the SBT system when sourced properly
+declare -r __SBT_TRAP_FUNCTION='core__shutdown'                                                #@$ Contains the name of the function to run when an EXIT trap is set up.  Core will automatically set this.  If you set your own traps, you need to include this for proper shutdown processing.
+declare -a __SBT_SHUTDOWN_REGISTRY                                                             #@$ Collection of events that have been registered for execution at shutdown.
+declare    __SBT_LOG_FILE=''                                                                   #@$ Location of the log file for core__log_verbose and core__log_error.  When set to an empty string, no file logging is done.  Cannot be a relative path.
+           OPTIND=1                                                                            #@$ Tracks the position of the argument we're reading.  Bash internal.
+           OPTARG=''                                                                           #@$ Holds either the switch active in getopts, or the value sent to the switch if it's compulsory.  Bash internal.
+           OPTERR=1                                                                            #@$ Flag to determine if getopts should report invalid switches itself or rely in case statement in caller.  Bash internal.
+# Second Order
 declare -r __SBT_EXT_DIR="${__SBT_ROOT_DIR}/sbt/ext"                                           #@$ Extension directory for non-bash functions
 declare -A __SBT_NAMESPACES_LOADED=([core]='loaded')                                           #@$ Tracks sources which have already been loaded.
 declare    __SBT_TMP_DIR="/tmp/sbt/${__SBT_UUID}"                                              #@$ Global temp directory for misc stuff.
-declare    __SBT_LOG_FILE=''         #@$ Location of the log file for core__log_verbose and core__log_error.  When set to an empty string, no file logging is done.  Cannot be a relative path.
-           OPTIND=1                  #@$ Tracks the position of the argument we're reading.  Bash internal.
-           OPTARG=''                 #@$ Holds either the switch active in getopts, or the value sent to the switch if it's compulsory.  Bash internal.
-           OPTERR=1                  #@$ Flag to determine if getopts should report invalid switches itself or rely in case statement in caller.  Bash internal.
 
 
 
@@ -58,13 +62,8 @@ function core__getopts {
   #@$4  The arguments sent to the caller and now passed to us.  It should always be passed quoted, like so:  "$@"  (NOT "$*").
   #@$4  You must use the 'at' symbol, not asterisk.  Otherwise the positionals will be merged into a single word.
 
-  # Invocation and preflight checks.
+  # Invocation and preflight checks.  Clean out OPTARG and setup variables.
   core__log_verbose 'Entering function.'
-  if [ -z "${1}" ] && [ -z "${3}" ] ; then core__log_error   'Both short and long options ($1 and $3) are blank.  Aborting.'     ; return ${E_UHOH} ; fi
-  if [ -z "${2}" ]                  ; then core__log_error   'Variable to assign option to ($2) is blank.'                       ; return ${E_UHOH} ; fi
-  if [ -z "${4}" ]                  ; then core__log_verbose 'No positionals were sent ($4+), odd.  Not an error, but aborting.' ; return ${E_UHOH} ; fi
-
-  # Clean out OPTARG and setup variables
   core__log_verbose 'Setting up variables.'
   OPTARG=''
   local    _opt_=''     #@$ Holds the positional argument based on OPTIND.  Needs to be unique compared to all callers because we use eval!
@@ -73,6 +72,11 @@ function core__getopts {
   local -i _my_optind   #@$ Holds the correctly offset OPTIND for grabbing arguments (because this function shifts 1, 2, and 3 for control).
   local -i E_GENERIC=1  #@$ Basic catch-all.  Used when option parsing should stop for expected reasons (like no more options found).
   local -i E_UHOH=2     #@$ If a parsing error occurs that is fatal, send this code.
+
+  # Invocation and preflight checks.
+  if [ -z "${1}" ] && [ -z "${3}" ] ; then core__log_error   'Both short and long options ($1 and $3) are blank.  Aborting.'     ; return ${E_UHOH}    ; fi
+  if [ -z "${2}" ]                  ; then core__log_error   'Variable to assign option to ($2) is blank.'                       ; return ${E_UHOH}    ; fi
+  if [ "${#@}" -lt 4 ]              ; then core__log_verbose 'No positionals were sent ($4+), odd.  Not an error, but aborting.' ; return ${E_GENERIC} ; fi
 
   # If we're on the first index, turn off OPTERR if our prescribed opts start with a colon.
   core__log_verbose 'Checking to see if OPTIND is 1 so we can reset items.'
@@ -97,9 +101,19 @@ function core__getopts {
     let OPTIND++
 
     # Try to store positional argument in _opt_.  If the option we tried to store in _opt is blank, we're done.
-    core__log_verbose 'Assigning value to _opt_ and leaving if blank.'
+    core__log_verbose 'Assigning value to _opt_.'
     eval _opt_="\"\${${_my_optind}}\""
-    if [ -z "${_opt_}" ] ; then OPTIND=1 ; __SBT_SHORT_OPTIND=1 ; return ${E_GENERIC} ; fi
+    if [ -z "${_opt_}" ] ; then
+      if [ ${_my_optind} -le ${#@} ] ; then
+        core__log_verbose "The positional was blank, but there may be more positionals to grab.  Storing the empty value in __SBT_NONOPT_ARGS and continuing."
+        __SBT_NONOPT_ARGS+=('')
+        continue
+      fi
+      core__log_verbose "The positional was blank and we're out of them.  There's nothing left to process.  Reset for niceness and return 1."
+      OPTIND=1
+      __SBT_SHORT_OPTIND=1
+      return ${E_GENERIC}
+    fi
 
     # If the _opt_ has an equal sign, we need to place the right-hand contents in value and trim _opt_.
     if [[ "${_opt_}" =~ ^--[a-zA-Z0-9][a-zA-Z0-9-]*= ]] || [[ "${_opt_}" =~ ^-[a-zA-Z0-9][a-zA-Z0-9-]*= ]] ; then
@@ -305,7 +319,12 @@ function core__initialize {
       return ${E_GENERIC}
     fi
   fi
+  # Register the directory removal.
+  core__register_shutdown_event "rm -r '${__SBT_TMP_DIR}'"
 
+  # Set a trap for our shutdown registry.
+  core__log_verbose "Setting an EXIT trap with function:  ${__SBT_TRAP_FUNCTION}"
+  trap "${__SBT_TRAP_FUNCTION}" EXIT
   return 0
 }
 
@@ -320,45 +339,66 @@ function core__log_error {
   # Check for __SBT_WARNING first.
   ${__SBT_WARNING} || return 0
 
-  # Send all the work to core__log_verbose, along with -W to indicate this is a warning/error message.
-  core__log_verbose -W "${@}"
+  # Setup variables
+  local -i -r E_BAD_PATH=12                            #@$ Exit code for bad paths and permission issues.
+  local       _switches=''                             #@$ Keep track of the switches to send to echo.  This function accepts them the same as echo builtin does.  Sorry printf
+  local -i -r _SPACES=$(( (${#FUNCNAME[@]} - 2) * 2))  #@$ Track the number of spaces to send
 
-  return $?
+  # Process options.  Can't use core__getopts or similar because a loop would occur.
+  while true ; do
+    if [ "${1:0:1}" == '-' ] ; then _switches+=" ${1}" ; shift ; continue ; fi
+    break
+  done
+
+  # Print to stderr and file, if desired.
+  printf "%${_SPACES}s" '' >&2
+  echo ${_switches} "(error in ${FUNCNAME[1]}: ${BASH_LINENO[0]})  $@" >&2
+  # If file logging is enabled, log.
+  if [ ! -z "${__SBT_LOG_FILE}" ] ; then
+    # If the __SBT_LOG_FILE isn't fully qualified, we have a problem.
+    if [ "${__SBT_LOG_FILE:0:1}" != '/' ] ; then
+      echo "The __SBT_LOG_FILE variable isn't set to a fully qualified path, this is a no-no:  ${__SBT_LOG_FILE}" >&2
+      return ${E_BAD_PATH}
+    fi
+    # Try to touch the file to ensure we can write to it.
+    if ! touch "${__SBT_LOG_FILE}" 2>/dev/null ; then
+      echo "Cannot touch the __SBT_LOG_FILE.  Directory missing or permissions wrong:  ${__SBT_LOG_FILE}" >&2
+      return ${E_BAD_PATH}
+    fi
+    # For now we will log directly to the file.  Future synchronization mechnisms might be necessary.
+    printf "%${_SPACES}s" '' >>"${__SBT_LOG_FILE}"
+    echo ${_switches} "(error in ${_error_string}${FUNCNAME[1]}: ${BASH_LINENO[0]})  $@" >>"${__SBT_LOG_FILE}"
+  fi
+
+  return 0
 }
 
 
 function core__log_verbose {
   #@Description  Mostly for internal use.  Sends info to std err if verbosity is enabled.  No calls to other SBT functions allowed to prevent infinite loops.
   #@Date   2013.07.14
-  #@Usage  core__log_verbose [-e] [-n] [-W] <'text to send' [...]>
+  #@Usage  core__log_verbose [-e] [-n] <'text to send' [...]>
 
   #@opt_e  Passes -e to echo for interpretation.
   #@opt_n  Passes -n to echo for interpretation.
-  #@opt_W  Tells us that the invocation came from core__log_error so we can log it specially.  MUST be the first positional ($1).
 
   # Check for __SBT_VERBOSE first.  Save a lot of time if verbosity isn't enabled.
-  if ! ${__SBT_VERBOSE} ; then
-    # If $1 is -W and __SBT_WARNING is true, we need to log because we came from core__log_error.
-    [ "${1}" == '-W' ] || return 0
-    ${__SBT_WARNING}   || return 0
-  fi
+  ${__SBT_VERBOSE} || return 0
 
   # Setup variables
   local -i -r E_BAD_PATH=12                            #@$ Exit code for bad paths and permission issues.
   local       _switches=''                             #@$ Keep track of the switches to send to echo.  This function accepts them the same as echo builtin does.  Sorry printf
   local -i -r _SPACES=$(( (${#FUNCNAME[@]} - 2) * 2))  #@$ Track the number of spaces to send
-  local       _error_string=''                         #@$ The string to use if the log statement came from core__log_error.
 
   # Process options.  Can't use core__getopts or similar because a loop would occur.
   while true ; do
-    if [ "${1}" == '-W' ]    ; then _error_string='error in ' ; shift ; continue ; fi
-    if [ "${1:0:1}" == '-' ] ; then _switches+=" ${1}"        ; shift ; continue ; fi
+    if [ "${1:0:1}" == '-' ] ; then _switches+=" ${1}" ; shift ; continue ; fi
     break
   done
 
   # Print to stderr and file, if desired.
   printf "%${_SPACES}s" '' >&2
-  echo ${_switches} "(${_error_string}${FUNCNAME[1]}: ${BASH_LINENO[0]})  $@" >&2
+  echo ${_switches} "(${FUNCNAME[1]}: ${BASH_LINENO[0]})  $@" >&2
   # If file logging is enabled, log.
   if [ ! -z "${__SBT_LOG_FILE}" ] ; then
     # If the __SBT_LOG_FILE isn't fully qualified, we have a problem.
@@ -421,7 +461,7 @@ function core__tool_exists {
       'e' | 'exact'          ) _exact=true                 ;;  #@opt_  Make the version match exactly, rather than greater-than.
       'r' | 'regex-pattern'  ) _regex_pattern="${OPTARG}"  ;;  #@opt_  Specify a custom regex pattern for getting the version number from program output.
       'v' | 'version-switch' ) _version_switch="${OPTARG}" ;;  #@opt_  Specify a custom switch to use to get version information from the program output.
-      *                      ) core__log_error "Invalid option for the core__tool_exists function:  ${_opt}  (continuing)" ;;
+      *                      ) core__log_error "Invalid option for the core__tool_exists function:  ${_opt}  (aborting)" ; return ${E_GENERIC} ;;
     esac
   done
 
@@ -576,6 +616,130 @@ function core__read_data {
 
   # If data is still empty (not sure how...) send a warning but keep going.
   [ -z "${_data}" ] && core__log_verbose "Reached the end and _data is still empty, not sure how though.  Continuing."
+  return 0
+}
+
+
+function core__shutdown {
+  #@Description  Performs necessary actions to cleanly shut down SBT.  Primarily it processes the event registry.
+  #@Description  -
+  #@Description  By default, it's quiet.  If commands are blank or or fail, this function continues running and still returns OK.  You can change this behavior with switches.
+  #@Date         2016.07.09
+  #@Usage        core__shutdown
+
+  # Variables.
+  local -r -i E_GENERIC=1            #@$ Generic error when badness happens.
+  local -r -i E_ABORT_EARLY=14       #@$ Throw a differnt code if we abort early.
+  local -r -i E_COMMANDS_FAILED=15   #@$ Generic error when badness happens.
+  local    -a __SBT_NONOPT_ARGS      #@$ Capture a list of tools for use.  Localize array since we'll only use it here.
+  local    -i OPTIND=1               #@$ Localizing OPTIND to avoid scoping issues.
+  local       _opt=''                #@$ Used for looping through getopts
+  local       _cmd                   #@$ Junk variable for looping.
+  local       _empty_ok=true         #@$ Flag to determine if empty entries are OK.
+  local       _abort_on_error=false  #@$ Flag to decide if we should fail-fast when an error happens.  This will consider empty commands as errors if _empty_ok=false.
+  local       _found_errors=false    #@$ Flag that flips to true if any commands fail.
+
+  # Process options.
+  core__log_verbose "Entering function."
+  core__log_verbose "Processing options."
+  while true ; do
+    core__getopts ':a:e:' _opt ':abort-on-error:,empty-ok:' "$@"
+    case $? in  2 ) core__log_error "Getopts failed.  Aborting function." ; return 1 ;;  1 ) break ;; esac
+    case "${_opt}" in
+      'a' | 'abort-on-error' ) #@opt_  Sets the flag to control if we will abort early if any command in the registry fails.  Note this will result in the registry NOT being cleared, at all!
+                               if ! grep -qP '^(true|false)$' <<<"${OPTARG}" ; then
+                                 core__log_error "The -a/--abort-on-error switch requires a value of 'true' or 'false', not '${OPTARG}'.  (aborting)"
+                                 return ${E_GENERIC}
+                               fi
+                               _abort_on_error="${OPTARG}"
+                               ;;
+      'e' | 'empty-ok'       ) #@opt_  Sets the flag to control if empty commands are OK.  If set it's treated as an error and the functino will return non-zero.  If -a/--abort-on-error is set it will fail immediately.
+                               if ! grep -qP '^(true|false)$' <<<"${OPTARG}" ; then
+                                 core__log_error "The -e/--empty-ok switch requires a value of 'true' or 'false', not '${OPTARG}'.  (aborting)"
+                                 return ${E_GENERIC}
+                               fi
+                               _empty_ok="${OPTARG}"
+                               ;;
+      *                      ) core__log_error "Invalid option for the core__shutdown function:  ${_opt}  (failing)" ; return ${E_GENERIC} ;;
+    esac
+  done
+
+  # Run through the shutdown registry.
+  core__log_verbose "Starting to process the shutdown registry."
+  for _cmd in "${__SBT_SHUTDOWN_REGISTRY[@]}" ; do
+    core__log_verbose "Processing command:  ${_cmd}"
+    if [ -z "${_cmd}" ] ; then
+      ${_empty_ok} && core__log_verbose "Command was blank and _empty_ok is true, so skipping and moving on." && continue
+      # Empty is not OK so flag it.  If abort-on-error is also true then we need to quit.
+      _found_errors=true
+      ${_abort_on_error} && core__log_error "Command was blank and blanks aren't allowed.  Abort-on-error is also set, so we're failing early without cleaning up." && return ${E_ABORT_EARLY}
+    fi
+    if ! eval "${_cmd}" ; then
+      _found_errors=true
+      ${_abort_on_error} && core__log_error "Command failed!  Abort-on-error is set, so we're failing early without cleaning up." && return ${E_ABORT_EARLY}
+      core__log_error "Command failed!  Continuing to next command."
+    fi
+  done
+  core__log_verbose "Done processing shutdown registry.  Clearing the __SBT_SHUTDOWN_REGISTRY.  Errors found: ${_found_errors}"
+  unset __SBT_SHUTDOWN_REGISTRY
+  declare -a __SBT_SHUTDOWN_REGISTRY=()
+  ${_found_errors} && return ${E_COMMANDS_FAILED}
+
+  return 0
+}
+
+
+function core__register_shutdown_event {
+  #@Description  Saves an event in the registry to run later.  You can only send multiple commands at once.
+  #@Date         2016.07.09
+  #@Usage        core__register_shutdown_event [-d | --duplicates] [-e | --error-on-duplicate] <'command to run --including "args"' ['another cmd']>
+
+  # Variables.
+  local -r -i E_GENERIC=1                #@$ Generic error when badness happens.
+  local    -a __SBT_NONOPT_ARGS          #@$ Capture a list of tools for use.  Localize array since we'll only use it here.
+  local    -i OPTIND=1                   #@$ Localizing OPTIND to avoid scoping issues.
+  local       _opt=''                    #@$ Used for looping through getopts
+  local       _allow_duplicates=false    #@$ Boolean to determine if duplicates are allowed.
+  local       _error_on_duplicate=false  #@$ Boolean to throw an error if a duplicate is found.  Default is to ignore it.
+  local       _cmd                       #@$ The command we're trying to register; comes from __SBT_NONOPT_ARGS[0].
+  local       _existing_cmd              #@$ Temporary variable for looping.
+
+  # Process options.
+  core__log_verbose "Entering function."
+  core__log_verbose "Processing options."
+  while true ; do
+    core__getopts ':de' _opt ':duplicates,error-on-duplicate' "$@"
+    case $? in  2 ) core__log_error "Getopts failed.  Aborting function." ; return 1 ;;  1 ) break ;; esac
+    case "${_opt}" in
+      'd' | 'duplicates'         ) _allow_duplicates=true   ;;  #@opt_  If specified, allows duplicates to be put in the registry.  Usually, they aren't.
+      'e' | 'error-on-duplicate' ) _error_on_duplicate=true ;;  #@opt_  If specified, throws an error when a duplicate is found rather than exiting cleanly.
+      *                          ) core__log_error "Invalid option for the core__register_for_shutdown function:  ${_opt}  (failing)" ; return ${E_GENERIC} ;;
+    esac
+  done
+
+  # Preflight checks
+  for _cmd in "${__SBT_NONOPT_ARGS[@]}" ; do
+    [ -z "${_cmd}" ] && core__log_error "You sent a blank command; this is disallowed." && return ${E_GENERIC}
+  done
+
+  # Check all commands.
+  for _cmd in "${__SBT_NONOPT_ARGS[@]}" ; do
+    # If duplicates aren't allowed, loop through and check the registry.
+    if ! ${_allow_duplicates} ; then
+      core__log_verbose "Duplicates aren't allowed, checking the existing registry."
+      for _existing_cmd in "${__SBT_SHUTDOWN_REGISTRY[@]}" ; do
+        if [ "${_cmd}" == "${_existing_cmd}" ] ; then
+          core__log_verbose "A duplicate was found.  The _error_on_duplicate is set to '${_error_on_duplicate}', exiting appropriately."
+          ${_error_on_duplicate} && return ${E_GENERIC}
+          return 0
+        fi
+      done
+    fi
+    # At this point the command isn't a duplicate or duplicates are allowed, so we really don't need to check anything.  Just add it and leave.
+    core__log_verbose "Adding a command to the __SBT_SHUTDOWN_REGISTRY:  ${_cmd}"
+    __SBT_SHUTDOWN_REGISTRY+=("${_cmd}")
+  done
+
   return 0
 }
 
