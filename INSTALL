@@ -1,0 +1,19 @@
+Installation is a whimsical idea.  SBT is a series of shell scripts with functions
+
+Simply copy the sbt/ folder (with files like core.sh, array.sh, etc) to whatever location you want.
+
+From there, just source it from your script...
+
+[your_script.sh]
+#!/bin/bash
+if ! . /path/to/sbt/core.sh ; then
+  echo "Failed to load SBT." >&2
+  exit 1
+fi
+
+
+The only real stipulation is you MUST load core.sh before any other namespaces.
+
+You do NOT have to load all of the SBT namespaces (no cross-namespace dependencies).
+E.g.:  If you just want array.sh, you only need to load core.sh and array.sh.
+
