@@ -426,8 +426,8 @@ function core__tool_exists {
   #@Description  You may also specify multiple tools and the -a or --any switch, which will return true if Any of the tools match.  For example, you might want gawk by default, but you can reasonably trust whatever version of awk is on a system.  So you send: 'gawk' and 'awk' IN ORDER OF PREFERENCE!  The found tool will be reported to stdout unless -q/--quiet is sent.
   #@Description  -
   #@Description  Minimum and maximum versions are tested by using GNU sort -V along with the discovered version.  If you want an exact match, simply set minimum and maximum versions to the same value you want an exact match for.
-  #@Date   2016.07.11
-  #@Usage  core__tool_exists [-a --any] [-m --max-version ''] [-n --min-version ''] [-q --quiet] [-r --regex-pattern 'pattern'] [-v --version-switch '-V'] <'tool' [...]>
+  #@Date         2016.07.11
+  #@Usage        core__tool_exists [-a --any] [-m --max-version ''] [-n --min-version ''] [-q --quiet] [-r --regex-pattern 'pattern'] [-v --version-switch '-V'] <'tool' [...]>
 
   # Variables
   local -a    __SBT_NONOPT_ARGS            #@$ Capture a list of tools for use.  Localize array since we'll only use it here.
