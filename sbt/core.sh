@@ -26,7 +26,6 @@ fi
 # First Order
 declare -a __SBT_NONOPT_ARGS                                                                   #@$ Holds all arguments sent to getopts that are not part of the switch syntax.  Unique to SBT.  Similar to BASH_ARGV, only better.  Can store unlimited options, BASH_ARGV stores a max of 10, and in reverse order which is unintuitive when processing as-passed-in.
 declare -i __SBT_SHORT_OPTIND=1                                                                #@$ Tracks the position of the short option if they're side by side -abcd etc.  Unique to SBT.
-declare -A __SBT_TOOL_LIST                                                                     #@$ List of all tools asked for by SBT.  Prevent expensive lookups with recurring calls.
 declare    __SBT_NO_MORE_OPTS=false                                                            #@$ If a double hypen (--) is passed, we put all future items into __SBT_NONOPT_ARGS.
 declare    __SBT_VERBOSE=false                                                                 #@$ Enable or disable verbose messages for debugging.
 declare    __SBT_WARNING=true                                                                  #@$ Enable or disable warning messages.
@@ -421,29 +420,31 @@ function core__log_verbose {
 
 
 function core__tool_exists {
-  #@Description  Find an executable program with the names given.  Variables are stored in __SBT_TOOL_LIST hash.  Help ensure portability.
-  #@Description  SBT functions should never use this for tools in the known-dependencies list.  This is primarily: coreutils, grep, and perl.
-  #@Description  You may specify multiple tools to check for, but if you pass version checking switches they must apply to all tools for this call.  If version numbers, version invocation, or other switches are different for the tools, perform multiple calls in your caller.
+  #@Description  Find an executable program with the names given.  Acts a lot like the 'which' program, but offers a few extra features.
+  #@Description  You may specify multiple tools to check for, but if you pass version checking switches then you can only check for 1 tool at a time.
   #@Description  -
-  #@Description  You may also specify multiple tools and the -a or --any switch, which will return true if Any of the tools match.  For example, you might want gawk by default, but you can reasonably trust whatever version of awk is on a system.  So you send: 'gawk' and 'awk' IN ORDER OF PREFERENCE!  The found tool will be reported to stdout.
-  #@Date   2013.10.04
-  #@Usage  core__tool_exists [-1 --major '#'] [-2 --medium '#'] [-3 --minor '#'] [-a --any] [-e --exact] [-v --version-switch '-V'] [-r --regex-pattern 'pattern'] <'tool' [...]>
+  #@Description  You may also specify multiple tools and the -a or --any switch, which will return true if Any of the tools match.  For example, you might want gawk by default, but you can reasonably trust whatever version of awk is on a system.  So you send: 'gawk' and 'awk' IN ORDER OF PREFERENCE!  The found tool will be reported to stdout unless -q/--quiet is sent.
+  #@Description  -
+  #@Description  Minimum and maximum versions are tested by using GNU sort -V along with the discovered version.  If you want an exact match, simply set minimum and maximum versions to the same value you want an exact match for.
+  #@Date   2016.07.11
+  #@Usage  core__tool_exists [-a --any] [-m --max-version ''] [-n --min-version ''] [-q --quiet] [-r --regex-pattern 'pattern'] [-v --version-switch '-V'] <'tool' [...]>
 
   # Variables
-  local -a __SBT_NONOPT_ARGS                   #@$ Capture a list of tools for use.  Localize array since we'll only use it here.
-  local -i OPTIND=1                            #@$ Localizing OPTIND to avoid scoping issues.
-  local    _opt=''                             #@$ Used for looping through getopts
-  local -i E_CMD_NOT_FOUND=10                  #@$ Help differentiate between a generic failure and a failure due to a tool not found.
-  local -i _major=0                            #@$ Major version number
-  local -i _medium=0                           #@$ Medium version number
-  local -i _minor=0                            #@$ Minor version number
-  local    _found_one=false                    #@$ Flag to determine if at least one item was found, useful when --any is used.
-  local    _exact=false                        #@$ Compare the version numbers exactly, not in a greater-than fashion
-  local    _any=false                          #@$ Flag to determine if we should abort when any of the tools checked for are found.
-  local    _version_switch='--version'         #@$ The switch syntax to present the version information string
-  local    _regex_pattern='\d+\.\d+([.]\d+)?'  #@$ The PCRE (grep -P) regex pattern to use to finding the version string.  By default MAJOR.MEDIUM only.
-  local    _tool=''                            #@$ Temp variable to hold tool name, kept in local scope.
-  local    _found_version=''                   #@$ Misc temp variable, kept in local scope.
+  local -a    __SBT_NONOPT_ARGS            #@$ Capture a list of tools for use.  Localize array since we'll only use it here.
+  local -i    OPTIND=1                     #@$ Localizing OPTIND to avoid scoping issues.
+  local       _opt=''                      #@$ Used for looping through getopts
+  local -i -r E_GENERIC=1                  #@$ General error when there are problems.
+  local -i -r E_BAD_CLI=2                  #@$ Return value if CLI is wrong or invalid.
+  local -i -r E_CMD_NOT_FOUND=10           #@$ Help differentiate between a generic failure and a failure due to a tool not found.
+  local       _min_version=''              #@$ The minimum version to tolerate.  Anything below this is a failure.
+  local       _max_version=''              #@$ The maximum version to tolerate.  Anything above this is a failure.
+  local -A    _tools_found                 #@$ A hash of the tools found.
+  local       _any=false                   #@$ Flag to determine if we should abort when any of the tools checked for are found.
+  local       _quiet=false                 #@$ Flag to disable the normal output for the --any flag (by default, we report the name of the tool found).
+  local       _version_switch='--version'  #@$ The switch syntax to present the version information string.  Usually --version, -v, -V, -h, --help, etc...
+  local       _regex_pattern=''            #@$ The PCRE (grep -P) regex pattern to use to finding the version string.  If empty, no version check is done.
+  local       _tool=''                     #@$ Temp variable to hold tool name, kept in local scope.
+  local       _found_version=''            #@$ Misc temp variable, kept in local scope.
 
   # Invocation
   core__log_verbose 'Entering function.'
@@ -451,67 +452,94 @@ function core__tool_exists {
   # Get a list of options and commands to check for
   core__log_verbose 'Checking options and loading tools to check into array.'
   while true ; do
-    core__getopts ':1:2:3:er:v:' _opt ':exact,major:,medium:,minor:,regex-pattern:,version-switch:' "$@"
-    case $? in  2 ) core__log_error "Getopts failed.  Aborting function." ; return 1 ;;  1 ) break ;; esac
+    core__getopts ':am:n:qr:v:' _opt ':any,max-version:,min-version:,quiet,regex-pattern:,version-switch:' "$@"
+    case $? in  2 ) core__log_error "Getopts failed.  Aborting function." ; return ${E_BAD_CLI} ;;  1 ) break ;; esac
     case "${_opt}" in
-      '1' | 'major'          ) _major="${OPTARG}"          ;;  #@opt_  Sets the major version number for comparison.
-      '2' | 'medium'         ) _medium="${OPTARG}"         ;;  #@opt_  Sets the medium version number for comparison.
-      '3' | 'minor'          ) _minor="${OPTARG}"          ;;  #@opt_  Sets the minor version number for comparison.
       'a' | 'any'            ) _any=true                   ;;  #@opt_  Return successful after matching any tool, if multiple provided, rather than all.
-      'e' | 'exact'          ) _exact=true                 ;;  #@opt_  Make the version match exactly, rather than greater-than.
-      'r' | 'regex-pattern'  ) _regex_pattern="${OPTARG}"  ;;  #@opt_  Specify a custom regex pattern for getting the version number from program output.
+      'm' | 'max-version'    ) _max_version="${OPTARG}"    ;;  #@opt_  Sets the minimum supported version.  Anything above this is a failure.
+      'n' | 'min-version'    ) _min_version="${OPTARG}"    ;;  #@opt_  Sets the maximum supported version.  Anything below this is a failure.
+      'q' | 'quiet'          ) _quiet=true                 ;;  #@opt_  Prevents the output of the found tools (normally goes to stdout).
+      'r' | 'regex-pattern'  ) _regex_pattern="${OPTARG}"  ;;  #@opt_  Specify a custom regex pattern for getting the version number/string from program output.
       'v' | 'version-switch' ) _version_switch="${OPTARG}" ;;  #@opt_  Specify a custom switch to use to get version information from the program output.
-      *                      ) core__log_error "Invalid option for the core__tool_exists function:  ${_opt}  (aborting)" ; return ${E_GENERIC} ;;
+      *                      ) core__log_error "Invalid option for the core__tool_exists function:  ${_opt}  (aborting)" ; return ${E_BAD_CLI} ;;
     esac
   done
 
   # Preflight checks
   core__log_verbose 'Doing pre-flight checks to make sure all necessary options were passed.'
-  if [ -z "${_regex_pattern}" ]         ; then core__log_error 'Regex pattern cannot be blank.  (aborting)'  ; return 1 ; fi
-  if [ -z "${_version_switch}" ]        ; then core__log_error 'Version switch cannot be blank.  (aborting)' ; return 1 ; fi
-  if [ ${#__SBT_NONOPT_ARGS[@]} -eq 0 ] ; then core__log_error 'No tools sent to check for.  (aborting).'    ; return 1 ; fi
-
-  # Search for tools
-  core__log_verbose "Checking for programs/tools.  Exact: ${_exact}.  Version: ${_major}.${_medium}.${_minor}."
-  for _tool in ${__SBT_NONOPT_ARGS[@]} ; do
-    core__log_verbose "Scanning existing tool list for an previously found match of: ${_tool}"
-    _found_version="${__SBT_TOOL_LIST[${_tool}]}"
-    if [ -z "${_found_version}" ] ; then
-      core__log_verbose 'Not found.  Seeing if tool exists on our PATH anywhere.'
-      if ! ${_tool} ${_version_switch} >/dev/null 2>/dev/null ; then
-        ${_any} && continue
-        core__log_error "Could not find tool '${_tool}'.  Check path and add paths using core__set_tool_path if needed."
-        return ${E_CMD_NOT_FOUND}
-      fi
-      core__log_verbose "Trying to grab the version string for comparison using:  ${_tool} ${_version_switch} | grep -oP '${_regex_pattern}'"
-      _found_version="$(${_tool} ${_version_switch} 2>/dev/null | grep -oP "${_regex_pattern}")"
-      if [ -z "${_found_version}" ] ; then
-        ${_any} && continue
-        core__log_error "Could not find a version string in program output.  If caller is an SBT function, this shouldn't have happened."
-        return ${E_CMD_NOT_FOUND}
-      fi
-    fi
-    core__log_verbose "Found the version string: '${_found_version}'.  Comparing it now."
-    if ${_exact} && [ ! "${_found_version}" == "${_major}.${_medium}.${_minor}" ] ; then
-      ${_any} && continue
-      core__log_error 'Exact version match requested, but the versions do not match.  Failing.'
-      return ${E_CMD_NOT_FOUND}
-    fi
-    if [ "$(echo -e "${_found_version}\n${_major}.${_medium}.${_minor}" | sort -V | head -n 1)" == "${_found_version}" ] ; then
-      ${_any} && continue
-      core__log_error 'Tool found is a lower version number than required version.'
-      return ${E_CMD_NOT_FOUND}
-    fi
-    core__log_verbose 'Found tool and it meets requirements!  Storing in __SBT_TOOL_LIST hash for faster future lookups.'
-    __SBT_TOOL_LIST["${_tool}"]="${_found_version}"
-    _found_one=true
-
-    # If we hit this point, we found a tool and are about to loop again.  But if we'll take any match, report it and leave.
-    if ${_any} ; then core__log_verbose "Found a tool (${_tool}) and the ANY flag is set; reporting to stdout and leaving." ; echo "${_tool}" ; break ; fi
+  if [ ! -z "${_min_version}" ] || [ ! -z "${_max_version}" ] ; then
+    if [ -z "${_regex_pattern}" ]         ; then core__log_error "You sent either a minimum or maximum version but didn't specify a regex-pattern to find the version string." ; return ${E_BAD_CLI} ; fi
+    if [ ${#__SBT_NONOPT_ARGS[@]} -gt 1 ] ; then core__log_error "You can't specify a minimum or maximum version along with more than 1 tool at a time."                       ; return ${E_BAD_CLI} ; fi
+  fi
+  if [ -z "${_version_switch}" ]        ; then core__log_error 'Version switch cannot be blank.  (aborting)' ; return ${E_BAD_CLI} ; fi
+  if [ ${#__SBT_NONOPT_ARGS[@]} -eq 0 ] ; then core__log_error 'No tools sent to check for.  (aborting).'    ; return ${E_BAD_CLI} ; fi
+  for _tool in "${__SBT_NONOPT_ARGS[@]}" ; do
+    [ -z "${_tool}" ] && core__log_error "You sent a blank string as a tool to check for.  For safety, this is an error.  (aborting)" && return ${E_BAD_CLI}
   done
 
-  # If we're here, make sure we found what we were looking for.
-  ${_found_one} && return 0
+  # Search for tools
+  core__log_verbose "Checking for programs/tools.  Version switch: '${_version_switch}'.  Pattern match: '${regex_pattern}'.  Min/max versions: '${_min_version}'/'${_max_version}'."
+  for _tool in "${__SBT_NONOPT_ARGS[@]}" ; do
+    # Try to execute the tool and version string.
+    core__log_verbose "Seeing if tool '${_tool}' exists on our PATH anywhere."
+    if ! ${_tool} ${_version_switch} >/dev/null 2>/dev/null ; then
+      ${_any} && core__log_verbose "Didn't find it but the any flag is set, checking next tool specified." && continue
+      core__log_verbose "Could not find tool '${_tool}'.  Check PATH and your version switch (currently: '${_version_switch}')."
+      continue
+    fi
+    # Found the tool.  If the regex-pattern is blank then we're not interested in a match.
+    _tools_found["${_tool}"]='na'
+    if [ -z "${_regex_pattern}" ] ; then
+      core__log_verbose "Tool was found and no -r/--regex-pattern sent.  Continuing to the next tool."
+      ${_any} && core__log_verbose "Actually, the any flag is set so we're done now.  Breaking from the loop so we can exit." && break
+      continue
+    fi
+    # The regex-pattern has contents.  User wants to find a match.
+    core__log_verbose "Found tool, trying to grab the version string for comparison using:  ${_tool} ${_version_switch} | grep -oP '${_regex_pattern}'"
+    _found_version="$(${_tool} ${_version_switch} 2>/dev/null | grep -oP "${_regex_pattern}" -m 1)"
+    if [ $? -ne 0 ] || [ -z "${_found_version}" ] ; then
+      core__log_verbose "Couldn't find the version string, rejecting this tool as a match."
+      unset _tools_found["${_tool}"]
+      ${_any} && core__log_verbose "The any flag is set, so we can continue looping trying to find other tools." && continue
+      core__log_error "Tool found but version not discovered.  The any flag isn't set, nothing more we can do.  Breaking loop to exit properly."
+      break
+    fi
+    # Found a version string.  Store it then start matching.
+    core__log_verbose "Found a version string, storing it:  '${_found_version}'"
+    _tools_found["${_tool}"]="${_found_version}"
+    # Minimum version requirement.
+    if [ ! -z "${_min_version}" ] ; then
+      core__log_verbose "Minimum version requirement was sent.  Checking for found version '${_found_version}' to be greater than/equal to minimum version '${_min_version}'."
+      if ! echo -e "${_min_version}\n${_found_version}" | sort -V -C ; then
+        core__log_verbose "Version found '${_found_version}' is lower than the minimum required '${_min_version}'.  Rejecting this match."
+        unset _tools_found["${_tool}"]
+        break
+      fi
+    fi
+    # Maximum version requirement.
+    if [ ! -z "${_max_version}" ] ; then
+      core__log_verbose "Maximum version requirement was sent.  Checking for found version '${_found_version}' to be less than/equal to maximum version '${_max_version}'."
+      if ! echo -e "${_found_version}\n${_max_version}" | sort -V -C ; then
+        core__log_verbose "Version found '${_found_version}' is greater than the maximum allowed '${_max_version}'.  Rejecting this match."
+        unset _tools_found["${_tool}"]
+        break
+      fi
+    fi
+  done
+
+  # If the any flag is set and we found at least 1 tool, we're done.  Report it and leave.
+  if ${_any} && [ ${#_tools_found[@]} -gt 0 ] ; then
+    core__log_verbose "Any flag sent and at least one tool found with matching version(s).  Success."
+    ${_quiet} || echo "${!_tools_found[@]}"
+    return 0
+  fi
+  # The any flag wasn't sent, but if tools found match tools sent we're good.
+  if [ ${#_tools_found[@]} -eq ${#__SBT_NONOPT_ARGS[@]} ] ; then
+    core__log_verbose "All tools found.  Returning successfully."
+    return 0
+  fi
+
+  core__log_error "Unable to find the required tool(s) and/or versions.  Tool(s) we did find (if any):  ${!_tools_found[@]}"
   return ${E_CMD_NOT_FOUND}
 }
 

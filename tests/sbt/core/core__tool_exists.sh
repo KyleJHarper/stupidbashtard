@@ -15,83 +15,108 @@ if [ "${1}" == 'performance' ] ; then iteration=1 ; START="$(date '+%s%N')" ; el
 # Testing loop
 while [ ${iteration} -le ${MAX_ITERATIONS} ] ; do
   # -- 1 -- Find a known program, bash!
-  new_test "Trying to find 'bash', any version. (0.0.0): "
-  unset __SBT_TOOL_LIST ; declare -A __SBT_TOOL_LIST
-  core__tool_exists 'bash'  || fail 1
+  new_test "Trying to find 'bash', any version: "
+  core__tool_exists 'bash' || fail 1
   pass
 
-  # -- 2 -- Try the short options, all of them!!!
-  new_test 'Sending all short switches to ensure they work.  First without exact, then with: '
-  unset __SBT_TOOL_LIST ; declare -A __SBT_TOOL_LIST
-  core__tool_exists 'bash' -1 4 -2 0 -3 0    -r '\d+\.\d+([.]\d+)?' -v '--version'              || fail 1
-  core__tool_exists 'bash' -1 4 -2 0 -3 0 -e -r '\d+\.\d+([.]\d+)?' -v '--version' 2>/dev/null  && fail 2
+  # -- 2 -- Fail for a program that doesn't exist.
+  new_test "Looking for a tool that doesn't exist, should be code 10: "
+  core__tool_exists 'not_a_real_tool'  2>/dev/null  && fail 1
+  [ $? -eq 10 ]                                     || fail 2
   pass
 
-  # -- 3 -- Now try long options.
-  new_test 'Sending all long switches to ensure they work.  First without exact, then with: '
-  unset __SBT_TOOL_LIST ; declare -A __SBT_TOOL_LIST
-  core__tool_exists 'bash' --major 4 --medium 0 --minor 0         --regex-pattern '\d+\.\d+([.]\d+)?' --version-switch '--version'              || fail 1
-  core__tool_exists 'bash' --major 4 --medium 0 --minor 0 --exact --regex-pattern '\d+\.\d+([.]\d+)?' --version-switch '--version' 2>/dev/null  && fail 2
+  # -- 3 -- Minimum version.
+  new_test "Specifying a minimum version should work: "
+  core__tool_exists -n '3.0'            -r '\d+[.]\d+([.]\d+)?' 'bash'              || fail 1
+  core__tool_exists -n '9.0'            -r '\d+[.]\d+([.]\d+)?' 'bash' 2>/dev/null  && fail 2
+  [ $? -eq 10 ]                                                                     || fail 3
+  core__tool_exists --min-version '3.0' -r '\d+[.]\d+([.]\d+)?' 'bash'              || fail 4
+  core__tool_exists --min-version '9.0' -r '\d+[.]\d+([.]\d+)?' 'bash' 2>/dev/null  && fail 5
+  [ $? -eq 10 ]                                                                     || fail 6
   pass
 
-  # -- 4 -- Find bash again, but with too high a version.
-  new_test "Trying to find 'bash', a version we know is too high. (9.6.2): "
-  unset __SBT_TOOL_LIST ; declare -A __SBT_TOOL_LIST
-  core__tool_exists 'bash' --major=9 --medium=6 --minor=2 2>/dev/null  && fail 1
+  # -- 4 -- Maximum version.
+  new_test "Specifying a maximum version should work: "
+  core__tool_exists -m '3.0'            -r '\d+[.]\d+([.]\d+)?' 'bash' 2>/dev/null  && fail 1
+  [ $? -eq 10 ]                                                                     || fail 2
+  core__tool_exists -m '9.0'            -r '\d+[.]\d+([.]\d+)?' 'bash'              || fail 3
+  core__tool_exists --max-version '3.0' -r '\d+[.]\d+([.]\d+)?' 'bash' 2>/dev/null  && fail 4
+  [ $? -eq 10 ]                                                                     || fail 5
+  core__tool_exists --max-version '9.0' -r '\d+[.]\d+([.]\d+)?' 'bash'              || fail 6
   pass
 
-  # -- 5 -- Coreutils programs often just announce the coreutils version (eg. 8.13).
-  new_test "Checking the 'cut' program output.  Should be corutils and only have x.yy: "
-  unset __SBT_TOOL_LIST ; declare -A __SBT_TOOL_LIST
-  core__tool_exists 'cut' --major=7 || fail 1
+  # -- 5 -- Any Switch
+  new_test "The any switch should work if any tools are found (in any order): "
+  core__tool_exists 'not_a_real_tool' 'bash' --any >/dev/null   || fail 1
+  core__tool_exists 'not_a_real_tool' 'bash' -a    >/dev/null   || fail 2
+  core__tool_exists 'bash' 'not_a_real_tool' --any >/dev/null   || fail 3
+  core__tool_exists 'bash' 'not_a_real_tool' -a    >/dev/null   || fail 4
   pass
 
-  # -- 6 -- Some programs use special version checking switches, like mawk
-  new_test "Overriding --version-switch argument to '-W version' to get awk/nawk/mawk version string: "
-  unset __SBT_TOOL_LIST ; declare -A __SBT_TOOL_LIST
-  core__tool_exists 'awk' --major=1 -v '-W version' || fail 1
+  # -- 6 -- Any should fail if all missing
+  new_test "We should still fail with --any if all are missing: "
+  core__tool_exists 'not_a_real_tool' 'also_not_real' --any 2>/dev/null   && fail 1
+  core__tool_exists 'not_a_real_tool' 'also_not_real' -a    2>/dev/null   && fail 2
   pass
 
-  # -- 7 -- Variable should have tools... otherwise we're missing out on caching.
-  new_test "Checking for bash again, to make sure __SBT_TOOL_LIST actually populates: "
-  unset __SBT_TOOL_LIST ; declare -A __SBT_TOOL_LIST
-  core__tool_exists 'bash' --major=4 --medium=0 --minor=0 || fail 1
-  [ "${!__SBT_TOOL_LIST[@]}" == 'bash' ]                  || fail 2
-  [ ! -z "${__SBT_TOOL_LIST['bash']}" ]                   || fail 3
-  core__tool_exists 'perl' --major=4 --medium=0 --minor=0 || fail 4
-  core__tool_exists 'cut'  --major=7 --medium=0 --minor=0 || fail 5
-  [ ${#__SBT_TOOL_LIST[@]} -eq 3 ]                        || fail 6
+  # -- 7 -- Any should send the first discovered tool.
+  new_test "We should get the first matching tool with --any: "
+  [ "$(core__tool_exists -a 'bash' 'sort' 'cut')" == 'bash' ]           || fail 1
+  [ "$(core__tool_exists -a 'not_real' 'sort' 'cut')" == 'sort' ]       || fail 2
+  [ "$(core__tool_exists -a 'not_real' 'still_nope' 'cut')" == 'cut' ]  || fail 3
   pass
 
-  # -- 8 -- Multiple programs and we need them all.
-  new_test "Requiring multiple tools at once: "
-  unset __SBT_TOOL_LIST ; declare -A __SBT_TOOL_LIST
-  core__tool_exists 'bash' 'cut'         || fail 1
-  [ ! -z "${__SBT_TOOL_LIST['bash']}" ]  || fail 2
-  [ ! -z "${__SBT_TOOL_LIST['cut']}" ]   || fail 3
-  [ ${#__SBT_TOOL_LIST[@]} -eq 2 ]       || fail 4
+  # -- 8 -- Any Switch with Quiet
+  new_test "The any switch should suppress output if quiet is flagged: "
+  [ "$(core__tool_exists -a -q      'bash' 'sort' 'cut')" == '' ]      || fail 1
+  [ "$(core__tool_exists -a --quiet 'not_real' 'sort' 'cut')" == '' ]  || fail 2
   pass
 
-  # -- 9 -- Multiple programs but only need one
-  new_test "Requiring one tool but checking multiple options: "
-  unset __SBT_TOOL_LIST ; declare -A __SBT_TOOL_LIST
-  core__tool_exists --any 'ruroh' 'cut'  1>/dev/null   || fail 1
-  [ ! -z "${__SBT_TOOL_LIST['cut']}" ]                 || fail 2
-  [ ${#__SBT_TOOL_LIST[@]} -eq 1 ]                     || fail 3
+  # -- 9 -- Exact matching should work.
+  new_test "Using min and max versions of the same string should be an exact match formula: "
+  core__tool_exists -n "${BASH_VERSION}" -m "${BASH_VERSION}" --regex-pattern '\d+[.]\d+[.]\d+\S*-release' 'bash'  || fail 1
   pass
 
-  # -- 10 -- Multiple programs and none will be found.
-  new_test "Checking for multiple tools, with --any, knowing it won't be found: "
-  unset __SBT_TOOL_LIST ; declare -A __SBT_TOOL_LIST
-  core__tool_exists --any 'ruroh' 'raggy'  1>/dev/null && fail 1
-  [ $? -eq 10 ] || fail 2
+  # -- 10 -- Without any switch we must match all
+  new_test "If the --any switch is NOT set, we must match all tools: "
+  core__tool_exists 'bash' 'sort' 'cut'             || fail 1
+  core__tool_exists 'bash' 'not_real' 2>/dev/null   && fail 2
   pass
 
-  # -- 11 -- Unable to find tool should report E_CMD_NOT_FOUND (code 10)
-  new_test "Testing a tool known to be missing, code should be 10: "
-  unset __SBT_TOOL_LIST ; declare -A __SBT_TOOL_LIST
-  core__tool_exists 'ruroh' 'raggy' 1>/dev/null 2>/dev/null
-  [ $? -eq 10 ] || fail 1
+  # -- 11 -- The version switch should be selectable.
+  new_test "We should be able to specify any type of version switch: "
+  core__tool_exists 'awk' -v '-W version'                 || fail 1
+  core__tool_exists 'awk' --version-switch '-W version'   || fail 2
+  pass
+
+  # -- 12 -- Bad options should return code 2
+  new_test "Bad options should result in E_BAD_CLI (code 2): "
+  core__tool_exists --bad-switch 2>/dev/null   && fail 1
+  [ $? -eq 2 ]                                 || fail 2
+  core__tool_exists -b           2>/dev/null   && fail 3
+  [ $? -eq 2 ]                                 || fail 4
+  core__tool_exists --min-version 2>/dev/null  && fail 5
+  [ $? -eq 2 ]                                 || fail 6
+  core__tool_exists --any 2>/dev/null          && fail 7
+  [ $? -eq 2 ]                                 || fail 8
+  pass
+
+  # -- 13 -- LOTS of tools
+  new_test "Sending LOTS of tools shouldn't be a problem: "
+  core__tool_exists 'bash' 'sort' 'cut' 'shuf' 'head' 'tail' 'uniq'                        || fail 1
+  core__tool_exists 'not_real_bash' 'sort' 'cut' 'shuf' 'head' 'tail' 'uniq' 2>/dev/null   && fail 2
+  pass
+
+  # -- 14 -- Blank tools should be an error.
+  new_test "Sending a blank tool name like '' should fail: "
+  core__tool_exists 'bash' '' 2>/dev/null      && fail 1
+  [ $? -eq 2 ]                                 || fail 2
+  core__tool_exists '' 'bash' '' 2>/dev/null   && fail 3
+  [ $? -eq 2 ]                                 || fail 4
+  core__tool_exists '' '' 2>/dev/null          && fail 5
+  [ $? -eq 2 ]                                 || fail 6
+  core__tool_exists '' 2>/dev/null             && fail 7
+  [ $? -eq 2 ]                                 || fail 8
   pass
 
 
