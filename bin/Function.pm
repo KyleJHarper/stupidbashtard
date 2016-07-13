@@ -30,6 +30,7 @@ sub new {
   if ( ! $self->{'openedbraces'}    ) { $self->{'openedbraces'}    = 0       ; }
   if ( ! $self->{'required_tools'}  ) { $self->{'required_tools'}  = ''      ; }
   if ( ! $self->{'thread_safe'}     ) { $self->{'thread_safe'}     = 'true'  ; }
+  if ( ! $self->{'loop_level'}      ) { $self->{'loop_level'}      = 0       ; }
 
   # Return me
   return $self;
@@ -65,6 +66,13 @@ sub closed_braces {
   my $self = shift;
   if ( scalar(@_) == 1) { $self->{"closedbraces"} = shift; }
   return $self->{"closedbraces"};
+}
+
+# -- Loop Level
+sub loop_level {
+  my $self = shift;
+  if ( scalar(@_) == 1) { $self->{"loop_level"} = shift; }
+  return $self->{"loop_level"};
 }
 
 # -- Thread Safety
@@ -152,8 +160,8 @@ sub count_braces {
   # Setup string and strip anything between quotes (braces inside quotes don't affect flow).
   my $self = shift ;
   my $line = shift ;
-  $line =~ s/["][^"]*["]// ;
-  $line =~ s/['][^']*[']// ;
+  $line =~ s/["][^"]*["]//g ;
+  $line =~ s/['][^']*[']//g ;
 
   # Count braces and update properties
   my $opened = $line =~ tr/\{// ;
@@ -161,8 +169,23 @@ sub count_braces {
   $self->opened_braces( $self->opened_braces() + $opened );
   $self->closed_braces( $self->closed_braces() + $closed );
 
-  # Report an error if the closed braces outnumber opened ones.  This should never happen.
-  if ( $self->opened_braces() < $self->closed_braces() ) { return 0 ; }
+  # Caller must check if braces don't match.
+  return 1;
+}
+
+sub count_loops {
+  # Setup string and strip anything between quotes (for/while/until/done inside quotes don't affect flow).
+  my $self = shift ;
+  my $line = shift ;
+  $line =~ s/["][^"]*["]//g ;
+  $line =~ s/['][^']*[']//g ;
+
+  # Count for|while|until and update properties.
+  my $start = $line =~ tr/(while|until|for)[\s]+// ;
+  my $end   = $line =~ tr/(;[\s]*)?done// ;
+  $self->loop_level( $self->loop_level() + $start - $end );
+
+  # Caller must check if loop level meets certain conditions... like going negative.
   return 1;
 }
 
