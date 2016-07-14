@@ -15,13 +15,13 @@ sub new {
   bless $self;
 
   # Initialize empty strings for keys
-  $self->{'argument_tags'} = {};
-  $self->{'basic_tags'}    = {};
-  $self->{'exit_tags'}     = {};
-  $self->{'options'}       = {};
-  $self->{'option_tags'}   = {};
-  $self->{'variables'}     = {};
-  $self->{'variable_tags'} = {};
+  $self->{'argument_tags'}   = {};
+  $self->{'basic_tags'}      = {};
+  $self->{'dependency_tags'} = {};
+  $self->{'options'}         = {};
+  $self->{'option_tags'}     = {};
+  $self->{'variables'}       = {};
+  $self->{'variable_tags'}   = {};
 
   # Set defaults if none provided
   if ( ! $self->{'closedbraces'}    ) { $self->{'closedbraces'}    = 0       ; }

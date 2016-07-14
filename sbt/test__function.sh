@@ -7,29 +7,37 @@ function test__function {
   #@Author  Hank BoFrank
   #@Date    2013.03.04
   #@Usage   test__function [-D 'search for string' [-D ...]] [-h --help] [-v --verbose] <file>
+  #@Dep     grep 2.0+ it's awesome
+  #@dep     cool_tool 9.21.4-alpha+, but less than 9.21.5
 
   #@Description   A complex function attempting to show most (or all) of the things/ways you can document stuff.
   #@Description   We will attempt to read a file and list the line number and first occurence of a Zelda keyword.
   #@Description   -
   #@Description   This is a SILLY script that is untested; for demonstration purposes only.
 
+
   # Variables
   #@$1 The first option (after shifting from getopts) will be a file name to operate on.
-  local    -r E_GENERIC=1             #@$E_GENERIC If we need to exit and don't have a better ERROR choice, use this.
-  local    -r E_BAD_INPUT=10          #@$ Send when file specified in $1 is invalid or when -D is blank.
-  local       _verbose=false          #@$verbose Flag to decide if we should be chatty with our output.
+  #@$@ A list of other files to include in the search.
+  #@$@ -
+  #@$@ I have multiple lines, for kicks.
+  local -i -r E_GENERIC=1             #@$E_GENERIC If we need to exit and don't have a better ERROR choice, use this.
+  local -i -r E_BAD_INPUT=10          #@$ Send when file specified in $1 is invalid or when -D is blank.
+  local       _verbose=false          #@$_verbose Flag to decide if we should be chatty with our output.
   local       _temp='something'       #@$ A temp variable for our operations below.  (Note: Docker will record defaults.)
   local    -r _WIFE_IS_HOT=true       #@$ Pointless boolean flag, and it is now read only (and accurate).
   local -a    _index_array=( Zelda )  #@$ Index array with 1 element (element 0, value of Zelda)
   local -A    _assoc_array            #@$ Associative array (hash) to hold misc things as we read file.
   local -i    _i                      #@$ A counter variable, forced to be integer only.
-  local       _opt                    #@$ Opt variable for getopts.
+  local       _opt
   local       _line                   #@$ Temporary variable for use in the read loop.
-  final_value=''                      #@$ The final value to expose to the caller after we exit. (Note: Docker will flag as by-ref.)
+  local       _reference              #@$ Variable to hold the name of our nameref for assignment.
+                                      #@$_line I have some extra detail about _line.
+  final_value=''                      #@$ The final value to expose to the caller after we exit. (Note: Docker will flag as not "threadsafe" as a result)
 
   # Process options
   while true ; do
-    core__getopts ":D:hv" opt 'help,verbose'
+    core__getopts ":D:hR:v" opt 'help,verbose'
     case $? in 1) break ;; 2) return 1 ;; esac
     case "${_opt}" in
       D           ) #@opt_ Add bonus items to the index_array variable.
@@ -39,10 +47,12 @@ function test__function {
                     echo 'No help exists for this function yet.' >&2
                     return ${E_GENERIC}
                     ;;
+      'R'         ) _reference="${OPTARG}" ;; #@opt_ Sets the nameref for indirect assignment.
       v | verbose ) _verbose=true ;; #@opt_ Change the verbose flag to true so we can send more output to the caller.
       *           ) echo "Invalid option: -${OPTARG}" >&2 ; return ${E_GENERIC} ;;
     esac
   done
+  #@opt_verbose  Federating this option so I can make it multiline.
 
   # Pre-flight Checks
   if ! core__tool_exists 'grep'    ; then echo 'The required tools to run this function were not found.' >&2 ; return ${E_GENERIC}   ; fi
