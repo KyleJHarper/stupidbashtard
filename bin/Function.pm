@@ -142,8 +142,11 @@ sub variables {
   # Set a value if value, variable name, and property specified.
   if ( $variable && $property && $value ) { $self->{'variables'}->{$variable}->{$property} = $value ; return 1 ; }
 
-  # Return a value if only a variable name and property were sent.
-  if ( $variable && $property ) { return $self->{'variables'}->{$variable}->{$property} ; }
+  # Return a value if only a variable name and property were sent.  Make sure the property persists, btw.
+  if ( $variable && $property ) {
+    if (! $self->{'variables'}->{$variable}->{$property} ) { $self->{'variables'}->{$variable}->{$property} = '' ; }
+    return $self->{'variables'}->{$variable}->{$property} ;
+  }
 
   # Return keys (properties) of the variable specified, if only variable specified.
   if ( $variable ) { return keys $self->{'variables'}->{$variable} ; }

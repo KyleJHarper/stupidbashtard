@@ -28,11 +28,33 @@ function test__function {
   local    -r _WIFE_IS_HOT=true       #@$ Pointless boolean flag, and it is now read only (and accurate).
   local -a    _index_array=( Zelda )  #@$ Index array with 1 element (element 0, value of Zelda)
   local -A    _assoc_array            #@$ Associative array (hash) to hold misc things as we read file.
+  local -A    _new_hash=([k1]=hi)     #@$ Hash with a single key/value pair.
+  local -A    _bigger_hash=([k-1]=hi [k-2]=there    #@$ Hash with a multiple key/value pair.
+  local       _implied_array=(hi ho)  #@$ Docker will understand this is an array.
+  local -a    _multi_array=(          #@$ Explicitly defined array that holds multiple values via lines.
+                            one
+                            two
+                            'a b c'
+                            'd "e" f'
+                            'g " h " i'
+                            "\\whee"
+                            "\"no\" thanks"
+                           )
+  local -A    _multi_hash=(           #@$ Explicitly defined multiline hash.
+                           [key1]=value1
+                           ['key2']=value2
+                           [key 3]=value3
+                           [key 4]='value 4'
+                           [key 5]="\"value\" 5"
+                          )
   local -i    _i                      #@$ A counter variable, forced to be integer only.
   local       _opt
   local       _line                   #@$ Temporary variable for use in the read loop.
-  local       _reference              #@$ Variable to hold the name of our nameref for assignment.
                                       #@$_line I have some extra detail about _line.
+  local       _reference              #@$ Variable to hold the name of our nameref for assignment.
+  local       _multiline='this
+spans a few
+    lines'
   final_value=''                      #@$ The final value to expose to the caller after we exit. (Note: Docker will flag as not "threadsafe" as a result)
 
   # Process options

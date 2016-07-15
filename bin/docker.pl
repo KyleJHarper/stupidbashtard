@@ -49,6 +49,7 @@ my $getopts_offset = 0  ;
 my $last_opt_name  = '' ;
 my $line_num       = 0  ;
 my $saw_return     = '' ;
+my $current_file   = '' ;
 
 # -- GetOpts Overrides
 getopts('d:hqtuv') or &usage ;
@@ -77,6 +78,7 @@ foreach ( @FILES ) {
   $line_num = 0 ;
   &reset_variables ;
   %namespace_tags = () ;
+  $current_file = $_ ;
   open( $fh, '<', $_ ) or &fatal($E_IO_FAILURE, "Unable to open file for reading:  " . $_ ) ;
 
   # Read file line by line and generate documentation.
@@ -221,7 +223,6 @@ sub save_function {
   }
   print $file_handle "\n" ;
 
-
   # -- Parameters & Options
   print $file_handle "# Parameters & Options (switches and positionals)\n" ;
   print $file_handle "parameters:\n" ;
@@ -296,6 +297,7 @@ sub save_function {
     else               { print $file_handle "    exit_var: false\n" ; }
     # Scope, Flags, and Default Value
     foreach my $property ($func->variables($var)) {
+      # -- Flags:  store them in an array.
       if ($property eq 'flags' ) {
         $flags = $func->variables($var, $property);
         $flags =~ s/([\S]+)/'$1'/g ;
@@ -304,6 +306,109 @@ sub save_function {
         print $file_handle "    ${property}: [" . $flags . "]\n" ;
         next ;
       }
+      # -- Values (Array):  split them up.
+      if ($property eq 'value' && $flags =~ /array/) {
+        my $in_quote  = '';
+        my $escape    = '';
+        my $new_value = '';
+        my @values    = ();
+        $token = $func->variables($var, $property) ;
+        $token =~ s/(^\([\s]*|[\s]*\)$)//g ;
+        foreach my $char ( split //, $token ) {
+          $new_value .= $char ;
+          if (   $new_value =~ /^\s+$/           ) { next ; }
+          if (   $escape                         ) { $escape = ''      ; next ; }
+          if ( ! $escape   && $char eq '\\'      ) { $escape = 'yep'   ; next ; }
+          if (   $in_quote && $char eq $in_quote ) { $in_quote = ''    ; next ; }
+          if ( ! $in_quote && $char =~ /["']/    ) { $in_quote = $char ; next ; }
+          if ( ! $in_quote && $char =~ /\s/      ) {
+            $new_value =~ s/(^\s*|\s*$)//g ;
+            $new_value =~ s/'/''/g ;
+            push @values, $new_value ;
+            $new_value = '' ;
+            next ;
+          }
+        }
+        $new_value =~ s/(^\s*|\s*$)//g ;
+        $new_value =~ s/'/''/g ;
+        push @values, $new_value ;
+        print $file_handle "    value:\n" ;
+        foreach ( @values ) {
+          $quote = "'";
+          if ($new_value =~ /^[0-9]+$/ ) { $quote = '' ; }
+          print $file_handle "      - ${quote}$_${quote}\n" ;
+        }
+        next ;
+      }
+      # -- Values (Hash):  store as key-value pairs.
+      if ($property eq 'value' && $flags =~ /hash/) {
+        my $in_quote  = '';
+        my $escape    = '';
+        my $new_value = '';
+        my $new_key   = '';
+        my $keys      = {};
+        $token = $func->variables($var, $property) ;
+        $token =~ s/(^\([\s]*|[\s]*\)$)//g ;
+        foreach my $char ( split //, $token ) {
+          $new_value .= $char ;
+          if (   $new_value =~ /^\s+$/           ) { next ; }
+          if ( ! $new_key  && $char eq '['       ) { next ; }
+          if (   $escape                         ) { $escape = ''      ; next ; }
+          if ( ! $escape   && $char eq '\\'      ) { $escape = 'yep'   ; next ; }
+          if (   $in_quote && $char eq $in_quote ) { $in_quote = ''    ; next ; }
+          if ( ! $in_quote && $char =~ /["']/    ) { $in_quote = $char ; next ; }
+          if ( ! $new_key  && $char =~ /\s/      ) { next ; }
+          if ( ! $new_key  && $char eq ']'       ) { $new_key = $new_value ; $new_value = '' ; next ; }
+          if ( ! $in_quote && $char =~ /\s/      ) {
+            $new_value =~ s/(^\s*=|\s*$)//g ;
+            $new_value =~ s/'/''/g ;
+            $new_key =~ s/(^\s*|\s*$)//g ;
+            $new_key =~ s/[\[\]]//g ;
+            if ($new_key =~ /^['"]\S+['"]$/ ) { $new_key =~ s/(^['"]|['"]$)//g ; }
+            if ($new_key =~ /\s/) { $new_key = "'${new_key}'" } ;
+            $keys->{$new_key} = $new_value ;
+            $new_value = '' ;
+            $new_key = '' ;
+            next ;
+          }
+        }
+        $new_value =~ s/(^\s*=|\s*$)//g ;
+        $new_value =~ s/'/''/g ;
+        $new_key =~ s/(^\s*|\s*$)//g ;
+        $new_key =~ s/[\[\]]//g ;
+        if ($new_key =~ /^['"]\S+['"]$/ ) { $new_key =~ s/(^['"]|['"]$)//g ; }
+        if ($new_key =~ /\s/) { $new_key = "'${new_key}'" } ;
+        $keys->{$new_key} = $new_value ;
+        print $file_handle "    value:\n" ;
+        foreach ( sort keys $keys ) {
+          if ($_ eq '') { next ; }
+          $quote = "'";
+          if ($keys->{$_} =~ /^[1-9]+$/ ) { $quote = '' ; }
+          print $file_handle "      $_: ${quote}$keys->{$_}${quote}\n" ;
+        }
+        next ;
+      }
+      # Values (String/Numeric):  Save as-is, spanning lines if necessary.
+      if ($property eq 'value') {
+        $token = $func->variables($var, $property) ;
+        my $line_count = $token =~ tr/\n// ;
+        if ($line_count > 1 ) {
+          $token =~ s/^['"]// ;
+          $token =~ s/['"]$// ;
+          print $file_handle "    value: |\n" ;
+          foreach (split /\n/, $token) {
+            print $file_handle "      " . $_ . "\n";
+          }
+          next ;
+        }
+        $quote = "'";
+        $token =~ s/'/''/g ;
+        if ($token =~ /^[0-9]+$/ ) { $quote = '' ; }
+        print $file_handle "    value: " . ${quote} . $token . ${quote} . "\n" ;
+        next ;
+      }
+
+      # Remainder
       $quote = "'";
       $token = $func->variables($var, $property) ;
       $token =~ s/'/''/g ;
@@ -380,6 +485,8 @@ sub add_variable {
     }
   }
 
+  # Before we strip spacing see if this is an array without the explicit -a switch.
+
   # If we still don't have a name, then we need to leave.
   if ( ! $name ) { return 0 ; }
 
@@ -404,6 +511,55 @@ sub add_variable {
   $value = $new_value;
   $value =~ s/^[\s]*//g ;
   $value =~ s/[\s]*$//g ;
+
+  # If the variable's value looks like an array or hash, let's grab it.
+  if ($value =~ /^\(/ ) {
+    # Assume this is an array for now; we can change our mind later.
+    my $inferred_type = 'array ' ;
+    # If the value doesn't end in a bare closing parenthesis then this will be multiline.
+    if ($value !~ /\)$/ ) {
+      $new_value = $value ;
+      my $fh;
+      my $local_line_no = 0;
+      open( $fh, '<', $current_file ) or &fatal($E_IO_FAILURE, "Unable to open file for reading values from:  " . $current_file ) ;
+      while( <$fh> ) {
+        $local_line_no++;
+        chomp ;
+        if ($local_line_no <= $line_num) { next ; }
+        if ($_ =~ /^[\s]*\[['"]?[a-zA-Z0-9_ -]+['"]?\]=/ ) { $inferred_type = 'hash ' ; }
+        $in_quote = '' ;
+        $escape   = '' ;
+        foreach my $char ( split //, $_ ) {
+          $new_value .= $char ;
+          if (   $escape                         ) { $escape = ''      ; next ; }
+          if ( ! $escape   && $char eq '\\'      ) { $escape = 'yep'   ; next ; }
+          if (   $in_quote && $char eq $in_quote ) { $in_quote = ''    ; next ; }
+          if ( ! $in_quote && $char =~ /["']/    ) { $in_quote = $char ; next ; }
+          if ( ! $in_quote && $char eq '#'       ) { $new_value = substr($new_value, 0, -1) ; last ; }
+          if ( ! $in_quote && $char eq ';'       ) { $new_value = substr($new_value, 0, -1) ; last ; }
+        }
+        if ($_ =~ /\)$/ ){ last ; }
+      }
+      close($fh) ;
+      $value = $new_value ;
+    }
+    if ($flags !~ /hash/ && $flags !~ /${inferred_type}/ ) { $flags .= "${inferred_type} " ; }
+  }
+
+  # If the variable's value is multiline inside quotes and isn't an array or hash try to find it.
+  if ($value =~ /^['][^']+$/ || $value =~ /^["][^"]+$/ ) {
+    my $fh;
+    my $local_line_no = 0;
+    my $leading_quote = substr($value, 0, 1) ;
+    open( $fh, '<', $current_file ) or &fatal($E_IO_FAILURE, "Unable to open file for reading multiline value from:  " . $current_file ) ;
+    while( <$fh> ) {
+      $local_line_no++;
+      chomp;
+      if ($local_line_no <= $line_num) { next ; }
+      $value .= "\n" . $_ ;
+      if (substr($_, -1, 1) eq $leading_quote) { last ; }
+    }
+  }
 
   # Thread safe killed if non local variable found.
   if ( $scope eq 'top' ) { $func->thread_safe('false') ; }
