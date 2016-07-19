@@ -151,6 +151,14 @@ while [ ${iteration} -le ${MAX_ITERATIONS} ] ; do
   [ "${option_longB}" == "${temp}" ]                                                                                                   || fail 8
   pass
 
+  # -- 12 -- Stupidly long getopts
+  new_test "Long options with several hyphens should get substituded: "
+  unset __SBT_NONOPT_ARGS
+  declare -a __SBT_NONOPT_ARGS=()
+  reset_vars
+  core__easy_getopts '' ':very-long-hyphenated-option:' --very-long-hyphenated-option 'weird "new" value with\"escaped\" quotes'  || fail 1
+  [ "${option_very_long_hyphenated_option}" == 'weird "new" value with\"escaped\" quotes' ]                                       || fail 2
+  pass
 
   let iteration++
 done

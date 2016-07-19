@@ -180,8 +180,8 @@ function core__getopts {
       fi
       # If we're not handling errors internally. Return success and let the user handle it.  Set OPTARG too because bash does... odd.
       core__log_verbose "Found an option that isn't in the list but I was told to shut up about it:  --${_opt_}"
-      eval "$2=\"${_opt_}\""
-      eval "OPTARG=\"${_opt_}\""
+      eval "$2=\"\${_opt_}\""
+      eval "OPTARG=\"\${_opt_}\""
       return 0
     fi
 
@@ -203,7 +203,7 @@ function core__getopts {
         _temp_opt="${1:${_i}:1}"
         if [ "${_temp_opt}" = "${_opt_}" ] ; then
           core__log_verbose "Found a matching option.  Assigning to: $2"
-          eval "$2=\"${_temp_opt}\""
+          eval "$2=\"\${_temp_opt}\""
           let _i++
           if [ "${1:${_i}:1}" == ':' ] && [ -z "${OPTARG}" ] ; then
             core__log_verbose "Option sent (${_opt_}) requires an argument; gathering now. Also resetting SHORT OPTIND, as it must be the end."
@@ -230,8 +230,8 @@ function core__getopts {
       fi
       # If we're not handling errors internally. Return success and let the user handle it.  Set OPTARG too because bash does... odd.
       core__log_verbose "Found an option that isn't in the list but I was told to shut up about it:  -${_opt_}"
-      eval "$2=\"${_opt_}\""
-      eval "OPTARG=\"${_opt_}\""
+      eval "$2=\"\${_opt_}\""
+      eval "OPTARG=\"\${_opt_}\""
       return 0
     fi
 
@@ -279,8 +279,7 @@ function core__easy_getopts {
              continue
            fi
            core__log_verbose "Option found was '${_opt}' and OPTARG has a value.  Assigning OPTARG to option and continuing loop."
-           OPTARG="${OPTARG//\"/\\\"}"
-           eval "option_${_opt}=\"${OPTARG}\""
+           eval "option_${_opt}=\"\${OPTARG}\""
            ;;
       1 )  core__log_verbose "Received code 1, getopts is done.  Breaking loop."                     ; break    ;;
       2 )  core__log_error   "Received code 2 (E_UHOH) from core__getopts.  Returning failure here." ; return 1 ;;
