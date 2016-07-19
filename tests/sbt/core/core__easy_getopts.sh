@@ -103,6 +103,54 @@ while [ ${iteration} -le ${MAX_ITERATIONS} ] ; do
   [ "${option_long_hyphenated}" = 'this "is" fun' ]                                                                                                   || fail 8
   pass
 
+  # -- 9 -- Nonopt args should get populated.
+  new_test "The SBT_NONOPT_ARGS should get populated: "
+  reset_vars
+  unset __SBT_NONOPT_ARGS
+  declare -a __SBT_NONOPT_ARGS=()
+  core__easy_getopts ':abc:' ':longA' -a 'nonopt arg 1' -c 'rawr' --longA 'nonopt arg 2' 'nonopt arg 3'   || fail 1
+  [ "${option_a}" == 'true' ]                                                                             || fail 2
+  [ "${option_c}" == 'rawr' ]                                                                             || fail 3
+  [ "${option_longA}" == 'true' ]                                                                         || fail 4
+  [ ${#__SBT_NONOPT_ARGS[@]} -eq 3 ]                                                                      || fail 5
+  [ "${__SBT_NONOPT_ARGS[0]}" == 'nonopt arg 1' ]                                                         || fail 6
+  [ "${__SBT_NONOPT_ARGS[1]}" == 'nonopt arg 2' ]                                                         || fail 7
+  [ "${__SBT_NONOPT_ARGS[2]}" == 'nonopt arg 3' ]                                                         || fail 8
+  pass
+
+  # -- 10 -- Newlines
+  new_test "Newlines shouldn't be a problem: "
+  unset __SBT_NONOPT_ARGS
+  declare -a __SBT_NONOPT_ARGS=()
+  declare temp="$(echo -e "\nasdf\n\nfdsa")"
+  reset_vars
+  core__easy_getopts ':abc:' ':longA,longB:' -a -c $'rawr\nthere' --longA --longB "${temp}" $'line1\nline2' "${temp}"   || fail 1
+  [ ${#__SBT_NONOPT_ARGS[@]} -eq 2 ]                                                                                    || fail 2
+  [ "${__SBT_NONOPT_ARGS[0]}" == $'line1\nline2' ]                                                                      || fail 3
+  [ "${__SBT_NONOPT_ARGS[1]}" == $'\nasdf\n\nfdsa' ]                                                                    || fail 4
+  [ "${option_a}" == 'true' ]                                                                                           || fail 5
+  [ "${option_c}" == $'rawr\nthere' ]                                                                                   || fail 6
+  [ "${option_longA}" == 'true' ]                                                                                       || fail 7
+  [ "${option_longB}" == "${temp}" ]                                                                                    || fail 8
+  unset temp
+  pass
+
+  # -- 11 -- Quotes
+  new_test "Quotes and nested quotes should be ok: "
+  unset __SBT_NONOPT_ARGS
+  declare -a __SBT_NONOPT_ARGS=()
+  reset_vars
+  declare temp="$(echo -e "''\"\'text\"'''")"
+  core__easy_getopts ':abc:' ':longA,longB:' -a -c "this is 'one' option" --longA --longB "${temp}" "this is 'one' option" "${temp}"   || fail 1
+  [ ${#__SBT_NONOPT_ARGS[@]} -eq 2 ]                                                                                                   || fail 2
+  [ "${__SBT_NONOPT_ARGS[0]}" == "this is 'one' option" ]                                                                              || fail 3
+  [ "${__SBT_NONOPT_ARGS[1]}" == "${temp}" ]                                                                                           || fail 4
+  [ "${option_a}" == 'true' ]                                                                                                          || fail 5
+  [ "${option_c}" == "this is 'one' option" ]                                                                                          || fail 6
+  [ "${option_longA}" == 'true' ]                                                                                                      || fail 7
+  [ "${option_longB}" == "${temp}" ]                                                                                                   || fail 8
+  pass
+
 
   let iteration++
 done

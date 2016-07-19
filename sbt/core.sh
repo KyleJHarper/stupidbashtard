@@ -101,7 +101,7 @@ function core__getopts {
 
     # Try to store positional argument in _opt_.  If the option we tried to store in _opt is blank, we're done.
     core__log_verbose 'Assigning value to _opt_.'
-    eval _opt_="\"\${${_my_optind}}\""
+    eval "_opt_=\"\${${_my_optind}}\""
     if [ -z "${_opt_}" ] ; then
       if [ ${_my_optind} -le ${#@} ] ; then
         core__log_verbose "The positional was blank, but there may be more positionals to grab.  Storing the empty value in __SBT_NONOPT_ARGS and continuing."
@@ -156,12 +156,12 @@ function core__getopts {
         [ "${_temp_opt:0:1}" = ':' ] && _temp_opt="${_temp_opt:1}"
         if [ "${_temp_opt%:}" = "${_opt_}" ] ; then
           core__log_verbose "Found a matching option.  Assigning to: $2"
-          eval $2="\"${_temp_opt%:}\""
+          eval "$2=\"${_temp_opt%:}\""
           if [ "${_temp_opt: -1}" == ':' ] && [ -z "${OPTARG}" ] ; then
             core__log_verbose "Option sent (${_opt_}) requires an argument; gathering now."
             let OPTIND++
             let _my_optind++
-            eval OPTARG="\"\${${_my_optind}}\""
+            eval "OPTARG=\"\${${_my_optind}}\""
             if [ -z "${OPTARG}" ] ; then
               core__log_error "Option specified (--${_opt_}) requires a value."
               OPTIND=1
@@ -180,8 +180,8 @@ function core__getopts {
       fi
       # If we're not handling errors internally. Return success and let the user handle it.  Set OPTARG too because bash does... odd.
       core__log_verbose "Found an option that isn't in the list but I was told to shut up about it:  --${_opt_}"
-      eval $2="\"${_opt_}\""
-      eval OPTARG="\"${_opt_}\""
+      eval "$2=\"${_opt_}\""
+      eval "OPTARG=\"${_opt_}\""
       return 0
     fi
 
@@ -203,14 +203,14 @@ function core__getopts {
         _temp_opt="${1:${_i}:1}"
         if [ "${_temp_opt}" = "${_opt_}" ] ; then
           core__log_verbose "Found a matching option.  Assigning to: $2"
-          eval $2="\"${_temp_opt}\""
+          eval "$2=\"${_temp_opt}\""
           let _i++
           if [ "${1:${_i}:1}" == ':' ] && [ -z "${OPTARG}" ] ; then
             core__log_verbose "Option sent (${_opt_}) requires an argument; gathering now. Also resetting SHORT OPTIND, as it must be the end."
             __SBT_SHORT_OPTIND=1
             let OPTIND++
             let _my_optind++
-            eval OPTARG="\"\${${_my_optind}}\""
+            eval "OPTARG=\"\${${_my_optind}}\""
             if [ -z "${OPTARG}" ] ; then
               core__log_error "Option specified (-${_opt_}) requires a value."
               OPTIND=1
@@ -230,8 +230,8 @@ function core__getopts {
       fi
       # If we're not handling errors internally. Return success and let the user handle it.  Set OPTARG too because bash does... odd.
       core__log_verbose "Found an option that isn't in the list but I was told to shut up about it:  -${_opt_}"
-      eval $2="\"${_opt_}\""
-      eval OPTARG="\"${_opt_}\""
+      eval "$2=\"${_opt_}\""
+      eval "OPTARG=\"${_opt_}\""
       return 0
     fi
 
@@ -275,12 +275,12 @@ function core__easy_getopts {
            _opts_found+=("${_opt}")
            if [ -z "${OPTARG}" ] ; then
              core__log_verbose "Option found was '${_opt}' and OPTARG is blank.  Giving this option 'true' and continuing loop."
-             eval option_${_opt}=true
+             eval "option_${_opt}=true"
              continue
            fi
            core__log_verbose "Option found was '${_opt}' and OPTARG has a value.  Assigning OPTARG to option and continuing loop."
            OPTARG="${OPTARG//\"/\\\"}"
-           eval option_${_opt}="\"${OPTARG}\""
+           eval "option_${_opt}=\"${OPTARG}\""
            ;;
       1 )  core__log_verbose "Received code 1, getopts is done.  Breaking loop."                     ; break    ;;
       2 )  core__log_error   "Received code 2 (E_UHOH) from core__getopts.  Returning failure here." ; return 1 ;;

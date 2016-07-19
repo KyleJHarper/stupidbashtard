@@ -341,6 +341,28 @@ while [ ${iteration} -le ${MAX_ITERATIONS} ] ; do
   [ "${__SBT_NONOPT_ARGS[0]}" == '' ]    || fail 4
   pass
 
+  # -- 29 -- Newlines
+  new_test "Newlines shouldn't be a problem: "
+  unset __SBT_NONOPT_ARGS
+  declare -a __SBT_NONOPT_ARGS=()
+  declare temp="$(echo -e "\nasdf\n\nfdsa")"
+  opts_sbt ':abc' ':long' $'line1\nline2' "${temp}"      || fail 1
+  [ ${#__SBT_NONOPT_ARGS[@]} -eq 2 ]                     || fail 2
+  [ "${__SBT_NONOPT_ARGS[0]}" == $'line1\nline2' ]       || fail 3
+  [ "${__SBT_NONOPT_ARGS[1]}" == $'\nasdf\n\nfdsa' ]     || fail 4
+  unset temp
+  pass
+
+  # -- 30 -- Quotes
+  new_test "Quotes and nested quotes should be ok: "
+  unset __SBT_NONOPT_ARGS
+  declare -a __SBT_NONOPT_ARGS=()
+  declare temp="$(echo -e "''\"\'text\"'''")"
+  opts_sbt ':abc' ':long' "this is 'one' option" "${temp}"   || fail 1
+  [ ${#__SBT_NONOPT_ARGS[@]} -eq 2 ]                         || fail 2
+  [ "${__SBT_NONOPT_ARGS[0]}" == "this is 'one' option" ]    || fail 3
+  [ "${__SBT_NONOPT_ARGS[1]}" == "${temp}" ]                 || fail 4
+  pass
 
   let iteration++
 done
