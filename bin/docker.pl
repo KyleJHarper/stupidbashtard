@@ -324,6 +324,8 @@ sub save_function {
           if ( ! $in_quote && $char =~ /\s/      ) {
             $new_value =~ s/(^\s*|\s*$)//g ;
             $new_value =~ s/'/''/g ;
+            $new_value =~ s/^''// ;
+            $new_value =~ s/''$// ;
             push @values, $new_value ;
             $new_value = '' ;
             next ;
@@ -362,6 +364,8 @@ sub save_function {
           if ( ! $in_quote && $char =~ /\s/      ) {
             $new_value =~ s/(^\s*=|\s*$)//g ;
             $new_value =~ s/'/''/g ;
+            $new_value =~ s/^''// ;
+            $new_value =~ s/''$// ;
             $new_key =~ s/(^\s*|\s*$)//g ;
             $new_key =~ s/[\[\]]//g ;
             if ($new_key =~ /^['"]\S+['"]$/ ) { $new_key =~ s/(^['"]|['"]$)//g ; }
@@ -403,6 +407,8 @@ sub save_function {
         }
         $quote = "'";
         $token =~ s/'/''/g ;
+        $token =~ s/^''// ;
+        $token =~ s/''$// ;
         if ($token =~ /^[0-9]+$/ ) { $quote = '' ; }
         print $file_handle "    value: " . ${quote} . $token . ${quote} . "\n" ;
         next ;
@@ -412,6 +418,8 @@ sub save_function {
       $quote = "'";
       $token = $func->variables($var, $property) ;
       $token =~ s/'/''/g ;
+      $token =~ s/^''// ;
+      $token =~ s/''$// ;
       if ($token =~ /^[0-9]+$/ ) { $quote = '' ; }
       print $file_handle "    ${property}: ${quote}" . $token . "${quote}\n" ;
     }

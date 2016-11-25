@@ -14,15 +14,7 @@ dt="${d} -t"
 
 
 
-
-###########
-#  Tests  #
-###########
-
-# Table of Contents
-#   1.  docker.pl
-
-
+echo ''
 # +-------------------------#
 # |  Section 1.  docker.pl  |
 # +-------------------------#
@@ -109,11 +101,13 @@ pass
 
 #
 # Generate the test_function yaml file and make sure the MD5 matches.
+# Note: we don't hash full comment lines, so header info and stuff doesn't affect us.
 #
-cmd="${d} ../sbt/test_function.sh"
-KNOWN_SUM='bd34d83ef1f1ef55aa6aa4d3b789b5ea'
+cmd="${d} ../sbt/test__function.sh"
+KNOWN_SUM='1172ee31a504143f7e9379bc77ed2a50'
 new_test "Analyzing a complete function and comparing known MD5 of YAML file.  Includes most features and edge cases: "
+[ -f "../doc/test__function.yaml" ] && rm "../doc/test__function.yaml"
 $cmd >/dev/null 2>/dev/null
 [ $? -eq ${E_GOOD} ] || fail 1
-[[ "$( grep -P '^[^#]' ../doc/test_function.yaml | md5sum | cut -d' ' -f1 )" == "${KNOWN_SUM}" ]] || fail 2
+[[ "$( grep -P '^[^#]' ../doc/test__function.yaml | md5sum | cut -d' ' -f1 )" == "${KNOWN_SUM}" ]] || fail 2
 pass

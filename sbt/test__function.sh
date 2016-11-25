@@ -55,7 +55,7 @@ function test__function {
   local       _multiline='this
 spans a few
     lines'
-  final_value=''                      #@$ The final value to expose to the caller after we exit. (Note: Docker will flag as not "threadsafe" as a result)
+  final_value=''                      #@$ The final value to expose to the caller after we exit. (Note: Docker will flag 'top' scope as a result.)
 
   # Process options
   while true ; do
