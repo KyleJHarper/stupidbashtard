@@ -3,7 +3,7 @@
 # Copyright 2013 Kyle Harper
 # Licensed per the details in the LICENSE file in this package.
 
-#./docker.sh
+#./shocker.sh
 #./core.sh
 
 T=0

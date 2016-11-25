@@ -8,16 +8,16 @@
 
 # Variables
 cmd=''
-d="${BIN_DIR}/docker.pl"
+d="${BIN_DIR}/shocker.pl"
 dt="${d} -t"
 
 
 
 
 echo ''
-# +-------------------------#
-# |  Section 1.  docker.pl  |
-# +-------------------------#
+# +--------------------------#
+# |  Section 1.  shocker.pl  |
+# +--------------------------#
 #
 # No switches should give basic test output
 #
@@ -104,7 +104,7 @@ pass
 # Note: we don't hash full comment lines, so header info and stuff doesn't affect us.
 #
 cmd="${d} ../sbt/test__function.sh"
-KNOWN_SUM='1172ee31a504143f7e9379bc77ed2a50'
+KNOWN_SUM='829c839835c92dfa84135842635be9c0'
 new_test "Analyzing a complete function and comparing known MD5 of YAML file.  Includes most features and edge cases: "
 [ -f "../doc/test__function.yaml" ] && rm "../doc/test__function.yaml"
 $cmd >/dev/null 2>/dev/null

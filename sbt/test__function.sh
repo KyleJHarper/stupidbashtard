@@ -24,13 +24,13 @@ function test__function {
   local -i -r E_GENERIC=1             #@$E_GENERIC If we need to exit and don't have a better ERROR choice, use this.
   local -i -r E_BAD_INPUT=10          #@$ Send when file specified in $1 is invalid or when -D is blank.
   local       _verbose=false          #@$_verbose Flag to decide if we should be chatty with our output.
-  local       _temp='something'       #@$ A temp variable for our operations below.  (Note: Docker will record defaults.)
+  local       _temp='something'       #@$ A temp variable for our operations below.  (Note: Shocker will record defaults.)
   local    -r _WIFE_IS_HOT=true       #@$ Pointless boolean flag, and it is now read only (and accurate).
   local -a    _index_array=( Zelda )  #@$ Index array with 1 element (element 0, value of Zelda)
   local -A    _assoc_array            #@$ Associative array (hash) to hold misc things as we read file.
   local -A    _new_hash=([k1]=hi)     #@$ Hash with a single key/value pair.
   local -A    _bigger_hash=([k-1]=hi [k-2]=there    #@$ Hash with a multiple key/value pair.
-  local       _implied_array=(hi ho)  #@$ Docker will understand this is an array.
+  local       _implied_array=(hi ho)  #@$ Shocker will understand this is an array.
   local -a    _multi_array=(          #@$ Explicitly defined array that holds multiple values via lines.
                             one
                             two
@@ -55,7 +55,7 @@ function test__function {
   local       _multiline='this
 spans a few
     lines'
-  final_value=''                      #@$ The final value to expose to the caller after we exit. (Note: Docker will flag 'top' scope as a result.)
+  final_value=''                      #@$ The final value to expose to the caller after we exit. (Note: Shocker will flag 'top' scope as a result.)
 
   # Process options
   while true ; do

@@ -7,7 +7,7 @@ SBT is a framework comprised of shell scripts full of functions.  In short, I go
 -- Singular Principle
 SBT adheres to one rule above all others: if it isn't simple, repeatable, and easy to use, it's written wrong.  Bash is dangerously simple.  By following simple standards and regression testing, SBT should always remain useful, not cumbersome.  When we stick to its built-ins, Bash can operate very quickly too.  Operations which Bash stinks at should be passed to backend tools via function wrappers.
 
--- Docker
+-- Shocker
 A static analysis tool is used to read functions and put information about them into YAML files.  Ultimately, these could be useful as description pop-ups in an IDE.
 
 -- Support
@@ -17,7 +17,7 @@ I am not God's gift to scripting.  I fully expect, and hope, others will provide
 SBT requires a few basic tools (rm, cp, ...) which are generally provided by util-linux or similar.  It also leans heavily on GNU coreutils and GNU grep (your grep must support -P).  Finally, some functions use awk (any modern flavor) and perl (5+).
 
 MORE INFO
-More details about SBT and Docker are available in the SBT namespace 'doc_examples.sh'.
+More details about SBT and Shocker are available in the SBT namespace 'doc_examples.sh'.
 
 There is also a FAQ sheet which can answer a lot of questions.
 

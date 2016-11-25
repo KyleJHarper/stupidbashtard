@@ -23,15 +23,15 @@
 # -- Synopsis
 # Documentation is done through a combination of tags and code crawling.  In typical SBt (Stupid Bashtard) fashion, the documentation process is simplistic.
 
-# -- Docker
-# The tool used to generate documentation is called "Docker".  The end.
+# -- Shocker
+# The tool used to generate documentation is called "Shocker".  The end.
 
 
 # +--------+
 # |  Tags  |
 # +--------+
 # -- Tag Basics
-# Tags are the indicator that the documentation building script ("Docker") should include info about something it normally wouldn't capture.  Docker will look for certain tags by default, such as author, date, namespace, et cetera.  Custom tags are valid as well (like rawr above).
+# Tags are the indicator that the documentation building script ("Shocker") should include info about something it normally wouldn't capture.  Shocker will look for certain tags by default, such as author, date, namespace, et cetera.  Custom tags are valid as well (like rawr above).
 #
 # You can specify a tag by using the comment and @ symbol combination:  #@SomeAttribute bla (see the #@Description above for a multi-line example).
 #
@@ -39,7 +39,7 @@
 #   1. Description
 
 # -- Line-End Tags
-# Bash supports line-end comments, therefore Docker does too.  The two benefits to line-end comments are 1) 'cleaner' code visually and 2) certain line-end tags infer information.  This is quite popular for variable tags, getopt tags, and similar because it allows you to leave off the tag name.  For example, if you wanted to document a variable named VERBOSE, you could do:
+# Bash supports line-end comments, therefore Shocker does too.  The two benefits to line-end comments are 1) 'cleaner' code visually and 2) certain line-end tags infer information.  This is quite popular for variable tags, getopt tags, and similar because it allows you to leave off the tag name.  For example, if you wanted to document a variable named VERBOSE, you could do:
 # VERBOSE=false  #@$VEBOSE <description text>   or...
 # VERBOSE=false  #@$ <description text>
 
@@ -48,9 +48,9 @@
 # #@$VERBOSE <description text>
 
 # -- Variable Tags
-# Variables are auto-detected by either the delcare/typeset/local keyword and/or the assignment operator (=).  If a variable tag (#@$) is used as a line-end comment, the text following will be used as a description.  You do not need to specify the variable name again (#@$var), it will be inferred from the declaration.  Docker can treat variable tags like all others, if desired.  Their unique prefix (#@$) allows Docker to still group them all up, so where you place them in the function is irrelevant to Docker.
+# Variables are auto-detected by either the delcare/typeset/local keyword and/or the assignment operator (=).  If a variable tag (#@$) is used as a line-end comment, the text following will be used as a description.  You do not need to specify the variable name again (#@$var), it will be inferred from the declaration.  Shocker can treat variable tags like all others, if desired.  Their unique prefix (#@$) allows Shocker to still group them all up, so where you place them in the function is irrelevant to Shocker.
 #
-# Parameters should usually be passed as switches (see getopts below) and combined with pre-flight logic for mandatory things.  If, however, your function expects things like $1, you need to let Docker know.  Do this by placing a variable tag (#@$1) INSIDE the function.  These are always, of course, federated.
+# Parameters should usually be passed as switches (see getopts below) and combined with pre-flight logic for mandatory things.  If, however, your function expects things like $1, you need to let Shocker know.  Do this by placing a variable tag (#@$1) INSIDE the function.  These are always, of course, federated.
 # Note: While its tag looks funny, you are welcome to use the $@ variable.  Its variable tag would be:  #@$@
 # Note: Same with the $* variable:  #@$*
 
@@ -62,9 +62,9 @@
 # |  Code Crawling  |
 # +-----------------+
 # -- Crawling Basics
-# Docker is designed to crawl code and scan for functions, variables, and certain structures. It uses the information it finds to generate a report about each function.  The information is then stored in the meta-file along with tags (see above).
+# Shocker is designed to crawl code and scan for functions, variables, and certain structures. It uses the information it finds to generate a report about each function.  The information is then stored in the meta-file along with tags (see above).
 #
-# Note that Docker scans line-by-line, not by character or word.  If you follow simple, clean coding standards it's good at what it does.
+# Note that Shocker scans line-by-line, not by character or word.  If you follow simple, clean coding standards it's good at what it does.
 
 # -- Function Declarations
 # You do NOT need to use special comments and tags declare a function.  You ONLY need to write the function using valid bash syntax.  The documentation tool will read everything after it.  The braces for the function simply need to comply with bash rules.  The opening is on the same line or directly after.  The closing must be on it's own line, or preceeded by a semicolon.  Again, whatever bash allows.
@@ -76,26 +76,26 @@
 #   4. Functions have no return type besides integer (specifically, 0-255 usually).  You can't return a string, array, etc.  You shouldn't even be returning an integer via the function's return value.
 #   ...a lot more sadness :(
 #
-# Please note, Docker does not support function declarations inside other functions.  This is almost never useful and should be avoided.
+# Please note, Shocker does not support function declarations inside other functions.  This is almost never useful and should be avoided.
 
 # -- Parameters
 # Parameters should be passed and accepted via getopts (read more about that below) or anticipated in $@.  If you need to set variables from the command output of a function, swallow it like you would any other command output.
 #
 # Functions act more like code macros than subroutines (ignoring async/fork calls for now).  You cannot create functions with parameters defined as by-value, reference, out, and so forth.  All parameters sent to a function are by-value.  While Bash supports indirect referencing, and we could use that with funky naming conventions to emulate some reference-style parameters... it would be extremely hacky and deviate from the globally accepted rule for GNU/linux command output: it should go to STDOUT.
 #
-# That said:  By-Ref can be helpful at times.  For example, if we have a function that sorts an array it's easier (and faster) to simply return a variable with the array contents rather than swallowing the function output from a subshell.  StupidBashTard functions will always reserve the getopts option '-R' (capital R, not lowercase) for this purpose.  Functions which support this feature will use indirect referencing to assign the output to the variable name passed as an arg to the '-R' option.  As an added bonus, Docker will flag any function with a '-R' option as 'allow_indirect_output: true'. (You're welcome.)
+# That said:  By-Ref can be helpful at times.  For example, if we have a function that sorts an array it's easier (and faster) to simply return a variable with the array contents rather than swallowing the function output from a subshell.  StupidBashTard functions will always reserve the getopts option '-R' (capital R, not lowercase) for this purpose.  Functions which support this feature will use indirect referencing to assign the output to the variable name passed as an arg to the '-R' option.  As an added bonus, Shocker will flag any function with a '-R' option as 'allow_indirect_output: true'. (You're welcome.)
 
 # -- Variables & Scope
 # Variables in a bash script are thrown into a global top-level scope, even those made inside of functions.  The only exceptions are when calling a function asynchronously (forking) or when the function declares a variable using one of the keywords: declare, typeset, or local.  Note that you cannot use the local keyword for variables inside your main process.  This means the more you cram into the 'main' of your shell script the more expensive your async function calls and forking will be, since all variables are copied to forked processes.
 #
-# As mentioned in the parameters section, you should never set a variable in a function for use outside the function (see thread safety).  If Docker identifies a variable being set which was NOT defined earlier in the function with a local/declare/typeset keyword, it will flag the function as non-thread safe.
+# As mentioned in the parameters section, you should never set a variable in a function for use outside the function (see thread safety).  If Shocker identifies a variable being set which was NOT defined earlier in the function with a local/declare/typeset keyword, it will flag the function as non-thread safe.
 
 # -- Thread Safety
-# While bash doesn't support true threading, it can spawn (asynchronous) sub-processes and emulate a similar watered-down behavior.  Docker will mark all functions thread-safe until it finds a reason not to.  The primary reason for marking a function as non-thread safe is if Docker finds non-local variables.
+# While bash doesn't support true threading, it can spawn (asynchronous) sub-processes and emulate a similar watered-down behavior.  Shocker will mark all functions thread-safe until it finds a reason not to.  The primary reason for marking a function as non-thread safe is if Shocker finds non-local variables.
 #
 # This is, at best, a generic indicator that a thread isn't trying to assign values to a variable declared in another scope.
 #
-# Note:  Docker is a static-analysis tool.  It cannot begin to comprehend how you're using various functions.  A function marked thread-safe does not mean it'll magically protect you from race conditions and data corruption if you use the functions with shared resources or in a non-thread safe manner.  (You have been warned.)
+# Note:  Shocker is a static-analysis tool.  It cannot begin to comprehend how you're using various functions.  A function marked thread-safe does not mean it'll magically protect you from race conditions and data corruption if you use the functions with shared resources or in a non-thread safe manner.  (You have been warned.)
 
 # -- Returns
 # You should:
@@ -108,16 +108,16 @@
 #
 # *Else-Less Note: Else blocks are almost always unnecessary and result in nastier code.  Trapped errors and returns are often crammed into these and generate edge-cases where the wrong return is sent or program flow continues where it shouldn't.
 #
-# Docker will NOT send a warning for any function without a 'return #' statement at the end.  However, functions should have a default return status if the end of the function is ever reached.  Conditional blocks may contain returns as well; but no matter what you should always have a default return value.
+# Shocker will NOT send a warning for any function without a 'return #' statement at the end.  However, functions should have a default return status if the end of the function is ever reached.  Conditional blocks may contain returns as well; but no matter what you should always have a default return value.
 
 # -- Declare, Local, & Typeset
-# Bash variables are generally untyped.  If you use the declare keyword, the document script will note this and update correctly.  The keywords 'declare' or 'local' are preferred, but 'typeset' is acceptable too.  Any valid declare type will be detected.  E.g. -r, -i, etc.  Docker will attempt to point out conflicts and warn about them, but don't rely on this.  (For example: declare -a -A some_var ).
+# Bash variables are generally untyped.  If you use the declare keyword, the document script will note this and update correctly.  The keywords 'declare' or 'local' are preferred, but 'typeset' is acceptable too.  Any valid declare type will be detected.  E.g. -r, -i, etc.  Shocker will attempt to point out conflicts and warn about them, but don't rely on this.  (For example: declare -a -A some_var ).
 
 # -- Exit Codes
 # Any variable starting with E_ will be assumed to be an exit-code and documented as such.  The value assigned will be included in docs.  Use variable tags to add descriptions: #@$E_SOME_ERR <description text>
 
 # -- GetOpts
-# Docker will scan for a while loop that uses getopts (or core__getopts) and a case statement.  It MUST be presented like so:
+# Shocker will scan for a while loop that uses getopts (or core__getopts) and a case statement.  It MUST be presented like so:
 #   while getopts '<chars>' some_var ; do     # You CAN use double quotes around <chars> too.
 #     case $some_var in                       # You CAN use any variable name you want.  some_var is an example.
 #       ...                                   # You CAN put the 'do' keyword on a separate line, if you want.
@@ -134,13 +134,13 @@
 #     esac
 #   done
 #
-# When Docker sees the aforementioned, it will scan for getopt tags (#@opt_).  Typically you will place these tags inside each case item.  Docker will understand which case item the tag is in and record it appropriately.  You can also specify the name of the option if desired (e.g. #@opt_a).  This will override Docker's auto-detected case-item at run time... though it should always be the same, so why would you?
+# When Shocker sees the aforementioned, it will scan for getopt tags (#@opt_).  Typically you will place these tags inside each case item.  Shocker will understand which case item the tag is in and record it appropriately.  You can also specify the name of the option if desired (e.g. #@opt_a).  This will override Shocker's auto-detected case-item at run time... though it should always be the same, so why would you?
 #
 # StupidBashTard supports long options via the core__getopts function.  It is fully backward compatible with the built-in getopts.  It takes a 3rd parameter, a comma-separated list of long option names.  The above example with long opts would be as such:
 #   while core__getopts '<chars>' some_var '<long_opts>' ; do     # You CAN use double quotes around <chars> or long_opts too.
 
 # -- Required Programs & Functions (SBT core__tool_exists)
-# Docker is capable of reading the core__tool_exists function calls (from StupidBashtard).  If a function invokes core__tool_exists, all arguments listed afterward will be listed in the documentation as dependencies of the caller.
+# Shocker is capable of reading the core__tool_exists function calls (from StupidBashtard).  If a function invokes core__tool_exists, all arguments listed afterward will be listed in the documentation as dependencies of the caller.
 
 
 # +------------+
@@ -168,7 +168,7 @@ function doc_examples_01-DoNothing {
 }
 
 
-#(proof you can do this and Docker will 'read' it, but you can't really specify any tags... so... why???)
+#(proof you can do this and Shocker will 'read' it, but you can't really specify any tags... so... why???)
 function doc_examples_02-OneLiner { return 0 ; }
 
 
@@ -185,7 +185,7 @@ doc_examples_04-AnnoyingDeclarationOneLiner () { return 0 ; }
 
 
 function doc_examples_05-MixedDeclaration () {
-  #@Description  This form of declaration is valid in bash too, and still annoying.  But Docker will accept it.
+  #@Description  This form of declaration is valid in bash too, and still annoying.  But Shocker will accept it.
   return 0
 }
 
@@ -198,10 +198,10 @@ function doc_examples_10-SimpleLocalVariables {
 
   local _verbose=false
   local _max_things=20
-  # Docker will note the above variables and their default values.
+  # Shocker will note the above variables and their default values.
 
   local _i
-  # Docker will acknowledge the variable above, and that it does not have a default value.
+  # Shocker will acknowledge the variable above, and that it does not have a default value.
 
   return 0
 }
@@ -212,7 +212,7 @@ function doc_examples_11-MixedVariables {
 
   local _verbose=false
   items_found=13
-  # Docker will notice the missing local keyword and flag ITEMS_FOUND as a by-ref variable (when synchronous of course).
+  # Shocker will notice the missing local keyword and flag ITEMS_FOUND as a by-ref variable (when synchronous of course).
 
   return 0
 }
@@ -245,13 +245,13 @@ function doc_examples_14-TypedVariables {
   #@Description  This function will specify attributes about some variables by way of the keyword: declare.  It is also possible
   #@Description  to use the typeset or local keywords.
 
-  # Docker will note the special attributes for the following variables
+  # Shocker will note the special attributes for the following variables
   local    -r MY_UUID="$(uuidgen)"  # Read only
   local -i    _i                    # integer
   local -a    _index_array          # Simple array
   local -A    _some_hash            # Associative array (hash)
 
-  # Docker understands typeset too
+  # Shocker understands typeset too
   typeset -r _START_TIME="$(date +%s)"
 
   # Regular variables are untyped.
@@ -289,7 +289,7 @@ function doc_examples_41-LineEndVariableTags {
   local _verbose=false  #@$_verbose  Disable verbosity unless the user enables it with -v
   local _suppress=false #@$_suppress Don't sent error messages if the user specifies -s
 
-  # Line-end tags infer names, so Docker will transform the following variable tag (#@$) into  #@$QUIET
+  # Line-end tags infer names, so Shocker will transform the following variable tag (#@$) into  #@$QUIET
   local _quiet=false    #@$ Limit output of regular messages.  Will NOT disable error message output (see -s).
 
   return 0
@@ -435,14 +435,14 @@ function doc_examples_98-ComplexZelda {
   local       E_GENERIC=1             #@$E_GENERIC If we need to exit and don't have a better ERROR choice, use this.
   local       E_BAD_INPUT=10          #@$ Send when file specified in $1 is invalid or when -D is blank.
   local       _verbose=false          #@$_verbose Flag to decide if we should be chatty with our output.
-  local       _temp='something'       #@$ A temp variable for our operations below.  (Note: Docker will record defaults.)
+  local       _temp='something'       #@$ A temp variable for our operations below.  (Note: Shocker will record defaults.)
   local    -r _WIFE_IS_HOT=true       #@$ Pointless boolean flag, and it is now read only (and accurate).
   local -a    _index_array=( Zelda )  #@$ Index array with 1 element (element 0, value of Zelda)
   local -A    _assoc_array            #@$ Associative array (hash) to hold misc things as we read file.
   local -i    _i                      #@$ A counter variable, forced to be integer only.
   local       _opt                    #@$ Localize opt for getopts processing.
   local       _line                   #@$ Local temp variable for read loop.
-  final_value=''                      #@$ The final value to expose to the caller after we exit. (Note: Docker will flag as by-ref.)
+  final_value=''                      #@$ The final value to expose to the caller after we exit. (Note: Shocker will flag as by-ref.)
 
   # Process options
   while getopts ":D:hv" _opt; do
@@ -498,14 +498,14 @@ function doc_examples_99-ComplexZeldaLongOpts {
   local    -r E_GENERIC=1             #@$E_GENERIC If we need to exit and don't have a better ERROR choice, use this.
   local    -r E_BAD_INPUT=10          #@$ Send when file specified in $1 is invalid or when -D is blank.
   local       _verbose=false          #@$_verbose Flag to decide if we should be chatty with our output.
-  local       _temp='something'       #@$ A temp variable for our operations below.  (Note: Docker will record defaults.)
+  local       _temp='something'       #@$ A temp variable for our operations below.  (Note: Shocker will record defaults.)
   local    -r _WIFE_IS_HOT=true       #@$ Pointless boolean flag, and it is now read only (and accurate).
   local -a    _index_array=( Zelda )  #@$ Index array with 1 element (element 0, value of Zelda)
   local -A    _assoc_array            #@$ Associative array (hash) to hold misc things as we read file.
   local -i    _i                      #@$ A counter variable, forced to be integer only.
   local       _opt                    #@$ Localize opt for getopts processing.
   local       _line                   #@$ Local temp variable for read loop.
-  final_value=''                      #@$ The final value to expose to the caller after we exit. (Note: Docker will flag as by-ref.)
+  final_value=''                      #@$ The final value to expose to the caller after we exit. (Note: Shocker will flag as by-ref.)
 
   # Process options
   while core__getopts ":D:hv" _opt 'help,verbose'; do
