@@ -33,6 +33,7 @@ echo "${ary[@]}"           # ==> echo 'white' 'red' 'blue'
 
 # Insert item into array index
 unset ary
-ary=('red' 'blue')
-ary=("${ary[@]: 0: 1}" 'white' "${ary[@]: 1}")  # ==> ary=('red' 'white' 'blue')
-echo "${ary[@]}"                                # ==> echo 'red' 'white' 'blue'
+ary=('red' 'blue' 'green')
+x=1
+ary=("${ary[@]: $x-1: 1}" 'white' "${ary[@]: $x}")  # ==> ary=('red' 'white' 'blue' 'green')
+echo "${ary[@]}"                                    # ==> echo 'red' 'white' 'blue' 'green'
