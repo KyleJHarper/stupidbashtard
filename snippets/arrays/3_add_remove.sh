@@ -31,9 +31,9 @@ ary=('red' 'blue')
 ary=('white' "${ary[@]}")  # ==> ary=('white' 'red' 'blue')
 echo "${ary[@]}"           # ==> echo 'white' 'red' 'blue'
 
-# Insert item into array index
+# Insert item into array index (assuming array has no holes!)
 unset ary
 ary=('red' 'blue' 'green')
 x=1
-ary=("${ary[@]: $x-1: 1}" 'white' "${ary[@]: $x}")  # ==> ary=('red' 'white' 'blue' 'green')
-echo "${ary[@]}"                                    # ==> echo 'red' 'white' 'blue' 'green'
+ary=("${ary[@]: 0: $x}" 'white' "${ary[@]: $x}")  # ==> ary=('red' 'white' 'blue' 'green')
+echo "${ary[@]}"                                  # ==> echo 'red' 'white' 'blue' 'green'
